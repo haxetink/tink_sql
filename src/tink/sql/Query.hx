@@ -1,4 +1,4 @@
-package tink.csss;
+package tink.sql;
 
 typedef Clause<T> = {
 	pos: haxe.macro.Expr.Position,
