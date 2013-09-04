@@ -1,5 +1,6 @@
 package tink.sql;
 
+// typedef Clause<T> = T;
 typedef Clause<T> = {
 	pos: haxe.macro.Expr.Position,
 	v:T,
@@ -11,31 +12,18 @@ typedef Named<T> = {
 }
 
 enum Query {
-	Select(fields:Selection, from:From, ?condition:Condition, ?orderBy:Order, ?limit:Limit);
+	Select(fields:Selector, from:From, ?condition:Condition, ?orderBy:Order, ?limit:Limit);
 }
 
-typedef Limit = { 
-	count:Int,
-	start:Int
-}
-
+typedef Limit = { count:Int, start:Int }
 typedef Order = Array<Named<Bool>>;
-typedef Selection = Array<Named<Null<Value>>>;
+typedef Selector = Array<Named<Null<Value<Dynamic>>>>;
 
-enum Condition {
-	Const(b:Bool);
-	Field(name:Clause<String>, ?table:Clause<String>);
-	Not(c:Condition);
-	Compare(v1:Clause<Value>, v2:Clause<Value>, c:Comparison);
-}
 
-enum Comparison {
-	Equals;
-	Gt;
-	Gte;
-	Lt;
-	Lte;
-}
+typedef Condition = Value<Bool>;
+
+// typedef Constant<T> = T;
+typedef Constant<T> = haxe.macro.Expr;
 
 enum JoinType {
 	Left;
@@ -53,7 +41,32 @@ typedef From = {
 	}
 }
 
-enum Value {
-	Field(name:Clause<String>, ?table:Clause<String>);
-	Const(v:Clause<Dynamic>);
+enum BinOp<In, Out> {
+	Add:BinOp<Float, Float>;
+	Sub:BinOp<Float, Float>;
+	Mult:BinOp<Float, Float>;
+	Div:BinOp<Float, Float>;
+	Mod:BinOp<Float, Float>;
+	
+	Equals<A>:BinOp<A, Bool>;
+	Gt:BinOp<Float, Bool>;
+	Gte:BinOp<Float, Bool>;
+	Lt:BinOp<Float, Bool>;
+	Lte:BinOp<Float, Bool>;
 }
+
+enum UnOp<T> {
+	Not:UnOp<Bool>;
+	Neg:UnOp<Float>;
+}
+
+enum Value<T> {
+	Field(name:Clause<String>, ?table:Clause<String>):Value<T>;
+	Const(v:Constant<T>);
+	BinOp<In>(op:BinOp<In, T>, v1:Value<In>, v2:Value<In>);
+	UnOp(op:UnOp<T>, v:Value<T>);
+}
+
+
+
+
