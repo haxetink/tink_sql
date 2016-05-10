@@ -1,11 +1,7 @@
 package tink.sql;
 
-/**
- * ...
- * @author 
- */
-class Table{
-
+class Table<T> { 
+  
   public function new() {
     
   }

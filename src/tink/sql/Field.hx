@@ -2,7 +2,13 @@ package tink.sql;
 
 import tink.sql.Expr;
 
-abstract Field<Owner, T>({ table:String, name:String }) {
+private typedef Data = {
+  public var table(default, null):String;
+  public var name(default, null):String;
+}
+
+@:forward
+abstract Field<Owner, T>(Data) {
   
   public inline function new(table, name)
     this = {
