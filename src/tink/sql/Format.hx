@@ -2,6 +2,8 @@ package tink.sql;
 
 import tink.core.Any;
 import tink.sql.Expr;
+
+using StringTools;
 using Lambda;
 
 class Format {
@@ -43,14 +45,47 @@ class Format {
     return rec(e);
   }
   
-  static public function select<A>(t:Target<A>, ?c:Condition, s:Sanitizer) {
-    var sql = 'SELECT * FROM ' + target(t, s);
+  static public function selectAll<A>(t:Target<A>, ?field:Array<String>->String, ?c:Condition, s:Sanitizer) {
+    
+    function fields(t:Target<A>, ?nested:Bool):Array<Array<String>>
+      return switch t {
+        case TTable(t):
+          var prefix = 
+            if (nested) [t.name]
+            else [];
+            
+          [for (f in t.fieldnames) prefix.concat([f])];
+          
+        case TJoin(left, right, _, _):
+          fields(left, true).concat(fields(right, true));
+      }
+      
+    var fields = [for (f in fields(t)) 
+      switch f {
+        case [name]: 
+          s.ident(name);
+        case v:
+          
+          var name = f.map(s.ident).join('.');
+          
+          if (field != null)
+            name += ' AS ' + s.ident(field(v));
+          
+          name;
+      }
+    ].join(', ');
+    //var mapping = [];
+      
+    //var fields = fields(t).map(function (s) return '$s AS '+s.replace('_', '__').replace('.', '_')).join(', ');
+    var sql = 'SELECT $fields FROM ' + target(t, s);
     if (c != null)
       sql += ' WHERE ' + expr(c, s);
     return sql;  
   }
   
-  static public function insert<Fields, Row, Db>(table:Table<Fields, Row, Db>, rows:Array<Row>, s:Sanitizer) {
+  //static function 
+  
+  static public function insert<Fields, Row:{}, Db>(table:Table<Fields, Row, Db>, rows:Array<Row>, s:Sanitizer) {
     return
       'INSERT INTO ${s.ident(table.name)} (${table.fieldnames.map(s.ident).join(", ")}) VALUES ' +
          [for (row in rows) '(' + table.sqlizeRow(row, s.value).join(', ') + ')'].join(', ');
@@ -62,14 +97,14 @@ class Format {
         
         s.ident(t.name);
         
-      //case TJoin(left, right, type, cond): 
-      //
-        //target(left, s) + (switch type {
-          //case Inner: 'INNER';
-          //case Right: 'RIGHT';
-          //case Left:  'LEFT';
+      case TJoin(left, right, type, cond): 
+      
+        target(left, s) + ' '+(switch type {
+          case Inner: 'INNER';
+          case Right: 'RIGHT';
+          case Left:  'LEFT';
           //case Outer: 'FULL OUTER';
-        //}) + ' JOIN ' + target(right, s) + ' ON ' + expr(cond, s);
+        }) + ' JOIN ' + target(right, s) + ' ON ' + expr(cond, s);
     }
   
 }

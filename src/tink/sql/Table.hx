@@ -6,7 +6,7 @@ import tink.streams.Stream;
 import tink.sql.Expr;
 
 @:allow(tink.sql) 
-class Table<Fields, Row, Db> {
+class Table<Fields, Row:{}, Db> {
   var fields(default, null):Fields;
   var cnx:Connection<Db>;
   
@@ -24,8 +24,8 @@ class Table<Fields, Row, Db> {
     return [for (f in fieldnames) val(Reflect.field(row, f))];
   }
   
-  //public function join<A>(?type, table:Table<A, Db>, f):Join2<Row, A, Db> 
-    //return new Join2(this, table, f(fields, table.fields), type);
+  public function join<AFields, A:{}>(?type, table:Table<AFields, A, Db>, f:Fields->AFields->Condition):Join2<Fields, Row, AFields, A, Db> 
+    return new Join2(cnx, this, table, f(fields, table.fields), type);
     
   public function all(?filter:Fields->Condition):Stream<Row> {
     var cond = 
