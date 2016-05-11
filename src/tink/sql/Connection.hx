@@ -3,75 +3,40 @@ package tink.sql;
 import tink.sql.Expr;
 import tink.streams.Stream;
 
-interface Connection {
+using tink.sql.Format;
+using tink.CoreApi;
+
+interface Connection<Db> {
   
-  //function 
-  //function sqlToString<A>(e:Expr<A>):String;
-  //function selectAll<A>(c:Condition<A>):Stream<A>;
-  //function select<In, Out>(c:Condition<In>, p:Projection<In, Out>):Stream<Out>;
+  function selectAll<A>(t:Target<Db>, ?c:Condition):Stream<A>;
+  function insert<Fields, Row>(table:Table<Fields, Row, Db>, items:Array<Row>):Surprise<Int, Error>;
+  
 }
 
-class StdConnection {
+class StdConnection<Db> implements Sanitizer implements Connection<Db> {
+  
+  public function value(v:Dynamic):String 
+    return cnx.quote(Std.string(v));
+  
+  public function ident(s:String):String
+    return cnx.escape(s);
   
   var cnx:sys.db.Connection;
   
   public function new(cnx)
     this.cnx = cnx;
   
-  public function selectAll<A>(c:Condition):Stream<A> {
-    var sql = 'SELECT * FROM test WHERE ' + exprToSql(c);
-    return cnx.request('SELECT * FROM test WHERE '+exprToSql(c));
-  }
+  public function selectAll<A>(t:Target<Db>, ?c:Condition):Stream<A> 
+    return cnx.request(Format.select(t, c, this));
   
-  function exprToSql<T>(e:Expr<T>) {
+  public function insert<Fields, Row>(table:Table<Fields, Row, Db>, items:Array<Row>):Surprise<Int, Error> 
+    return Future.sync(try {
+      cnx.request(Format.insert(table, items, this));
+      Success(cnx.lastInsertId());
+    }
+    catch (e:Dynamic) {
+      trace(e);
+      Failure(Error.withData('Failed to INSERT INTO ${table.name}', e));
+    });
     
-    var ret = new StringBuf();
-    
-    inline function add(s:String)
-      ret.add(s);
-      
-    inline function char(i:Int)
-      ret.addChar(i);
-    
-    function rec(e:Expr<Dynamic>)
-      switch e {
-        case EConst(v): 
-          cnx.addValue(ret, v);
-        case EField(table, name): 
-          add(table+ '.' + name);
-        case EBinOp(op, e1, e2):
-          
-          char('('.code);
-          rec(e1);
-          
-          add(switch (op:BinOp<Dynamic, Dynamic, Dynamic>) {
-            case Add: '+';
-            case Subt: '-';
-            case Mult: '*';
-            case Div: '/';
-            case Mod: 'MOD';
-            case Or: 'OR';
-            case And: 'AND';
-            case Equals: '=';
-            case Greater: '>';
-          });
-          
-          rec(e2);
-          char(')'.code);
-          
-        case EUnOp(op, e):
-          
-          add(switch (op:UnOp<Dynamic, Dynamic>) {
-            case Not: 'NOT(';
-            case Neg: '-(';
-          });
-          
-          rec(e);
-          char(')'.code);
-      }
-      
-    rec(e);
-    
-    return ret.toString();
-  }
 }
