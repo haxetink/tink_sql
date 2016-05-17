@@ -48,39 +48,22 @@ class Format {
   
   
   
-  static public function selectAll<A, Db>(t:Target<A, Db>, ?c:Condition, s:Sanitizer) {
-    
-      
-    //var fields = [for (f in fields(t)) 
-      //switch f {
-        //case [name]: 
-          //s.ident(name);
-        //case v:
-          //
-          //var name = f.map(s.ident).join('.');
-          //
-          //if (field != null)
-            //name += ' AS ' + s.ident(field(v));
-          //
-          //name;
-      //}
-    //].join(', ');
-    //var mapping = [];
-      
-    //var fields = fields(t).map(function (s) return '$s AS '+s.replace('_', '__').replace('.', '_')).join(', ');
-    //var sql = 'SELECT $fields FROM ' + target(t, s);
-        
-    return select(t, '*', c, s);
-  }
+  static public function selectAll<A, Db>(t:Target<A, Db>, ?c:Condition, s:Sanitizer, ?limit:Limit)         
+    return select(t, '*', c, s, limit);
   
-  static function select<A, Db>(t:Target<A, Db>, what:String, ?c:Condition, s:Sanitizer) {
+  static function select<A, Db>(t:Target<A, Db>, what:String, ?c:Condition, s:Sanitizer, ?limit:Limit) {
     var sql = 'SELECT $what FROM ' + target(t, s);
+    
     if (c != null)
       sql += ' WHERE ' + expr(c, s);
+      
+    if (limit != null) 
+      sql += 'LIMIT ${limit.limit} OFFSET ${limit.offset}';
+      
     return sql;    
   }
   
-  static public function selectProjection<A, Db, Ret>(t:Target<A, Db>, ?c:Condition, s:Sanitizer, p:Projection<A, Ret>) 
+  static public function selectProjection<A, Db, Ret>(t:Target<A, Db>, ?c:Condition, s:Sanitizer, p:Projection<A, Ret>, ?limit) 
     return select(t, [
       for (part in p) (
         switch part.expr.data {
@@ -88,7 +71,7 @@ class Format {
           case v: expr(v, s) + ' AS ';
         }
       ) + s.ident(part.name)      
-    ].join(', '), c, s);
+    ].join(', '), c, s, limit);
     
   static public function insert<Row:{}>(table:TableInfo<Row>, rows:Array<Row>, s:Sanitizer) {
     return

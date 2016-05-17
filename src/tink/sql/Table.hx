@@ -28,7 +28,7 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db> extends Source
   
   @:noCompletion 
   public function fieldnames()
-    return Reflect.fields(fields).iterator();
+    return Reflect.fields(fields);
   
   @:noCompletion 
   public function sqlizeRow(row:Row, val:Any->String):Array<String> 

@@ -9,6 +9,6 @@ interface DatabaseInfo {
 
 interface TableInfo<Row:{}> {
   function getName():String;
-  function fieldnames():Iterator<String>;
+  function fieldnames():Iterable<String>;
   function sqlizeRow(row:Row, val:Any->String):Array<String>;
 }

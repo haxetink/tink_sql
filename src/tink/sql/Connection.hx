@@ -11,8 +11,8 @@ using tink.CoreApi;
 
 interface Connection<Db> {
   
-  function selectAll<A>(t:Target<A, Db>, ?c:Condition):Stream<A>;
   //function selectProjection<A, Res>(t:Target<A, Db>, ?c:Condition, p:Projection<Res>):Stream<A>;
+  function selectAll<A>(t:Target<A, Db>, ?c:Condition, ?limit:Limit):Stream<A>;
   function insert<Row:{}>(table:TableInfo<Row>, items:Array<Row>):Surprise<Int, Error>;
   
 }
@@ -36,12 +36,12 @@ class StdConnection<Db:DatabaseInfo> implements Sanitizer implements Connection<
   function makeRequest(s:String) 
     return cnx.request(s);
   
-  public function selectAll<A>(t:Target<A, Db>, ?c:Condition):Stream<A> 
+  public function selectAll<A>(t:Target<A, Db>, ?c:Condition, ?limit:Limit):Stream<A> 
     return 
       switch t {
         case TTable(_, _): 
           
-          makeRequest(Format.selectAll(t, c, this));
+          makeRequest(Format.selectAll(t, c, this, limit));
           
         default:
           
@@ -61,7 +61,7 @@ class StdConnection<Db:DatabaseInfo> implements Sanitizer implements Connection<
                 fields(left).concat(fields(right));
             }
           
-          var ret = makeRequest(Format.selectProjection(t, c, this, new Projection(fields(t))));
+          var ret = makeRequest(Format.selectProjection(t, c, this, new Projection(fields(t)), limit));
           
           {
             hasNext: function () return ret.hasNext(),
