@@ -10,6 +10,12 @@ enum ExprData<T> {
 }
 
 @:notNull abstract Expr<T>(ExprData<T>) from ExprData<T> to ExprData<T> {
+  
+  public var data(get, never):ExprData<T>;
+  
+    inline function get_data()
+      return this;
+      
   //{ region arithmetics
     @:op(a + b) static function add<T:Float>(a:Expr<T>, b:Expr<T>):Expr<T>
       return EBinOp(Add, a, b);

@@ -2,8 +2,9 @@ package tink.sql;
 
 import tink.sql.Expr;
 import tink.sql.Join;
+import tink.sql.Table;
 
-enum Target<Db> {
-  TTable<F, R:{}>(t:Table<F, R, Db>);
-  TJoin(left:Target<Db>, right:Target<Db>, type:JoinType, c:Condition);
+enum Target<Result, Db> {
+  TTable(name:TableName<Result>, ?alias:String);
+  TJoin<Left, Right>(left:Target<Left, Db>, right:Target<Right, Db>, type:JoinType, c:Condition);
 }

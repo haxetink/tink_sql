@@ -1,45 +1,42 @@
 package tink.sql;
 
 import tink.core.Any;
-import tink.sql.Join;
-import tink.streams.Stream;
 import tink.sql.Expr;
+import tink.sql.Info;
 
-@:allow(tink.sql) 
-class Table<Fields, Row:{}, Db> {
-  var fields(default, null):Fields;
-  var cnx:Connection<Db>;
+@:genericBuild(tink.sql.macros.TableBuilder.build())
+class Table<T> {
+
+}
+
+class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db> extends Source<Filter, Row, Db> implements TableInfo<Row> {
   
-  public var name(default, null):String;
-  public var fieldnames(default, null):Iterable<String>;
+  public var fields(default, null):Fields;
+  public var name(default, null):TableName<Row>;
+
+  @:noCompletion 
+  public function getName()
+    return name;
   
-  public function new(cnx, name, fields) {
-    this.cnx = cnx;
+  function new(cnx, name, fields) {
+    
     this.name = name;
     this.fields = fields;
-    this.fieldnames = Reflect.fields(fields);
-  }
-  
-  function sqlizeRow(row:Row, val:Any->String):Array<String> {
-    return [for (f in fieldnames) val(Reflect.field(row, f))];
-  }
-  
-  public function join<AFields, A:{}>(?type, table:Table<AFields, A, Db>, f:Fields->AFields->Condition):Join2<Fields, Row, AFields, A, Db> 
-    return new Join2(cnx, this, table, f(fields, table.fields), type);
     
-  public function all(?filter:Fields->Condition):Stream<Row> {
-    var cond = 
-      if (filter != null) filter(fields);
-      else null;
-    return cnx.selectAll(TTable(this), cond);
+    super(cnx, TTable(name), function (f:Filter) return (cast f : Fields->Condition)(fields));//TODO: raise issue on Haxe tracker and remove the cast once resolved
   }
   
-  public function insertOne(row:Row) {
-    return insertMany([row]);
-  }
+  @:noCompletion 
+  public function fieldnames()
+    return Reflect.fields(fields).iterator();
   
-  public function insertMany(rows:Array<Row>) {
-    return cnx.insert(this, rows);
-  }
-  
+  @:noCompletion 
+  public function sqlizeRow(row:Row, val:Any->String):Array<String> 
+    return [for (f in fieldnames()) val(Reflect.field(row, f))];
+
+}
+
+abstract TableName<Row>(String) to String {
+  public inline function new(s)
+    this = s;
 }

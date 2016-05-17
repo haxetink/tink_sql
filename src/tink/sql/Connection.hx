@@ -3,18 +3,21 @@ package tink.sql;
 import haxe.DynamicAccess;
 import tink.sql.Expr;
 import tink.streams.Stream;
+import tink.sql.Info;
+import tink.sql.Projection;
 
 using tink.sql.Format;
 using tink.CoreApi;
 
 interface Connection<Db> {
   
-  function selectAll<A>(t:Target<Db>, ?c:Condition):Stream<A>;
-  function insert<Fields, Row:{}>(table:Table<Fields, Row, Db>, items:Array<Row>):Surprise<Int, Error>;
+  function selectAll<A>(t:Target<A, Db>, ?c:Condition):Stream<A>;
+  //function selectProjection<A, Res>(t:Target<A, Db>, ?c:Condition, p:Projection<Res>):Stream<A>;
+  function insert<Row:{}>(table:TableInfo<Row>, items:Array<Row>):Surprise<Int, Error>;
   
 }
 
-class StdConnection<Db> implements Sanitizer implements Connection<Db> {
+class StdConnection<Db:DatabaseInfo> implements Sanitizer implements Connection<Db> {
   
   public function value(v:Dynamic):String 
     return cnx.quote(Std.string(v));
@@ -23,21 +26,42 @@ class StdConnection<Db> implements Sanitizer implements Connection<Db> {
     return cnx.escape(s);
   
   var cnx:sys.db.Connection;
+  var db:Db;
   
-  public function new(cnx)
+  public function new(cnx, db) {
     this.cnx = cnx;
-  
-  function makeRequest(s:String) {
-    trace(s);
-    return cnx.request(s);
+    this.db = db;
   }
-    
-  public function selectAll<A>(t:Target<Db>, ?c:Condition):Stream<A> 
+  
+  function makeRequest(s:String) 
+    return cnx.request(s);
+  
+  public function selectAll<A>(t:Target<A, Db>, ?c:Condition):Stream<A> 
     return 
       switch t {
-        case TTable(_): makeRequest(Format.selectAll(t, c, this));
+        case TTable(_, _): 
+          
+          makeRequest(Format.selectAll(t, c, this));
+          
         default:
-          var ret = makeRequest(Format.selectAll(t, function (parts) return parts.map(StringTools.replace.bind(_, '_', '_u')).join('_d'), c, this));
+          
+          function fields(t:Target<Dynamic, Db>):Array<ProjectionPart<Dynamic>>
+            return switch t {
+              case TTable(name, alias):
+                
+                if (alias == null)
+                  alias = name;
+                
+                [for (field in db.tableinfo(name).fieldnames()) {
+                  name: '`$alias.$field`', //TODO: backticks are non-standard ... double-check that they are supported
+                  expr: EField(alias, field),
+                }];
+                                  
+              case TJoin(left, right, _, _):
+                fields(left).concat(fields(right));
+            }
+          
+          var ret = makeRequest(Format.selectProjection(t, c, this, new Projection(fields(t))));
           
           {
             hasNext: function () return ret.hasNext(),
@@ -45,11 +69,11 @@ class StdConnection<Db> implements Sanitizer implements Connection<Db> {
               var v:DynamicAccess<Dynamic> = ret.next();
               var ret:DynamicAccess<DynamicAccess<Dynamic>> = { };
               for (f in v.keys()) {
-                switch f.split('_d').map(StringTools.replace.bind(_, '_u', '_')) {
+                switch f.split('.') {
                   case [prefix, name]: 
                     if (ret[prefix] == null) ret[prefix] = { };
                     ret[prefix][name] = v[f];
-                  default: throw 'assert';
+                  default: throw 'assert $f';
                 }
               }
               return (cast ret : A);
@@ -57,14 +81,13 @@ class StdConnection<Db> implements Sanitizer implements Connection<Db> {
           }
       }
   
-  public function insert<Fields, Row:{}>(table:Table<Fields, Row, Db>, items:Array<Row>):Surprise<Int, Error> 
+  public function insert<Row:{}>(table:TableInfo<Row>, items:Array<Row>):Surprise<Int, Error> 
     return Future.sync(try {
       makeRequest(Format.insert(table, items, this));
       Success(cnx.lastInsertId());
     }
     catch (e:Dynamic) {
-      trace(e);
-      Failure(Error.withData('Failed to INSERT INTO ${table.name}', e));
+      Failure(Error.withData('Failed to INSERT INTO ${table.getName()}', e));
     });
     
 }

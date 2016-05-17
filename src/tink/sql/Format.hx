@@ -2,6 +2,7 @@ package tink.sql;
 
 import tink.core.Any;
 import tink.sql.Expr;
+import tink.sql.Info;
 
 using StringTools;
 using Lambda;
@@ -45,58 +46,65 @@ class Format {
     return rec(e);
   }
   
-  static public function selectAll<A>(t:Target<A>, ?field:Array<String>->String, ?c:Condition, s:Sanitizer) {
+  
+  
+  static public function selectAll<A, Db>(t:Target<A, Db>, ?c:Condition, s:Sanitizer) {
     
-    function fields(t:Target<A>, ?nested:Bool):Array<Array<String>>
-      return switch t {
-        case TTable(t):
-          var prefix = 
-            if (nested) [t.name]
-            else [];
-            
-          [for (f in t.fieldnames) prefix.concat([f])];
-          
-        case TJoin(left, right, _, _):
-          fields(left, true).concat(fields(right, true));
-      }
       
-    var fields = [for (f in fields(t)) 
-      switch f {
-        case [name]: 
-          s.ident(name);
-        case v:
-          
-          var name = f.map(s.ident).join('.');
-          
-          if (field != null)
-            name += ' AS ' + s.ident(field(v));
-          
-          name;
-      }
-    ].join(', ');
+    //var fields = [for (f in fields(t)) 
+      //switch f {
+        //case [name]: 
+          //s.ident(name);
+        //case v:
+          //
+          //var name = f.map(s.ident).join('.');
+          //
+          //if (field != null)
+            //name += ' AS ' + s.ident(field(v));
+          //
+          //name;
+      //}
+    //].join(', ');
     //var mapping = [];
       
     //var fields = fields(t).map(function (s) return '$s AS '+s.replace('_', '__').replace('.', '_')).join(', ');
-    var sql = 'SELECT $fields FROM ' + target(t, s);
-    if (c != null)
-      sql += ' WHERE ' + expr(c, s);
-    return sql;  
+    //var sql = 'SELECT $fields FROM ' + target(t, s);
+        
+    return select(t, '*', c, s);
   }
   
-  //static function 
+  static function select<A, Db>(t:Target<A, Db>, what:String, ?c:Condition, s:Sanitizer) {
+    var sql = 'SELECT $what FROM ' + target(t, s);
+    if (c != null)
+      sql += ' WHERE ' + expr(c, s);
+    return sql;    
+  }
   
-  static public function insert<Fields, Row:{}, Db>(table:Table<Fields, Row, Db>, rows:Array<Row>, s:Sanitizer) {
+  static public function selectProjection<A, Db, Ret>(t:Target<A, Db>, ?c:Condition, s:Sanitizer, p:Projection<A, Ret>) 
+    return select(t, [
+      for (part in p) (
+        switch part.expr.data {
+          case null: '';
+          case v: expr(v, s) + ' AS ';
+        }
+      ) + s.ident(part.name)      
+    ].join(', '), c, s);
+    
+  static public function insert<Row:{}>(table:TableInfo<Row>, rows:Array<Row>, s:Sanitizer) {
     return
-      'INSERT INTO ${s.ident(table.name)} (${table.fieldnames.map(s.ident).join(", ")}) VALUES ' +
+      'INSERT INTO ${s.ident(table.getName())} (${[for (f in table.fieldnames()) s.ident(f)].join(", ")}) VALUES ' +
          [for (row in rows) '(' + table.sqlizeRow(row, s.value).join(', ') + ')'].join(', ');
   }
   
-  static public function target<A>(t:Target<A>, s:Sanitizer)
+  static public function target<A, Db>(t:Target<A, Db>, s:Sanitizer)
     return switch t {
-      case TTable(t): 
+      case TTable(name, alias): 
         
-        s.ident(t.name);
-        
+        s.ident(name) + switch alias {
+          case null: '';
+          case v: ' AS ' + s.ident(alias);
+        }
+                
       case TJoin(left, right, type, cond): 
       
         target(left, s) + ' '+(switch type {
