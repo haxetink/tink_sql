@@ -3,7 +3,7 @@ package tink.sql;
 import tink.core.Any;
 
 interface DatabaseInfo {
-  function tablesnames():Iterator<String>;
+  function tablesnames():Iterable<String>;
   function tableinfo<Row:{}>(name:String):TableInfo<Row>;  
 }
 

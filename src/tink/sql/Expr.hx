@@ -9,11 +9,16 @@ enum ExprData<T> {
   EConst<T>(value:T):ExprData<T>;
 }
 
-@:notNull abstract Expr<T>(ExprData<T>) from ExprData<T> to ExprData<T> {
+@:notNull abstract Expr<T>(ExprData<T>) {
+  
+  inline function new(e) this = e;
+  
+  @:from static function ofData<T>(d:ExprData<T>) 
+    return new Expr(d);
   
   public var data(get, never):ExprData<T>;
   
-    inline function get_data()
+    @:to inline function get_data()
       return this;
       
   //{ region arithmetics

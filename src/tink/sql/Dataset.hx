@@ -3,31 +3,37 @@ package tink.sql;
 import tink.sql.Expr;
 import tink.streams.Stream;
 
+import tink.sql.Table;
+
 #if macro
 import haxe.macro.Context;
 using tink.MacroApi;
 #end
 
-class Source<Filter, Result, Db> { 
+class Dataset<Fields, Filter, Result, Db> { 
+  
+  public var fields(default, null):Fields;
   
   var cnx:Connection<Db>;
   var target:Target<Result, Db>;
   var toCondition:Filter->Condition;
   
-  public function new(cnx, target, toCondition) { 
+  
+  function new(fields, cnx, target, toCondition) { 
+    this.fields = fields;
     this.cnx = cnx;
     this.target = target;
     this.toCondition = toCondition;
   }
   
-  macro public function all(ethis, ?filter) {
+  macro public function all(ethis, ?filter:haxe.macro.Expr.ExprOf<Filter>) {
     switch filter {
       case macro null:
       case { expr: EFunction(_, _) }:
       default:
-        switch (macro {
+        switch (macro @:privateAccess {
           var f = null;
-          @:privateAccess $ethis._all(f);
+          $ethis._all(f);
           f;
         }).typeof().sure().reduce() {
           case TFun(args, ret):
@@ -36,10 +42,10 @@ class Source<Filter, Result, Db> {
             
         }
     }
-    return macro @:pos(ethis.pos) @:privateAccess $ethis._all($filter);
+    return macro @:pos(ethis.pos) @:privateAccess $ethis._all(@:noPrivateAccess $filter);
   }
     
-  private function _all(?filter:Filter):Stream<Result>  {
+  function _all(?filter:Filter):Stream<Result>  {
     return cnx.selectAll(target, switch filter {
       case null: null;
       case v: toCondition(filter);

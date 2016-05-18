@@ -4,14 +4,19 @@ import tink.core.Any;
 import tink.sql.Expr;
 import tink.sql.Info;
 
+#if macro
+import haxe.macro.Expr;
+using haxe.macro.Tools;
+using tink.MacroApi;
+#else
 @:genericBuild(tink.sql.macros.TableBuilder.build())
 class Table<T> {
 
 }
+#end
 
-class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db> extends Source<Filter, Row, Db> implements TableInfo<Row> {
+class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db> extends Dataset<Fields, Filter, Row, Db> implements TableInfo<Row> {
   
-  public var fields(default, null):Fields;
   public var name(default, null):TableName<Row>;
 
   @:noCompletion 
@@ -23,7 +28,7 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db> extends Source
     this.name = name;
     this.fields = fields;
     
-    super(cnx, TTable(name), function (f:Filter) return (cast f : Fields->Condition)(fields));//TODO: raise issue on Haxe tracker and remove the cast once resolved
+    super(fields, cnx, TTable(name), function (f:Filter) return (cast f : Fields->Condition)(fields));//TODO: raise issue on Haxe tracker and remove the cast once resolved
   }
   
   @:noCompletion 
@@ -33,6 +38,15 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db> extends Source
   @:noCompletion 
   public function sqlizeRow(row:Row, val:Any->String):Array<String> 
     return [for (f in fieldnames()) val(Reflect.field(row, f))];
+    
+  @:privateAccess
+  macro public function init(e:Expr, rest:Array<Expr>) {
+    return switch e.typeof().sure().follow() {
+      case TInst(_.get() => { module: m, name: n }, _):
+        e.assign('$m.$n'.instantiate(rest));
+      default: e.reject();
+    }
+  }
 
 }
 

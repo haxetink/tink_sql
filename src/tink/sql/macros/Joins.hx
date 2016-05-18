@@ -1,7 +1,7 @@
 package tink.sql.macros;
 
 import haxe.macro.Context;
-import tink.sql.Join.JoinType;
+import tink.sql.Target.JoinType;
 import haxe.macro.Type;
 import haxe.macro.Expr;
 
@@ -13,7 +13,7 @@ class Joins {
     return switch Context.typeof(macro @:pos(e.pos) {
       var source = $e;
       var x = null;
-      source.all(x);
+      @:privateAccess source._all(x);
       x;
     }).reduce() {
       case TFun(args, ret):
@@ -31,30 +31,42 @@ class Joins {
     });
     
   static public function perform(type:JoinType, left:Expr, right:Expr, cond:Expr) {
-    
-    //var leftParts = getFilter(left),
-        //rightParts = getFilter(right);
         
-    var fields = new Array<Field>();
+    var rowFields = new Array<Field>(),
+        fieldsObj = [];
     
-    function traverse(e:Expr) {
+    function traverse(e:Expr, fieldsExpr:Expr) {
+      
+      function add(name, type, ?nested) {
+        
+        rowFields.push({
+          name: name,
+          pos: e.pos,
+          kind: FProp('default', 'null', type),
+        });              
+        
+        fieldsObj.push({
+          field: name,
+          expr: 
+            if (nested) macro $fieldsExpr.fields.$name
+            else macro $fieldsExpr.fields
+        });
+      }
+      
       var parts = getFilter(e);
       switch parts {
         case [single]:
-          fields.push({
-            name: single.name,
-            pos: e.pos,
-            kind: FProp('default', 'null', getRow(e).toComplex()),
-          });          
+          
+          add(single.name, getRow(e).toComplex());
+          
         default:
           switch getRow(e).reduce().toComplex() {
             case TAnonymous([for (f in _) f.name => f] => byName):
               for (p in parts)
-                fields.push({
-                  name: p.name,
-                  pos: e.pos,
-                  kind: FProp('default', 'null', p.t.toComplex()),
-                });
+                add(p.name, switch byName[p.name] {
+                  case null: e.reject('Lost track of ${p.name}');
+                  case f: f.getVar().sure().type;
+                }, true);
             default:
               e.reject();
           }
@@ -62,30 +74,58 @@ class Joins {
       return parts;
     }
     
-    var total = traverse(left).concat(traverse(right));
+    var total = traverse(left, macro left);
+    total = total.concat(traverse(right, macro right));//need separate statements because of evaluation order
     
     var f:Function = {
       expr: macro return null,
       ret: macro : tink.sql.Expr.Condition,
       args: [for (a in total) {
         name: a.name,
-        type: a.t.toComplex(),
+        type: a.t.toComplex({ direct: true }),
       }],
     }
     
-    var rowType = TAnonymous(fields);
+    switch cond {
+      case { expr: EFunction(_, _) } :
+      default:
+        cond = cond.func(f.args).asExpr(cond.pos);
+    }
     
+    var rowType = TAnonymous(rowFields);
+    var filterType = f.asExpr().typeof().sure().toComplex( { direct: true } );
     
-    //trace(f);
-    //trace(f.asExpr().typeof().sure().toComplex({ direct: true }).toType().sure().toString());
-    
-    return macro @:pos(left.pos) {
-      var ret = new tink.sql.Source();
+    var ret = macro @:pos(left.pos) @:privateAccess {
+      
+      var left = $left,
+          right = $right;
+      
+      function toCondition(filter:$filterType)
+        return ${(macro filter).call([for (field in fieldsObj) field.expr])};
+        
+      var ret = new tink.sql.Dataset(
+        ${EObjectDecl(fieldsObj).at()},
+        left.cnx, 
+        tink.sql.Target.TJoin(left.target, right.target, ${joinTypeExpr(type)}, toCondition($cond)), 
+        toCondition
+      );
+      
       if (false) {
-        ret.all(${f.asExpr()}).forEach(function (item:$rowType) return true);
+        ret._all().forEach(function (item:$rowType) return true);
       }
+      
       ret;
-    };
+      
+    }
+    
+    return ret;
   }
+  
+  static function joinTypeExpr(t:JoinType)
+    return switch t {
+      case Inner: macro Inner;
+      case Left: macro Left;
+      case Right: macro right;
+    }
   
 }

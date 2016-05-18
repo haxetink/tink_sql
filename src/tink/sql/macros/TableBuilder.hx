@@ -1,5 +1,6 @@
 package tink.sql.macros;
 
+import haxe.macro.Context;
 import tink.macro.BuildCache;
 import haxe.macro.Expr;
 
@@ -46,17 +47,20 @@ class TableBuilder {
             var rowType = TAnonymous(rowTypeFields),
                 fieldsType = TAnonymous(fieldsTypeFields);
                 
-            var anon = ctx.pos.makeBlankType();
-            //trace(fieldsType.toString());
+            var filterType = ctx.pos.makeBlankType();
             
-            macro class $cName<Db> extends tink.sql.Table.TableSource<$fieldsType, $anon, $rowType, Db> {
+            macro class $cName<Db> extends tink.sql.Table.TableSource<$fieldsType, $filterType, $rowType, Db> {
               public function new(cnx) {
-                (function ($name:$fieldsType):tink.sql.Expr.Condition return null : $anon);
+                (function ($name:$fieldsType):tink.sql.Expr.Condition return null : $filterType);
                 super(cnx, new tink.sql.Table.TableName($v{name}), ${EObjectDecl(fieldsExprFields).at(ctx.pos)});
               }
+              
+              static var FIELD_NAMES = $v{names};
+              override public function fieldnames()
+                return FIELD_NAMES;
+                
+                //TODO: override sqlizeRow
             }
-            
-            //TODO: override sqlizeRow
             
           default:
             ctx.pos.error('invalid usage of Table');

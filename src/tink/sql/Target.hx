@@ -1,8 +1,16 @@
 package tink.sql;
 
 import tink.sql.Expr;
-import tink.sql.Join;
+import tink.streams.Stream;
+
 import tink.sql.Table;
+
+@:enum abstract JoinType(String) {
+  var Inner = null;
+  var Left = 'left';
+  var Right = 'right';
+  //var Outer = 'outer'; //somehow MySQL can't do this. I don't blame them
+}
 
 enum Target<Result, Db> {
   TTable(name:TableName<Result>, ?alias:String);

@@ -52,7 +52,7 @@ class Format {
     return select(t, '*', c, s, limit);
   
   static function select<A, Db>(t:Target<A, Db>, what:String, ?c:Condition, s:Sanitizer, ?limit:Limit) {
-    var sql = 'SELECT $what FROM ' + target(t, s);
+    var sql = 'SELECT $what FROM ' + Dataset(t, s);
     
     if (c != null)
       sql += ' WHERE ' + expr(c, s);
@@ -79,7 +79,7 @@ class Format {
          [for (row in rows) '(' + table.sqlizeRow(row, s.value).join(', ') + ')'].join(', ');
   }
   
-  static public function target<A, Db>(t:Target<A, Db>, s:Sanitizer)
+  static public function Dataset<A, Db>(t:Target<A, Db>, s:Sanitizer)
     return switch t {
       case TTable(name, alias): 
         
@@ -90,12 +90,12 @@ class Format {
                 
       case TJoin(left, right, type, cond): 
       
-        target(left, s) + ' '+(switch type {
+        Dataset(left, s) + ' '+(switch type {
           case Inner: 'INNER';
           case Right: 'RIGHT';
           case Left:  'LEFT';
           //case Outer: 'FULL OUTER';
-        }) + ' JOIN ' + target(right, s) + ' ON ' + expr(cond, s);
+        }) + ' JOIN ' + Dataset(right, s) + ' ON ' + expr(cond, s);
     }
   
 }
