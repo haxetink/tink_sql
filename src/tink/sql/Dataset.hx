@@ -54,4 +54,11 @@ class Dataset<Fields, Filter, Result, Db> {
     
   macro public function leftJoin(ethis, ethat, cond)
     return tink.sql.macros.Joins.perform(Left, ethis, ethat, cond);
+    
+  macro public function join(ethis, ethat, cond)
+    return tink.sql.macros.Joins.perform(Inner, ethis, ethat, cond);
+
+  macro public function rightJoin(ethis, ethat, cond)
+    return tink.sql.macros.Joins.perform(Right, ethis, ethat, cond);
+    
 }

@@ -47,15 +47,45 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
   public function selectAll<A>(t:Target<A, Db>, ?c:Condition, ?limit:Limit):Stream<A>
     return Future.async(function (cb) {
       cnx.query( 
-        { sql: Format.selectAll(t, c, this), nestTables: true }, 
-        function (error, result:Array<DynamicAccess<Dynamic>>) cb(switch [error, result] {
+        { 
+          sql: Format.selectAll(t, c, this), 
+          nestTables: true 
+        }, 
+        function (error, result:Array<DynamicAccess<DynamicAccess<Any>>>) cb(switch [error, result] {
           case [null, result]:
-            Success(([for (row in result) {
-              var ret = new DynamicAccess();//This flat copy is done to lose some noise ... not proud of it ...
-              for (k in row.keys())
-                ret[k] = row[k];
-              (cast ret : A);
-            }].iterator() : Stream<A>));
+            
+            var result:Array<A> =
+              if (t.match(TTable(_, _))) cast result
+              else [for (row in result) {
+                
+                var rowCopy = row; rowCopy = { };
+                
+                for (partName in row.keys()) {
+                  
+                  var part = row[partName],
+                      notNull = false;
+                      
+                  for (name in part.keys())
+                    if (part[name] != null) {
+                      notNull = true;
+                      break;
+                    }
+                    
+                  if (notNull)
+                    rowCopy[partName] = part;
+                }
+                
+                (cast rowCopy : A);
+              }];
+              
+            Success((result.iterator() : Stream<A>));
+            
+            //Success(([for (row in result) {
+              //var ret = new DynamicAccess();//This copying is done to lose some noise ... not proud of it ...
+              //for (k in row.keys())
+                ////ret[k] = row[k];
+              //(cast ret : A);
+            //}].iterator() : Stream<A>));
           case [e, _]:
             toError(e);
         })

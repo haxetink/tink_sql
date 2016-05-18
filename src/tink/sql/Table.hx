@@ -11,11 +11,13 @@ using tink.MacroApi;
 #else
 @:genericBuild(tink.sql.macros.TableBuilder.build())
 class Table<T> {
-
 }
 #end
 
-class TableSource<Fields, Filter:(Fields->Condition), Insert:{}, Row:Insert, Db> extends Dataset<Fields, Filter, Row, Db> implements TableInfo<Insert, Row> {
+class TableSource<Fields, Filter:(Fields->Condition), Insert:{}, Row:Insert, Db> 
+    extends Dataset<Fields, Filter, Row, Db> 
+    implements TableInfo<Insert, Row> 
+{
   
   public var name(default, null):TableName<Row>;
 
@@ -28,7 +30,12 @@ class TableSource<Fields, Filter:(Fields->Condition), Insert:{}, Row:Insert, Db>
     this.name = name;
     this.fields = fields;
     
-    super(fields, cnx, TTable(name), function (f:Filter) return (cast f : Fields->Condition)(fields));//TODO: raise issue on Haxe tracker and remove the cast once resolved
+    super(
+      fields, 
+      cnx, 
+      TTable(name), 
+      function (f:Filter) return (cast f : Fields->Condition)(fields) //TODO: raise issue on Haxe tracker and remove the cast once resolved
+    );
   }
   
   public function insertMany(rows:Array<Insert>)

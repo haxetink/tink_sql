@@ -35,7 +35,7 @@ class Joins {
     var rowFields = new Array<Field>(),
         fieldsObj = [];
     
-    function traverse(e:Expr, fieldsExpr:Expr) {
+    function traverse(e:Expr, fieldsExpr:Expr, nullable:Bool) {
       
       function add(name, type, ?nested) {
         
@@ -74,8 +74,8 @@ class Joins {
       return parts;
     }
     
-    var total = traverse(left, macro left);
-    total = total.concat(traverse(right, macro right));//need separate statements because of evaluation order
+    var total = traverse(left, macro left, type == Right);
+    total = total.concat(traverse(right, macro right, type == Left));//need separate statements because of evaluation order
     
     var f:Function = {
       expr: macro return null,
@@ -125,7 +125,7 @@ class Joins {
     return switch t {
       case Inner: macro Inner;
       case Left: macro Left;
-      case Right: macro right;
+      case Right: macro Right;
     }
   
 }
