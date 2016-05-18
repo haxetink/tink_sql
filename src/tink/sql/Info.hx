@@ -4,11 +4,11 @@ import tink.core.Any;
 
 interface DatabaseInfo {
   function tablesnames():Iterable<String>;
-  function tableinfo<Row:{}>(name:String):TableInfo<Row>;  
+  function tableinfo<Insert:{}, Row:Insert>(name:String):TableInfo<Insert, Row>;  
 }
 
-interface TableInfo<Row:{}> {
+interface TableInfo<Insert:{}, Row:Insert> {
   function getName():String;
   function fieldnames():Iterable<String>;
-  function sqlizeRow(row:Row, val:Any->String):Array<String>;
+  function sqlizeRow(row:Insert, val:Any->String):Array<String>;
 }

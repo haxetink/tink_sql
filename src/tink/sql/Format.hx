@@ -73,7 +73,7 @@ class Format {
       ) + s.ident(part.name)      
     ].join(', '), c, s, limit);
     
-  static public function insert<Row:{}>(table:TableInfo<Row>, rows:Array<Row>, s:Sanitizer) {
+  static public function insert<Insert:{}, Row:Insert>(table:TableInfo<Insert, Row>, rows:Array<Insert>, s:Sanitizer) {
     return
       'INSERT INTO ${s.ident(table.getName())} (${[for (f in table.fieldnames()) s.ident(f)].join(", ")}) VALUES ' +
          [for (row in rows) '(' + table.sqlizeRow(row, s.value).join(', ') + ')'].join(', ');

@@ -66,7 +66,7 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
   function toError<A>(error:js.Error):Outcome<A, Error>
     return Failure(new Error(error.message));//TODO: give more information
   
-  public function insert<Row:{}>(table:TableInfo<Row>, items:Array<Row>):Surprise<Int, Error>
+  public function insert<Insert:{}, Row:Insert>(table:TableInfo<Insert, Row>, items:Array<Insert>):Surprise<Int, Error>
     return Future.async(function (cb) {
       cnx.query(
         { sql: Format.insert(table, items, this) }, 

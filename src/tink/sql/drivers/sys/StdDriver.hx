@@ -87,7 +87,7 @@ class StdConnection<Db:DatabaseInfo> implements Sanitizer implements Connection<
           }
       }
   
-  public function insert<Row:{}>(table:TableInfo<Row>, items:Array<Row>):Surprise<Int, Error> 
+  public function insert<Insert:{}, Row:Insert>(table:TableInfo<Insert, Row>, items:Array<Insert>):Surprise<Int, Error> 
     return Future.sync(try {
       makeRequest(Format.insert(table, items, this));
       Success(cnx.lastInsertId());

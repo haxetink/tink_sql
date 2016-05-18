@@ -15,7 +15,7 @@ class Table<T> {
 }
 #end
 
-class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db> extends Dataset<Fields, Filter, Row, Db> implements TableInfo<Row> {
+class TableSource<Fields, Filter:(Fields->Condition), Insert:{}, Row:Insert, Db> extends Dataset<Fields, Filter, Row, Db> implements TableInfo<Insert, Row> {
   
   public var name(default, null):TableName<Row>;
 
@@ -31,10 +31,10 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db> extends Datase
     super(fields, cnx, TTable(name), function (f:Filter) return (cast f : Fields->Condition)(fields));//TODO: raise issue on Haxe tracker and remove the cast once resolved
   }
   
-  public function insertMany(rows:Array<Row>)
+  public function insertMany(rows:Array<Insert>)
     return cnx.insert(this, rows);
     
-  public function insertOne(row:Row)
+  public function insertOne(row:Insert)
     return insertMany([row]);
   
   @:noCompletion 
@@ -42,11 +42,8 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db> extends Datase
     return Reflect.fields(fields);
   
   @:noCompletion 
-  public function sqlizeRow(row:Row, val:Any->String):Array<String> 
-    return [for (f in fieldnames()) switch Reflect.field(row, f) {
-      case null: 'DEFAULT';
-      case v: val(v);
-    }];
+  public function sqlizeRow(row:Insert, val:Any->String):Array<String> 
+    return [for (f in fieldnames()) val(Reflect.field(row, f))];
     
   @:privateAccess
   macro public function init(e:Expr, rest:Array<Expr>) {
