@@ -31,13 +31,22 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db> extends Datase
     super(fields, cnx, TTable(name), function (f:Filter) return (cast f : Fields->Condition)(fields));//TODO: raise issue on Haxe tracker and remove the cast once resolved
   }
   
+  public function insertMany(rows:Array<Row>)
+    return cnx.insert(this, rows);
+    
+  public function insertOne(row:Row)
+    return insertMany([row]);
+  
   @:noCompletion 
   public function fieldnames()
     return Reflect.fields(fields);
   
   @:noCompletion 
   public function sqlizeRow(row:Row, val:Any->String):Array<String> 
-    return [for (f in fieldnames()) val(Reflect.field(row, f))];
+    return [for (f in fieldnames()) switch Reflect.field(row, f) {
+      case null: 'DEFAULT';
+      case v: val(v);
+    }];
     
   @:privateAccess
   macro public function init(e:Expr, rest:Array<Expr>) {

@@ -51,7 +51,8 @@ class TableBuilder {
             
             macro class $cName<Db> extends tink.sql.Table.TableSource<$fieldsType, $filterType, $rowType, Db> {
               public function new(cnx) {
-                (function ($name:$fieldsType):tink.sql.Expr.Condition return null : $filterType);
+                if (false) 
+                  (function ($name:$fieldsType):tink.sql.Expr.Condition return null : $filterType);
                 super(cnx, new tink.sql.Table.TableName($v{name}), ${EObjectDecl(fieldsExprFields).at(ctx.pos)});
               }
               
