@@ -109,13 +109,13 @@ enum ExprData<T> {
   //} endregion  
      
   //{ region logic
-    @:op(!a) static function not<Owner>(c:Condition):Condition 
+    @:op(!a) static function not(c:Condition):Condition 
       return EUnOp(Not, c);
       
-    @:op(a && b) static function and<Owner>(a:Condition, b:Condition):Condition
+    @:op(a && b) static function and(a:Condition, b:Condition):Condition
       return EBinOp(And, a, b);    
       
-    @:op(a || b) static function or<Owner>(a:Condition, b:Condition):Condition
+    @:op(a || b) static function or(a:Condition, b:Condition):Condition
       return EBinOp(Or, a, b);  
   //} endregion  
 
@@ -140,8 +140,56 @@ enum UnOp<A, Ret> {
 }
 
 @:forward
-abstract Field<Data, Structure>(Expr<Data>) from Expr<Data> to Expr<Data> {
-  //public inline function new(table, name) {
-    //this = EField(table, name);
-  //}
+abstract Field<Data, Structure>(Expr<Data>) to Expr<Data> {
+  
+  public inline function new(table, name)
+    this = EField(table, name);
+  //TODO: it feels pretty sad to have to do this below:
+  //{ region arithmetics
+    @:op(a + b) static function add<T:Float, X, Y>(a:Field<T, X>, b:Field<T, Y>):Expr<T>
+      return EBinOp(Add, a, b);
+      
+    @:op(a - b) static function subt<T:Float, X, Y>(a:Field<T, X>, b:Field<T, Y>):Expr<T>
+      return EBinOp(Subt, a, b);
+      
+    @:op(a * b) static function mult<T:Float, X, Y>(a:Field<T, X>, b:Field<T, Y>):Expr<T>
+      return EBinOp(Mult, a, b);
+      
+    @:op(a / b) static function div<T:Float, X, Y>(a:Field<T, X>, b:Field<T, Y>):Expr<Float>
+      return EBinOp(Div, a, b);
+      
+    @:op(a % b) static function mod<T:Float, X, Y>(a:Field<T, X>, b:Field<T, Y>):Expr<T>
+      return EBinOp(Mod, a, b);
+  //} endregion  
+    
+  //{ region relations
+    @:op(a == b) static function eq<T, X, Y>(a:Field<T, X>, b:Field<T, Y>):Condition
+      return EBinOp(Equals, a, b);
+    
+    @:op(a != b) static function neq<T, X, Y>(a:Field<T, X>, b:Field<T, Y>):Condition
+      return !(a == b);
+      
+    @:op(a > b) static function gt<T:Float, X, Y>(a:Field<T, X>, b:Field<T, Y>):Condition
+      return EBinOp(Greater, a, b); 
+      
+    @:op(a < b) static function lt<T:Float, X, Y>(a:Field<T, X>, b:Field<T, Y>):Condition
+      return EBinOp(Greater, b, a); 
+      
+    @:op(a >= b) static function gte<T:Float, X, Y>(a:Field<T, X>, b:Field<T, Y>):Condition
+      return !(b > a); 
+      
+    @:op(a <= b) static function lte<T:Float, X, Y>(a:Field<T, X>, b:Field<T, Y>):Condition
+      return !(a > b);   
+  //} endregion  
+  
+  //{ region logic
+    @:op(!a) static function not<X, Y>(c:Field<Bool, Y>):Condition 
+      return EUnOp(Not, c);
+      
+    @:op(a && b) static function and<X, Y>(a:Field<Bool, X>, b:Field<Bool, Y>):Condition
+      return EBinOp(And, a, b);    
+      
+    @:op(a || b) static function or<X, Y>(a:Field<Bool, X>, b:Field<Bool, Y>):Condition
+      return EBinOp(Or, a, b);  
+  //} endregion    
 }

@@ -44,8 +44,9 @@ class BlogDb extends tink.sql.Database {
 var db:BlogDb = ...; //we'll talk about that later
 
 db.user
-  .join(db.post, post.author == user.id)
-  .join(db.postTags, postTags.post == post.id)
-  .join(db.tag, postTags.tag == tag.id)
-  .where(tag.name == 'off-topic').distinct(user.id);
+  .join(db.post).on(post.author == user.id)
+  .join(db.postTags).on(postTags.post == post.id)
+  .join(db.tag).on(postTags.tag == tag.id)
+  .where(tag.name == 'off-topic').all(distinct(user.name));
 ```
+

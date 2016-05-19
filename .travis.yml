@@ -1,0 +1,30 @@
+sudo: required
+dist: trusty
+
+language: haxe
+
+os:
+  - linux
+  - osx
+  
+haxe:
+  - "3.2.1"
+  - development
+
+services:
+  - mysql
+  
+matrix:
+  allow_failures:
+    - haxe: development
+    
+install:
+  - haxe -cp tests -main DbFixture -neko fixture.n
+  - haxelib install travix
+  - haxelib run travix install
+
+script:
+  - haxelib run travix neko
+  - haxelib run travix node
+  - haxelib run travix java
+  - haxelib run travix node

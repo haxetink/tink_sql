@@ -35,6 +35,10 @@ class Dataset<Fields, Filter, Result:{}, Db> {
     });
   }
   
+  macro public function groupBy(ethis, rest:Array<haxe.macro.Expr>) {
+    return tink.sql.macros.Groups.groupBy(ethis, rest);
+  }
+  
   public function stream():Stream<Result>
     return cnx.selectAll(target, condition);
     
@@ -46,5 +50,19 @@ class Dataset<Fields, Filter, Result:{}, Db> {
 
   macro public function rightJoin(ethis, ethat)
     return tink.sql.macros.Joins.perform(Right, ethis, ethat);
+    
+}
+
+class JoinPoint<Filter, Ret> {
+  
+  var _where:Filter->Ret;
+  
+  public function new(applyFilter)
+    this._where = applyFilter;
+    
+  macro public function on(ethis, filter:haxe.macro.Expr.ExprOf<Filter>) {
+    filter = tink.sql.macros.Filters.makeFilter(ethis, filter);
+    return macro @:pos(ethis.pos) @:privateAccess $ethis._where(@:noPrivateAccess $filter);    
+  }
     
 }

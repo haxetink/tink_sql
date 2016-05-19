@@ -45,7 +45,7 @@ class TableBuilder {
               
               fieldsExprFields.push({
                 field: f.name,
-                expr: macro tink.sql.Expr.ExprData.EField($v{name}, $v{f.name}),
+                expr: macro new tink.sql.Expr.Field($v{name}, $v{f.name}),
               });
             }
             

@@ -84,14 +84,14 @@ class Joins {
       function toCondition(filter:$filterType)
         return ${(macro filter).call([for (field in fieldsObj) field.expr])};
         
-      var ret = {
-        on: function (cond) return new tink.sql.Dataset(
+      var ret = new tink.sql.Dataset.JoinPoint(
+        function (cond:$filterType) return new tink.sql.Dataset(
           ${EObjectDecl(fieldsObj).at()},
           left.cnx, 
           tink.sql.Target.TJoin(left.target, right.target, ${joinTypeExpr(type)}, toCondition(cond)), 
           toCondition
         )
-      };
+      );
       
       if (false) {
         (ret.on(null).stream() : tink.streams.Stream<$rowType>);

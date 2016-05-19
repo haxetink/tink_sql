@@ -1,0 +1,3 @@
+-cmd neko fixture.n
+-cp tests
+-main Run
