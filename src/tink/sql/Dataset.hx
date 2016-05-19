@@ -22,30 +22,29 @@ class Dataset<Fields, Filter, Result:{}, Db> {
     this.condition = condition;
   }
   
-  macro public function where(ethis, ?filter:haxe.macro.Expr.ExprOf<Filter>) {
+  macro public function where(ethis, filter:haxe.macro.Expr.ExprOf<Filter>) {
     filter = tink.sql.macros.Filters.makeFilter(ethis, filter);
     return macro @:pos(ethis.pos) @:privateAccess $ethis._where(@:noPrivateAccess $filter);
   }
   
-  function _where(?filter:Filter) {
-    return new Dataset<Fields, Filter, Result, Db>(fields, cnx, target, toCondition, switch [condition, filter] {
-      case [null, null]: null;
-      case [v, null]: v;
-      case [null, v]: toCondition(filter);
-      case [a, b]: a && toCondition(b);
+  function _where(filter:Filter) {
+    var nu = toCondition(filter);    
+    return new Dataset<Fields, Filter, Result, Db>(fields, cnx, target, toCondition, switch condition {
+      case null: nu;
+      case v: v && nu;
     });
   }
   
   public function stream():Stream<Result>
     return cnx.selectAll(target, condition);
     
-  macro public function leftJoin(ethis, ethat, cond)
-    return tink.sql.macros.Joins.perform(Left, ethis, ethat, cond);
+  macro public function leftJoin(ethis, ethat)
+    return tink.sql.macros.Joins.perform(Left, ethis, ethat);
     
-  macro public function join(ethis, ethat, cond)
-    return tink.sql.macros.Joins.perform(Inner, ethis, ethat, cond);
+  macro public function join(ethis, ethat)
+    return tink.sql.macros.Joins.perform(Inner, ethis, ethat);
 
-  macro public function rightJoin(ethis, ethat, cond)
-    return tink.sql.macros.Joins.perform(Right, ethis, ethat, cond);
+  macro public function rightJoin(ethis, ethat)
+    return tink.sql.macros.Joins.perform(Right, ethis, ethat);
     
 }

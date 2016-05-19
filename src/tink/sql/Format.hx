@@ -64,7 +64,7 @@ class Format {
   }
   
   static public function selectProjection<A:{}, Db, Ret>(t:Target<A, Db>, ?c:Condition, s:Sanitizer, p:Projection<A, Ret>, ?limit) 
-    return select(t, [
+    return select(t, (if (p.distinct) 'DISTINCT ' else '') + [
       for (part in p) (
         switch part.expr.data {
           case null: '';

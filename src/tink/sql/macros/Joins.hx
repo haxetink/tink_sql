@@ -17,7 +17,7 @@ class Joins {
       x;
     });
     
-  static public function perform(type:JoinType, left:Expr, right:Expr, cond:Expr) {
+  static public function perform(type:JoinType, left:Expr, right:Expr) {
         
     var rowFields = new Array<Field>(),
         fieldsObj = [];
@@ -73,12 +73,6 @@ class Joins {
       }],
     }
     
-    switch cond {
-      case { expr: EFunction(_, _) } :
-      default:
-        cond = cond.func(f.args).asExpr(cond.pos);
-    }
-    
     var rowType = TAnonymous(rowFields);
     var filterType = f.asExpr().typeof().sure().toComplex( { direct: true } );
     
@@ -90,15 +84,17 @@ class Joins {
       function toCondition(filter:$filterType)
         return ${(macro filter).call([for (field in fieldsObj) field.expr])};
         
-      var ret = new tink.sql.Dataset(
-        ${EObjectDecl(fieldsObj).at()},
-        left.cnx, 
-        tink.sql.Target.TJoin(left.target, right.target, ${joinTypeExpr(type)}, toCondition($cond)), 
-        toCondition
-      );
+      var ret = {
+        on: function (cond) return new tink.sql.Dataset(
+          ${EObjectDecl(fieldsObj).at()},
+          left.cnx, 
+          tink.sql.Target.TJoin(left.target, right.target, ${joinTypeExpr(type)}, toCondition(cond)), 
+          toCondition
+        )
+      };
       
       if (false) {
-        (ret.stream() : tink.streams.Stream<$rowType>);
+        (ret.on(null).stream() : tink.streams.Stream<$rowType>);
       }
       
       ret;

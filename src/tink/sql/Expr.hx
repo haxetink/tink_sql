@@ -138,3 +138,10 @@ enum UnOp<A, Ret> {
   Not:UnOp<Bool, Bool>;
   Neg<T:Float>:UnOp<T, T>;
 }
+
+@:forward
+abstract Field<Data, Structure>(Expr<Data>) from Expr<Data> to Expr<Data> {
+  //public inline function new(table, name) {
+    //this = EField(table, name);
+  //}
+}

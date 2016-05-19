@@ -14,32 +14,38 @@ typedef User = {
   password:String,
 }
 
-typedef Image = {
-  id: Id<Image>,
+typedef Post = {
+  id:Id<Post>,
+  author:Id<User>,
   title:String,
   url:String,
 }
 
 typedef Tag = {
-  id: Id<Image>,
+  id:Id<Tag>,
   name:String,
   desc:Null<String>,
 }
 
-typedef ImageByTag = {
-  image: Id<Image>,
-  tag: Id<Tag>,
+typedef PostTags = {
+  post:Id<Post>,
+  tag:Id<Tag>,
 }
 
-class MyDb extends tink.sql.Database {
+class BlogDb extends tink.sql.Database {
   @:table var user:User;
-  @:table var image:Image;
+  @:table var post:Post;
   @:table var tag:Tag;
-  @:table var imageByTag:ImageByTag;
+  @:table var postTags:PostTags;
 }
 ```
 
+```haxe
+var db:BlogDb = ...; //we'll talk about that later
 
-
-
-Table<{ test: { foo:String, bar: String }}>
+db.user
+  .join(db.post, post.author == user.id)
+  .join(db.postTags, postTags.post == post.id)
+  .join(db.tag, postTags.tag == tag.id)
+  .where(tag.name == 'off-topic').distinct(user.id);
+```

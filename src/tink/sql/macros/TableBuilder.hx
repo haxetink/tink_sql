@@ -22,18 +22,25 @@ class TableBuilder {
                 fieldsExprFields = [];
                 
             for (f in fields) {
-              var fType = f.type.toComplex();
+              var fType = f.type.toComplex(),
+                  fName = f.name;
+              
+              var fStruct = TAnonymous([{
+                name: fName,
+                kind: FVar(fType),
+                pos: f.pos,
+              }]);
               
               rowTypeFields.push({ 
                 pos: f.pos,
-                name: f.name,
+                name: fName,
                 kind: FProp('default', 'null', fType),
               });
               
               fieldsTypeFields.push({
                 pos: f.pos,
-                name: f.name,
-                kind: FProp('default', 'null', macro : tink.sql.Expr<$fType>)
+                name: fName,
+                kind: FProp('default', 'null', macro : tink.sql.Expr.Field<$fType, $fStruct>)
               });
               
               fieldsExprFields.push({
