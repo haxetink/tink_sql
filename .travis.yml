@@ -3,23 +3,22 @@ dist: trusty
 
 language: haxe
 
-os:
-  - linux
-  - osx
+#os:
+#  - linux
+#  - osx
   
 haxe:
   - "3.2.1"
-  - development
+  #- development
 
 services:
   - mysql
   
-matrix:
-  allow_failures:
-    - haxe: development
+#matrix:
+#  allow_failures:
+#    - haxe: development
     
 install:
-  - haxe -cp tests -main DbFixture -neko fixture.n
   - haxelib install travix
   - haxelib run travix install
 

@@ -1,5 +1,22 @@
 package;
 
+#if macro
+using sys.FileSystem;
+class DbFixture {
+  static function exec(cmd, args) {
+    switch Sys.command(cmd, args) {
+      case 0:
+      case v: Sys.exit(v);
+    }
+  }
+  static function run() {
+    var module = 'fixture.n';
+    if (module.exists())
+      exec('haxe', ['-cp', 'tests', '-main', 'DbFixture', '-neko', module]);
+    exec('neko', [module]);
+  }
+}
+#else
 import sys.db.*;
 import sys.db.Types;
 
@@ -48,3 +65,4 @@ class PostTags extends Object {
   public var post:SInt;
   public var tag:SString<200>;
 }
+#end

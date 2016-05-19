@@ -58,6 +58,7 @@ class DatabaseBuilder {
     var ctor = c.getConstructor((macro function (name, driver:tink.sql.Driver) {
       var cnx = driver.open(name, this);
       $b{init};
+      //super(name, driver, $a{tables});
       super(name, driver, $a{tables});
     }).getFunction().sure());
     

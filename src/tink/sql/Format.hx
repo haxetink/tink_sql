@@ -70,7 +70,7 @@ class Format {
           case null: '';
           case v: expr(v, s) + ' AS ';
         }
-      ) + s.ident(part.name)      
+      ) + s.value(part.name)      
     ].join(', '), c, s, limit);
     
   static public function insert<Insert:{}, Row:Insert>(table:TableInfo<Insert, Row>, rows:Array<Insert>, s:Sanitizer) {

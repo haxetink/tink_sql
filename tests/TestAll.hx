@@ -52,34 +52,38 @@ class TestAll extends TestCase {
   }
   
   function testAll() {
+    #if javaerfwerf
+    var db:Db = new Db('test', new tink.sql.drivers.java.JavaDriver( ));
+    #else
     var db:Db = new Db('test', new tink.sql.drivers.MySql({ user:'root', password: '' }));
-    
+    #end
     assertEquals('test', db.name);
     assertEquals('Post,PostTags,User', sorted(db.tablesnames()).join(','));
     assertEquals('author,content,id,title', sorted(db.tableinfo('Post').fieldnames()).join(','));
     
     assertCount(0, db.User.all());
+    //return;
     assertCount(0, db.Post.all());
     assertCount(0, db.PostTags.all());
     
     db.User.insertMany([{
-      id: null,
+      id: cast null,
       name: 'Alice',
       email: 'alice@example.com',
     },{
-      id: null,
+      id: cast null,
       name: 'Bob',
       email: 'bob@example.com',
     },{
-      id: null,
+      id: cast null,
       name: 'Christa',
       email: 'christa@example.com',
     },{
-      id: null,
+      id: cast null,
       name: 'Dave',
       email: 'dave@example.com',
     },{
-      id: null,
+      id: cast null,
       name: 'Dave',
       email: 'dave2@example.com',
     }]);
@@ -91,7 +95,7 @@ class TestAll extends TestCase {
     
     function post(title:String, author:String, tags:Array<String>) {
       db.Post.insertOne( {
-        id: null, 
+        id: cast null, 
         title: title,
         author: first(db.User.where(User.name == author).all()).id,
         content: 'A wonderful post about "$title"',

@@ -57,9 +57,12 @@ class TableBuilder {
             var filterType = ctx.pos.makeBlankType();
             
             macro class $cName<Db> extends tink.sql.Table.TableSource<$fieldsType, $filterType, $rowType, $rowType, Db> {
+              
               public function new(cnx) {
+                
                 if (false) 
-                  (function ($name:$fieldsType):tink.sql.Expr.Condition return null : $filterType);
+                  (function ($name:$fieldsType):tink.sql.Expr.Condition return tink.sql.Expr.ExprData.EConst(true) : $filterType);
+                  
                 super(cnx, new tink.sql.Table.TableName($v{name}), ${EObjectDecl(fieldsExprFields).at(ctx.pos)});
               }
               

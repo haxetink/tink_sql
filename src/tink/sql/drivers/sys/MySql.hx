@@ -22,10 +22,9 @@ class MySql extends StdDriver {
         user: settings.user,
         pass: settings.password,
         database: name,
-      }));
+      }), tink.sql.drivers.MySql.getSanitizer);
     #else
       super(null);
     #end
-  }
-  
+  }  
 }

@@ -12,31 +12,43 @@ using tink.CoreApi;
 class StdDriver implements Driver {
   
   var doOpen:String->sys.db.Connection;
+  var sanitizer:sys.db.Connection->Sanitizer;
   
-  public function new(doOpen) {
+  public function new(doOpen, ?sanitizer) {
     this.doOpen = doOpen;
+    this.sanitizer = if (sanitizer != null) sanitizer else NativeSanitizer.new;
   }
   
   public function open<Db:DatabaseInfo>(name:String, info:Db):Connection<Db> {
-    return new StdConnection(doOpen(name), info);
+    var cnx = doOpen(name);
+    return new StdConnection(cnx, info, sanitizer(cnx));
   }
   
 }
 
-class StdConnection<Db:DatabaseInfo> implements Sanitizer implements Connection<Db> {
+private class NativeSanitizer implements Sanitizer {
+  var cnx:sys.db.Connection;
+  
+  public function new(cnx) 
+    this.cnx = cnx;
   
   public function value(v:Dynamic):String 
     return cnx.quote(Std.string(v));
   
-  public function ident(s:String):String
-    return cnx.escape(s);
+  public function ident(s:String):String 
+    return cnx.escape(s);  
+}
+
+class StdConnection<Db:DatabaseInfo> implements Connection<Db> {
   
+  var sanitizer:Sanitizer;
   var cnx:sys.db.Connection;
   var db:Db;
   
-  public function new(cnx, db) {
+  public function new(cnx, db, sanitizer) {
     this.cnx = cnx;
     this.db = db;
+    this.sanitizer = sanitizer;
   }
   
   function makeRequest(s:String) {
@@ -49,7 +61,7 @@ class StdConnection<Db:DatabaseInfo> implements Sanitizer implements Connection<
       switch t {
         case TTable(_, _): 
           
-          makeRequest(Format.selectAll(t, c, this, limit));
+          makeRequest(Format.selectAll(t, c, sanitizer, limit));
           
         default:
           
@@ -61,7 +73,7 @@ class StdConnection<Db:DatabaseInfo> implements Sanitizer implements Connection<
                   alias = name;
                 
                 [for (field in db.tableinfo(name).fieldnames()) {
-                  name: '`$alias.$field`', //TODO: backticks are non-standard ... double-check that they are supported
+                  name: '$alias.$field', //TODO: backticks are non-standard ... double-check that they are supported
                   expr: EField(alias, field),
                 }];
                                   
@@ -69,7 +81,7 @@ class StdConnection<Db:DatabaseInfo> implements Sanitizer implements Connection<
                 fields(left).concat(fields(right));
             }
           
-          var ret = makeRequest(Format.selectProjection(t, c, this, new Projection(fields(t)), limit));
+          var ret = makeRequest(Format.selectProjection(t, c, sanitizer, new Projection(fields(t)), limit));
           
           {
             hasNext: function () return ret.hasNext(),
@@ -91,7 +103,7 @@ class StdConnection<Db:DatabaseInfo> implements Sanitizer implements Connection<
   
   public function insert<Insert:{}, Row:Insert>(table:TableInfo<Insert, Row>, items:Array<Insert>):Surprise<Int, Error> 
     return Future.sync(try {
-      makeRequest(Format.insert(table, items, this));
+      makeRequest(Format.insert(table, items, sanitizer));
       Success(cnx.lastInsertId());
     }
     catch (e:Dynamic) {
