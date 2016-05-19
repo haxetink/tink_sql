@@ -64,7 +64,7 @@ class TableBuilder {
               }
               
               static var FIELD_NAMES = $v{names};
-              override public function fieldnames()
+              @:noCompletion override public function fieldnames():Array<String>
                 return FIELD_NAMES;
                 
                 //TODO: override sqlizeRow

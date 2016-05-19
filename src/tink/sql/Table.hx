@@ -22,7 +22,7 @@ class TableSource<Fields, Filter:(Fields->Condition), Insert:{}, Row:Insert, Db>
   public var name(default, null):TableName<Row>;
 
   @:noCompletion 
-  public function getName()
+  public function getName():String
     return name;
   
   function new(cnx, name, fields) {
@@ -45,14 +45,14 @@ class TableSource<Fields, Filter:(Fields->Condition), Insert:{}, Row:Insert, Db>
     return insertMany([row]);
   
   @:noCompletion 
-  public function fieldnames()
+  public function fieldnames():Array<String>
     return Reflect.fields(fields);
   
   @:noCompletion 
   public function sqlizeRow(row:Insert, val:Any->String):Array<String> 
     return [for (f in fieldnames()) val(Reflect.field(row, f))];
     
-  @:privateAccess
+  @:noCompletion
   macro public function init(e:Expr, rest:Array<Expr>) {
     return switch e.typeof().sure().follow() {
       case TInst(_.get() => { module: m, name: n }, _):

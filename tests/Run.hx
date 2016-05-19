@@ -5,7 +5,7 @@ import haxe.unit.*;
 class Run {
   
   static var tests:Array<TestCase> = [
-    
+    new TestAll(),
   ];
   
   static function main() {    
