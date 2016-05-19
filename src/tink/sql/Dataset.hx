@@ -1,9 +1,11 @@
 package tink.sql;
 
+
 import tink.sql.Expr;
 import tink.streams.Stream;
-
 import tink.sql.Table;
+
+using tink.CoreApi;
 
 class Dataset<Fields, Filter, Result:{}, Db> { 
   
@@ -41,6 +43,15 @@ class Dataset<Fields, Filter, Result:{}, Db> {
   
   public function stream():Stream<Result>
     return cnx.selectAll(target, condition);
+    
+  public function all():Surprise<Array<Result>, Error>
+    return Future.async(function (cb) {
+      var ret = [];
+      stream().forEach(function (result) {
+        ret.push(result);
+        return true;
+      }).handle(function (o) cb(o.map(function (_) return ret)));
+    });
     
   macro public function leftJoin(ethis, ethat)
     return tink.sql.macros.Joins.perform(Left, ethis, ethat);

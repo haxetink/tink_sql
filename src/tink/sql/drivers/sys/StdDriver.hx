@@ -39,8 +39,10 @@ class StdConnection<Db:DatabaseInfo> implements Sanitizer implements Connection<
     this.db = db;
   }
   
-  function makeRequest(s:String) 
+  function makeRequest(s:String) {
+    //trace(s);
     return cnx.request(s);
+  }
   
   public function selectAll<A:{}>(t:Target<A, Db>, ?c:Condition, ?limit:Limit):Stream<A> 
     return 

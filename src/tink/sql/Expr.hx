@@ -99,10 +99,10 @@ enum ExprData<T> {
       return gt(a, EConst(b)); 
       
     @:op(a < b) static function ltConst<T:Float>(a:Expr<T>, b:T):Condition
-      return lt(EConst(b), a); 
+      return lt(a, EConst(b)); 
       
     @:op(a >= b) static function gteConst<T:Float>(a:Expr<T>, b:T):Condition
-      return gte(EConst(b), a); 
+      return gte(a, EConst(b)); 
       
     @:op(a <= b) static function lteConst<T:Float>(a:Expr<T>, b:T):Condition
       return lte(a, EConst(b));   
@@ -180,6 +180,60 @@ abstract Field<Data, Structure>(Expr<Data>) to Expr<Data> {
       
     @:op(a <= b) static function lte<T:Float, X, Y>(a:Field<T, X>, b:Field<T, Y>):Condition
       return !(a > b);   
+  //} endregion  
+  
+  
+  static inline function EConst<T>(v:T):Expr<T>
+    return ExprData.EConst(v);
+    
+  //{ region arithmetics for constants
+    @:commutative
+    @:op(a + b) static function addConst<T:Float, S>(a:Field<T, S>, b:T):Expr<T>
+      return a + EConst(b);
+      
+    @:op(a - b) static function subtByConst<T:Float, S>(a:Field<T, S>, b:T):Expr<T>
+      return a - EConst(b);
+      
+    @:op(a - b) static function subtConst<T:Float, S>(a:T, b:Field<T, S>):Expr<T>
+      return EConst(a) - b;
+    
+    @:commutative
+    @:op(a * b) static function multConst<T:Float, S>(a:Field<T, S>, b:T):Expr<T>
+      return a * EConst(b);
+      
+    @:op(a / b) static function divByConst<T:Float, S>(a:Field<T, S>, b:T):Expr<Float>
+      return a / EConst(b);
+      
+    @:op(a / b) static function divConst<T:Float, S>(a:T, b:Field<T, S>):Expr<Float>
+      return EConst(a) / b;
+      
+    @:op(a % b) static function modByConst<T:Float, S>(a:Field<T, S>, b:T):Expr<T>
+      return a % EConst(b);
+      
+    @:op(a % b) static function modConst<T:Float, S>(a:T, b:Field<T, S>):Expr<T>
+      return EConst(a) % b;  
+  //} endregion
+    
+  //{ region relations for constants
+    @:commutative  
+    @:op(a == b) static function eqConst<T, S>(a:Field<T, S>, b:T):Condition
+      return a == EConst(b); 
+    
+    @:commutative
+    @:op(a != b) static function neqConst<T, S>(a:Field<T, S>, b:T):Condition
+      return a != EConst(b);    
+        
+    @:op(a > b) static function gtConst<T:Float, S>(a:Field<T, S>, b:T):Condition
+      return a > EConst(b); 
+      
+    @:op(a < b) static function ltConst<T:Float, S>(a:Field<T, S>, b:T):Condition
+      return a < EConst(b);
+      
+    @:op(a >= b) static function gteConst<T:Float, S>(a:Field<T, S>, b:T):Condition
+      return a >= EConst(b);
+      
+    @:op(a <= b) static function lteConst<T:Float, S>(a:Field<T, S>, b:T):Condition
+      return a <= EConst(b);   
   //} endregion  
   
   //{ region logic

@@ -54,11 +54,10 @@ class DatabaseBuilder {
     
     if (c.hasConstructor())
       c.getConstructor().toHaxe().pos.error('Custom constructors are currently not supported');
-    
-    init.unshift(macro @:pos(c.target.pos) var cnx = driver.open());
       
     var ctor = c.getConstructor((macro function (name, driver:tink.sql.Driver) {
       var cnx = driver.open(name, this);
+      $b{init};
       super(name, driver, $a{tables});
     }).getFunction().sure());
     

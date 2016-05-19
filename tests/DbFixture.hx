@@ -43,7 +43,8 @@ class Post extends Object {
   public var content:String;
 }
 
+@:id(post, tag)
 class PostTags extends Object {
-  public var post:SId;
-  public var tag:String;
+  public var post:SInt;
+  public var tag:SString<200>;
 }
