@@ -17,15 +17,17 @@ class MySql implements Driver {
     this.settings = settings;
   }
   
-  public function open<Db:DatabaseInfo>(name:String, info:Db):Connection<Db> 
-    return new MySqlConnection(info, NativeDriver.createConnection({
+  public function open<Db:DatabaseInfo>(name:String, info:Db):Connection<Db> {
+    var cnx = NativeDriver.createConnection({
       user: settings.user,
       password: settings.password,
       host: settings.host,
       port: settings.port,
       database: name,
-    }));
-  
+    });
+    //cnx.release(); //TODO: this doesn't work. Make it autorelease somehow
+    return new MySqlConnection(info, cnx);
+  }  
 }
 
 class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sanitizer {
@@ -44,7 +46,7 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
     this.cnx = cnx;
   }
   
-  public function selectAll<A>(t:Target<A, Db>, ?c:Condition, ?limit:Limit):Stream<A>
+  public function selectAll<A:{}>(t:Target<A, Db>, ?c:Condition, ?limit:Limit):Stream<A>
     return Future.async(function (cb) {
       cnx.query( 
         { 
@@ -80,12 +82,6 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
               
             Success((result.iterator() : Stream<A>));
             
-            //Success(([for (row in result) {
-              //var ret = new DynamicAccess();//This copying is done to lose some noise ... not proud of it ...
-              //for (k in row.keys())
-                ////ret[k] = row[k];
-              //(cast ret : A);
-            //}].iterator() : Stream<A>));
           case [e, _]:
             toError(e);
         })
@@ -121,6 +117,8 @@ private typedef Config = {>MySqlSettings,
 
 private typedef NativeConnection = {
   function query(q: { sql:String, ?nestTables:Bool }, cb:js.Error->Dynamic->Void):Void;
+  function release():Void;
+
 }
 
 #if ignore

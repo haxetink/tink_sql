@@ -12,7 +12,7 @@ import tink.sql.Table;
   //var Outer = 'outer'; //somehow MySQL can't do this. I don't blame them
 }
 
-enum Target<Result, Db> {
+enum Target<Result:{}, Db> {
   TTable(name:TableName<Result>, ?alias:String);
-  TJoin<Left, Right>(left:Target<Left, Db>, right:Target<Right, Db>, type:JoinType, c:Condition);
+  TJoin<Left:{}, Right:{}>(left:Target<Left, Db>, right:Target<Right, Db>, type:JoinType, c:Condition);
 }

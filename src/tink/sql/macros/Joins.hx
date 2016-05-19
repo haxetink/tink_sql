@@ -9,24 +9,11 @@ using haxe.macro.Tools;
 using tink.MacroApi;
 
 class Joins { 
-  static function getFilter(e:Expr) {
-    return switch Context.typeof(macro @:pos(e.pos) {
-      var source = $e;
-      var x = null;
-      @:privateAccess source._all(x);
-      x;
-    }).reduce() {
-      case TFun(args, ret):
-        args;
-      default:
-        throw 'assert';
-    }
-  }
   
   static function getRow(e:Expr)
     return Context.typeof(macro @:pos(e.pos) {
       var source = $e, x = null;
-      source.all().forEach(function (y) { x = y; return true; } );
+      source.stream().forEach(function (y) { x = y; return true; } );
       x;
     });
     
@@ -53,7 +40,7 @@ class Joins {
         });
       }
       
-      var parts = getFilter(e);
+      var parts = Filters.getArgs(e);
       switch parts {
         case [single]:
           
@@ -111,7 +98,7 @@ class Joins {
       );
       
       if (false) {
-        ret._all().forEach(function (item:$rowType) return true);
+        (ret.stream() : tink.streams.Stream<$rowType>);
       }
       
       ret;

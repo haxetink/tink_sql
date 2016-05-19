@@ -12,3 +12,15 @@ interface TableInfo<Insert:{}, Row:Insert> {
   function fieldnames():Iterable<String>;
   function sqlizeRow(row:Insert, val:Any->String):Array<String>;
 }
+  
+typedef FieldType = {
+  nullable:Bool,
+  type:DataType,
+}
+
+enum DataType {
+  DBool;
+  DInt(bits:Int, signed:Bool);
+  DString(maxLength:Int);
+  DBlob(maxLength:Int);
+}

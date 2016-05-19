@@ -48,11 +48,11 @@ class Format {
   
   
   
-  static public function selectAll<A, Db>(t:Target<A, Db>, ?c:Condition, s:Sanitizer, ?limit:Limit)         
+  static public function selectAll<A:{}, Db>(t:Target<A, Db>, ?c:Condition, s:Sanitizer, ?limit:Limit)         
     return select(t, '*', c, s, limit);
   
-  static function select<A, Db>(t:Target<A, Db>, what:String, ?c:Condition, s:Sanitizer, ?limit:Limit) {
-    var sql = 'SELECT $what FROM ' + Dataset(t, s);
+  static function select<A:{}, Db>(t:Target<A, Db>, what:String, ?c:Condition, s:Sanitizer, ?limit:Limit) {
+    var sql = 'SELECT $what FROM ' + target(t, s);
     
     if (c != null)
       sql += ' WHERE ' + expr(c, s);
@@ -63,7 +63,7 @@ class Format {
     return sql;    
   }
   
-  static public function selectProjection<A, Db, Ret>(t:Target<A, Db>, ?c:Condition, s:Sanitizer, p:Projection<A, Ret>, ?limit) 
+  static public function selectProjection<A:{}, Db, Ret>(t:Target<A, Db>, ?c:Condition, s:Sanitizer, p:Projection<A, Ret>, ?limit) 
     return select(t, [
       for (part in p) (
         switch part.expr.data {
@@ -79,7 +79,7 @@ class Format {
          [for (row in rows) '(' + table.sqlizeRow(row, s.value).join(', ') + ')'].join(', ');
   }
   
-  static public function Dataset<A, Db>(t:Target<A, Db>, s:Sanitizer)
+  static public function target<A:{}, Db>(t:Target<A, Db>, s:Sanitizer)
     return switch t {
       case TTable(name, alias): 
         
@@ -90,12 +90,12 @@ class Format {
                 
       case TJoin(left, right, type, cond): 
       
-        Dataset(left, s) + ' '+(switch type {
+        target(left, s) + ' '+(switch type {
           case Inner: 'INNER';
           case Right: 'RIGHT';
           case Left:  'LEFT';
           //case Outer: 'FULL OUTER';
-        }) + ' JOIN ' + Dataset(right, s) + ' ON ' + expr(cond, s);
+        }) + ' JOIN ' + target(right, s) + ' ON ' + expr(cond, s);
     }
   
 }

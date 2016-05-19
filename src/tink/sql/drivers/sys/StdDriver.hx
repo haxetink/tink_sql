@@ -42,7 +42,7 @@ class StdConnection<Db:DatabaseInfo> implements Sanitizer implements Connection<
   function makeRequest(s:String) 
     return cnx.request(s);
   
-  public function selectAll<A>(t:Target<A, Db>, ?c:Condition, ?limit:Limit):Stream<A> 
+  public function selectAll<A:{}>(t:Target<A, Db>, ?c:Condition, ?limit:Limit):Stream<A> 
     return 
       switch t {
         case TTable(_, _): 
