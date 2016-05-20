@@ -123,11 +123,12 @@ class Run {
     retain();
     f.handle(function (x) {
       counter++;
-      if (!condition(x.sure())) {
+      var x = x.sure();
+      if (!condition(x)) {
         var message = 
           if (expectation == null) 'Expectation failed for $x';
           else 'Expectation failed: $expectation';
-        throw Error.withData(message, x);
+        throw Error.withData(message, x, pos);
       }
     });
     f.handle(release);
