@@ -92,7 +92,9 @@ class Run {
     release();
   } 
   
+  static var counter = 0;
   static function assertEquals<A>(expected:A, found:A) {
+    counter++;
     if (expected != found)
       throw Error.withData('Expected $expected bound found $found', [expected, found]);
   }
@@ -111,13 +113,16 @@ class Run {
   
   static function release() {
     retainCount--;
-    if (retainCount == 0)
+    if (retainCount == 0) {
+      trace('Satisfied a total of $counter assertions');
       Sys.exit(0);
+    }
   }
   
   static function assertAsync<X>(f:Surprise<X, Error>, ?expectation:String, condition:X->Bool, ?pos) {
     retain();
     f.handle(function (x) {
+      counter++;
       if (!condition(x.sure())) {
         var message = 
           if (expectation == null) 'Expectation failed for $x';
