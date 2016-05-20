@@ -11,7 +11,7 @@ class DbFixture {
   }
   static function run() {
     var module = 'fixture.n';
-    if (module.exists())
+    if (!module.exists())
       exec('haxe', ['-cp', 'tests', '-main', 'DbFixture', '-neko', module]);
     exec('neko', [module]);
   }
