@@ -40,13 +40,4 @@ class BlogDb extends tink.sql.Database {
 }
 ```
 
-```haxe
-var db:BlogDb = ...; //we'll talk about that later
-
-db.user
-  .join(db.post).on(post.author == user.id)
-  .join(db.postTags).on(postTags.post == post.id)
-  .join(db.tag).on(postTags.tag == tag.id)
-  .where(tag.name == 'off-topic').all(distinct(user.name));
-```
-
+... to be continued ...
