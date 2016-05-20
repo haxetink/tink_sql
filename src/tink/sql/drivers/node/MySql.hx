@@ -47,7 +47,7 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
   }
   
   public function selectAll<A:{}>(t:Target<A, Db>, ?c:Condition, ?limit:Limit):Stream<A>
-    return Future.async(function (cb) {
+    return Stream.later(Future.async(function (cb) {
       cnx.query( 
         { 
           sql: Format.selectAll(t, c, this), 
@@ -86,11 +86,11 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
             toError(e);
         })
       );
-    });
+    }));
   
   
   function toError<A>(error:js.Error):Outcome<A, Error>
-    return Failure(new Error(error.message));//TODO: give more information
+    return Failure(Error.withData(error.message, error));//TODO: give more information
   
   public function insert<Insert:{}, Row:Insert>(table:TableInfo<Insert, Row>, items:Array<Insert>):Surprise<Int, Error>
     return Future.async(function (cb) {
