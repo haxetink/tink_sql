@@ -37,9 +37,9 @@ class Dataset<Fields, Filter, Result:{}, Db> {
     });
   }
   
-  macro public function groupBy(ethis, rest:Array<haxe.macro.Expr>) {
-    return tink.sql.macros.Groups.groupBy(ethis, rest);
-  }
+  //macro public function groupBy(ethis, rest:Array<haxe.macro.Expr>) {
+    //return tink.sql.macros.Groups.groupBy(ethis, rest);
+  //}
   
   public function stream():Stream<Result>
     return cnx.selectAll(target, condition);
