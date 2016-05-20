@@ -51,7 +51,7 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
       cnx.query( 
         { 
           sql: Format.selectAll(t, c, this), 
-          nestTables: true 
+          nestTables: !t.match(TTable(_, _))
         }, 
         function (error, result:Array<DynamicAccess<DynamicAccess<Any>>>) cb(switch [error, result] {
           case [null, result]:
