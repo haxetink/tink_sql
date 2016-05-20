@@ -19,6 +19,7 @@ services:
 #    - haxe: development
     
 install:
+  - npm install mysql
   - haxelib install jdbc.mysql
   - haxelib install travix
   - haxelib run travix install
