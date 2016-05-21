@@ -88,7 +88,7 @@ class Joins {
         function (cond:$filterType) return new tink.sql.Dataset(
           ${EObjectDecl(fieldsObj).at()},
           left.cnx, 
-          tink.sql.Target.TJoin(left.target, right.target, ${joinTypeExpr(type)}, toCondition(cond)), 
+          tink.sql.Target.TJoin(left.target, right.target, ${joinTypeExpr(type)}, toCondition(cond) && left.condition && right.condition), 
           toCondition
         )
       );

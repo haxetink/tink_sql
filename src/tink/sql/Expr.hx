@@ -113,7 +113,12 @@ enum ExprData<T> {
       return EUnOp(Not, c);
       
     @:op(a && b) static function and(a:Condition, b:Condition):Condition
-      return EBinOp(And, a, b);    
+      return 
+        switch [a.data, b.data] {
+          case [null, _]: b;
+          case [_, null]: a;
+          default: EBinOp(And, a, b);    
+        }
       
     @:op(a || b) static function or(a:Condition, b:Condition):Condition
       return EBinOp(Or, a, b);  

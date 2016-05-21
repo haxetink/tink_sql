@@ -29,17 +29,8 @@ class Dataset<Fields, Filter, Result:{}, Db> {
     return macro @:pos(ethis.pos) @:privateAccess $ethis._where(@:noPrivateAccess $filter);
   }
   
-  function _where(filter:Filter) {
-    var nu = toCondition(filter);    
-    return new Dataset<Fields, Filter, Result, Db>(fields, cnx, target, toCondition, switch condition {
-      case null: nu;
-      case v: v && nu;
-    });
-  }
-  
-  //macro public function groupBy(ethis, rest:Array<haxe.macro.Expr>) {
-    //return tink.sql.macros.Groups.groupBy(ethis, rest);
-  //}
+  function _where(filter:Filter):Dataset<Fields, Filter, Result, Db>
+    return new Dataset(fields, cnx, target, toCondition, condition && toCondition(filter));
   
   public function stream():Stream<Result>
     return cnx.selectAll(target, condition);
