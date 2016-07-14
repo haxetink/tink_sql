@@ -54,14 +54,11 @@ class TableBuilder {
             var rowType = TAnonymous(rowTypeFields),
                 fieldsType = TAnonymous(fieldsTypeFields);
                 
-            var filterType = ctx.pos.makeBlankType();
+            var filterType = (macro function ($name:$fieldsType):tink.sql.Expr.Condition return tink.sql.Expr.ExprData.EConst(true)).typeof().sure().toComplex({ direct: true });
             
             macro class $cName<Db> extends tink.sql.Table.TableSource<$fieldsType, $filterType, $rowType, $rowType, Db> {
               
-              public function new(cnx) {
-                
-                if (false) 
-                  (function ($name:$fieldsType):tink.sql.Expr.Condition return tink.sql.Expr.ExprData.EConst(true) : $filterType);
+              public function new(cnx) {                
                   
                 super(cnx, new tink.sql.Table.TableName($v{name}), ${EObjectDecl(fieldsExprFields).at(ctx.pos)});
               }

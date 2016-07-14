@@ -14,7 +14,7 @@ class Filters {
     }).reduce() {
       case TFun(args, ret):
         args;
-      default:
+      case v:
         throw 'assert';
     }
   

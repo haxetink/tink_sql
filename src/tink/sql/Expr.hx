@@ -122,7 +122,17 @@ enum ExprData<T> {
       
     @:op(a || b) static function or(a:Condition, b:Condition):Condition
       return EBinOp(Or, a, b);  
+      
+    @:op(a || b) static function constOr(a:Bool, b:Condition):Condition
+      return EBinOp(Or, EConst(a), b);  
+      
+    @:op(a || b) static function orConst(a:Condition, b:Bool):Condition
+      return EBinOp(Or, a, EConst(b)); 
+      
   //} endregion  
+  
+  @:from static function ofBool(b:Bool):Condition 
+    return EConst(b);
 
 }
 

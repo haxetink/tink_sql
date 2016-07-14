@@ -50,7 +50,11 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
     return Stream.later(Future.async(function (cb) {
       cnx.query( 
         { 
-          sql: Format.selectAll(t, c, this), 
+          sql: {
+            var sql = Format.selectAll(t, c, this);
+            trace(sql);
+            sql;
+          },
           nestTables: !t.match(TTable(_, _))
         }, 
         function (error, result:Array<DynamicAccess<DynamicAccess<Any>>>) cb(switch [error, result] {

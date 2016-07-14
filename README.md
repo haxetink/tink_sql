@@ -1,6 +1,14 @@
 # Tinkerbell SQL
 
-This library embeds SQL right into the Haxe language.
+This library embeds SQL right into the Haxe language. Think LINQ (not the syntax sugar, but the framework).
+
+## Motivation
+
+Most developers tend to dislike SQL, at least for a significant part of their career. A symptom of that are ever-repeating attempts to hide the database layer behind ORMs, with very limited success.
+
+Relational databases are however a very powerful concept, that was pioneered over 40 years ago.
+
+
 
 Define a database like so:
   

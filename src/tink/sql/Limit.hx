@@ -8,9 +8,9 @@ private typedef LimitData = {
 @:forward
 abstract Limit(LimitData) from LimitData to LimitData {
   
-  @:from static function ofIter(i:IntIterator)
+  @:from static function ofIter(i:IntIterator):Limit
     return @:privateAccess { limit: i.min, offset: i.max };
   
-  @:from static function ofInt(i:Int)
+  @:from static function ofInt(i:Int):Limit
     return { limit: i, offset: 0 };
 }

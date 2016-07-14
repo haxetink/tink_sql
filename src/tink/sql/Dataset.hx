@@ -24,7 +24,7 @@ class Dataset<Fields, Filter, Result:{}, Db> {
     this.condition = condition;
   }
   
-  macro public function where(ethis, filter:haxe.macro.Expr.ExprOf<Filter>) {
+  macro public function where(ethis, filter) {
     filter = tink.sql.macros.Filters.makeFilter(ethis, filter);
     return macro @:pos(ethis.pos) @:privateAccess $ethis._where(@:noPrivateAccess $filter);
   }
@@ -35,6 +35,13 @@ class Dataset<Fields, Filter, Result:{}, Db> {
   public function stream():Stream<Result>
     return cnx.selectAll(target, condition);
     
+  //TODO: add order
+  public function first():Surprise<Result, Error> 
+    return all() >> function (r:Array<Result>) return switch r {
+      case []: Failure(new Error(NotFound, 'The requested item was not found'));
+      case v: Success(v[v.length - 1]);
+    }
+    
   public function all():Surprise<Array<Result>, Error>
     return Future.async(function (cb) {
       var ret = [];
@@ -43,6 +50,15 @@ class Dataset<Fields, Filter, Result:{}, Db> {
         return true;
       }).handle(function (o) cb(o.map(function (_) return ret)));
     });
+  
+  @:noCompletion 
+  static public function get<Fields, Filter, Result:{}, Db>(v:Dataset<Fields, Filter, Result, Db>) {
+    return v;
+  }
+    
+  macro public function update(ethis, exprs:Array<haxe.macro.Expr>) {
+    return ethis;
+  }
     
   macro public function leftJoin(ethis, ethat)
     return tink.sql.macros.Joins.perform(Left, ethis, ethat);
@@ -62,7 +78,7 @@ class JoinPoint<Filter, Ret> {
   public function new(applyFilter)
     this._where = applyFilter;
     
-  macro public function on(ethis, filter:haxe.macro.Expr.ExprOf<Filter>) {
+  macro public function on(ethis, filter) {
     filter = tink.sql.macros.Filters.makeFilter(ethis, filter);
     return macro @:pos(ethis.pos) @:privateAccess $ethis._where(@:noPrivateAccess $filter);    
   }
