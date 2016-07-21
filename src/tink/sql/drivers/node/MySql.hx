@@ -1,6 +1,7 @@
 package tink.sql.drivers.node;
 
 import haxe.DynamicAccess;
+import tink.sql.Connection.Update;
 import tink.sql.Format.Sanitizer;
 import tink.sql.Limit;
 import tink.sql.Expr;
@@ -50,11 +51,7 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
     return Stream.later(Future.async(function (cb) {
       cnx.query( 
         { 
-          sql: {
-            var sql = Format.selectAll(t, c, this);
-            trace(sql);
-            sql;
-          },
+          sql: Format.selectAll(t, c, this), 
           nestTables: !t.match(TTable(_, _))
         }, 
         function (error, result:Array<DynamicAccess<DynamicAccess<Any>>>) cb(switch [error, result] {
@@ -96,12 +93,24 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
   function toError<A>(error:js.Error):Outcome<A, Error>
     return Failure(Error.withData(error.message, error));//TODO: give more information
   
-  public function insert<Insert:{}, Row:Insert>(table:TableInfo<Insert, Row>, items:Array<Insert>):Surprise<Int, Error>
+  public function insert<Row:{}>(table:TableInfo<Row>, items:Array<Insert<Row>>):Surprise<Int, Error>
     return Future.async(function (cb) {
       cnx.query(
         { sql: Format.insert(table, items, this) }, 
         function (error, result: { insertId: Int }) cb(switch [error, result] {
           case [null, { insertId: id }]: Success(id);
+          case [e, _]: toError(e);
+        })
+      );
+    });
+    
+        
+  public function update<Row:{}>(table:TableInfo<Row>, ?c:Condition, ?max:Int, update:Update<Row>):Surprise<{rowsAffected:Int}, Error> 
+    return Future.async(function (cb) {
+      cnx.query(
+        { sql: Format.update(table, c, max, update, this) },
+        function (error, result: { changedRows: Int } ) cb(switch [error, result] {
+          case [null, { changedRows: id }]: Success({ rowsAffected: id });
           case [e, _]: toError(e);
         })
       );

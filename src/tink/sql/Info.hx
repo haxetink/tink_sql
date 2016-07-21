@@ -4,13 +4,13 @@ import tink.core.Any;
 
 interface DatabaseInfo {
   function tablesnames():Iterable<String>;
-  function tableinfo<Insert:{}, Row:Insert>(name:String):TableInfo<Insert, Row>;  
+  function tableinfo<Row:{}>(name:String):TableInfo<Row>;  
 }
 
-interface TableInfo<Insert:{}, Row:Insert> {
+interface TableInfo<Row:{}> {
   function getName():String;
   function fieldnames():Iterable<String>;
-  function sqlizeRow(row:Insert, val:Any->String):Array<String>;
+  function sqlizeRow(row:Insert<Row>, val:Any->String):Array<String>;
 }
   
 typedef FieldType = {
@@ -24,3 +24,5 @@ enum DataType {
   DString(maxLength:Int);
   DBlob(maxLength:Int);
 }
+
+typedef Insert<Row> = Row;

@@ -1,16 +1,24 @@
 package tink.sql.types;
+import tink.json.Representation;
 
 abstract Id<T>(Int) to Int {
   
   public inline function new(v) 
     this = v;
   
-  @:from static inline function ofInt(i:Int)
+  @:from static inline function ofInt<T>(i:Int):Id<T>
     return new Id(i);
     
   @:to public inline function toString() 
-    return Std.int(this);
+    return Std.string(this);
     
   @:to public function toExpr():Expr<Id<T>>
     return Expr.ExprData.EConst(new Id(this));
+    
+  @:from static inline function ofRep(r:Representation<Int>) 
+    return new Id(r.get());
+  
+  @:to inline function toRep():Representation<Int>
+    return new Representation(this);
+    
 }

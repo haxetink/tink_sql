@@ -1,5 +1,6 @@
 package tink.sql.drivers.sys;
 
+import tink.sql.Connection.Update;
 import tink.sql.Format;
 import tink.sql.Info;
 import tink.sql.Expr;
@@ -51,8 +52,18 @@ class StdConnection<Db:DatabaseInfo> implements Connection<Db> {
     this.sanitizer = sanitizer;
   }
   
+  public function update<Row:{}>(table:TableInfo<Row>, ?c:Condition, ?max:Int, update:Update<Row>):Surprise<{ rowsAffected: Int }, Error> {
+    return Future.sync(
+      try Success({
+        rowsAffected:  cnx.request(Format.update(table, c, max, update, sanitizer)).length, //this is very likely neko-specific
+      })
+      //catch (e:Dynamic) {
+        //Failure(Error.withData('Failed to UPDATE ${table.getName()}', e));
+      //}
+    );
+  }
+  
   function makeRequest(s:String) {
-    //trace(s);
     return cnx.request(s);
   }
   
@@ -101,7 +112,7 @@ class StdConnection<Db:DatabaseInfo> implements Connection<Db> {
           }
       }
   
-  public function insert<Insert:{}, Row:Insert>(table:TableInfo<Insert, Row>, items:Array<Insert>):Surprise<Int, Error> 
+  public function insert<Row:{}>(table:TableInfo<Row>, items:Array<Insert<Row>>):Surprise<Int, Error> 
     return Future.sync(try {
       makeRequest(Format.insert(table, items, sanitizer));
       Success(cnx.lastInsertId());

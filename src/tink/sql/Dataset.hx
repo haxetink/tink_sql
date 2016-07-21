@@ -56,10 +56,6 @@ class Dataset<Fields, Filter, Result:{}, Db> {
     return v;
   }
     
-  macro public function update(ethis, exprs:Array<haxe.macro.Expr>) {
-    return ethis;
-  }
-    
   macro public function leftJoin(ethis, ethat)
     return tink.sql.macros.Joins.perform(Left, ethis, ethat);
     

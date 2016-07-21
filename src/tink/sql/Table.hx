@@ -1,6 +1,7 @@
 package tink.sql;
 
 import tink.core.Any;
+import tink.sql.Connection.Update;
 import tink.sql.Expr;
 import tink.sql.Info;
 
@@ -14,9 +15,9 @@ class Table<T> {
 }
 #end
 
-class TableSource<Fields, Filter:(Fields->Condition), Insert:{}, Row:Insert, Db> 
+class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db> 
     extends Dataset<Fields, Filter, Row, Db> 
-    implements TableInfo<Insert, Row> 
+    implements TableInfo<Row> 
 {
   
   public var name(default, null):TableName<Row>;
@@ -38,18 +39,22 @@ class TableSource<Fields, Filter:(Fields->Condition), Insert:{}, Row:Insert, Db>
     );
   }
   
-  public function insertMany(rows:Array<Insert>)
+  public function insertMany(rows:Array<Insert<Row>>)
     return cnx.insert(this, rows);
     
-  public function insertOne(row:Insert)
+  public function insertOne(row:Insert<Row>)
     return insertMany([row]);
+    
+  public function update(f:Fields->Update<Row>, options:{ where: Filter, ?max:Int }) {
+    return cnx.update(this, toCondition(options.where), options.max, f(this.fields));
+  }
   
   @:noCompletion 
   public function fieldnames():Array<String>
     return Reflect.fields(fields);
   
   @:noCompletion 
-  public function sqlizeRow(row:Insert, val:Any->String):Array<String> 
+  public function sqlizeRow(row:Insert<Row>, val:Any->String):Array<String> 
     return [for (f in fieldnames()) val(Reflect.field(row, f))];
     
   @:noCompletion

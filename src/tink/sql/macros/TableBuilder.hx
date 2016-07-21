@@ -21,15 +21,18 @@ class TableBuilder {
                 fieldsTypeFields = new Array<Field>(),
                 fieldsExprFields = [];
                 
+            var rowType = TAnonymous(rowTypeFields),
+                fieldsType = TAnonymous(fieldsTypeFields);//caution: these are mutable until the function is done          
+                
             for (f in fields) {
               var fType = f.type.toComplex(),
                   fName = f.name;
               
-              var fStruct = TAnonymous([{
-                name: fName,
-                kind: FVar(fType),
-                pos: f.pos,
-              }]);
+              //var fStruct = TAnonymous([{
+                //name: fName,
+                //kind: FVar(fType),
+                //pos: f.pos,
+              //}]);
               
               rowTypeFields.push({ 
                 pos: f.pos,
@@ -40,7 +43,8 @@ class TableBuilder {
               fieldsTypeFields.push({
                 pos: f.pos,
                 name: fName,
-                kind: FProp('default', 'null', macro : tink.sql.Expr.Field<$fType, $fStruct>)
+                kind: FProp('default', 'null', macro : tink.sql.Expr.Field<$fType, $rowType>)
+                //kind: FProp('default', 'null', macro : tink.sql.Expr<$fType>)
               });
               
               fieldsExprFields.push({
@@ -48,15 +52,10 @@ class TableBuilder {
                 expr: macro new tink.sql.Expr.Field($v{name}, $v{f.name}),
               });
             }
-            
-            
-              
-            var rowType = TAnonymous(rowTypeFields),
-                fieldsType = TAnonymous(fieldsTypeFields);
-                
+                            
             var filterType = (macro function ($name:$fieldsType):tink.sql.Expr.Condition return tink.sql.Expr.ExprData.EConst(true)).typeof().sure().toComplex({ direct: true });
             
-            macro class $cName<Db> extends tink.sql.Table.TableSource<$fieldsType, $filterType, $rowType, $rowType, Db> {
+            macro class $cName<Db> extends tink.sql.Table.TableSource<$fieldsType, $filterType, $rowType, Db> {
               
               public function new(cnx) {                
                   

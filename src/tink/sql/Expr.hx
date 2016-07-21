@@ -1,4 +1,5 @@
 package tink.sql;
+import tink.sql.Connection.FieldUpdate;
 
 typedef Condition = Expr<Bool>;
 
@@ -133,6 +134,9 @@ enum ExprData<T> {
   
   @:from static function ofBool(b:Bool):Condition 
     return EConst(b);
+    
+  //@:from static function ofString(s:String):Condition 
+    //return EConst(s);
 
 }
 
@@ -155,8 +159,26 @@ enum UnOp<A, Ret> {
 }
 
 @:forward
-abstract Field<Data, Structure>(Expr<Data>) to Expr<Data> {
+abstract Field<Data, Owner>(Expr<Data>) to Expr<Data> {
+  public var name(get, never):String;
   
+    function get_name() 
+      return switch this.data {
+        case EField(_, v): v;
+        case v: throw 'assert: invalid field $v';
+      }
+      
+  public var table(get, never):String;
+  
+    function get_table() 
+      return switch this.data {
+        case EField(v, _): v;
+        case v: throw 'assert: invalid field $v';
+      }   
+      
+  public function set(e:Expr<Data>):FieldUpdate<Owner>
+    return new FieldUpdate(cast this, e);
+      
   public inline function new(table, name)
     this = EField(table, name);
   //TODO: it feels pretty sad to have to do this below:

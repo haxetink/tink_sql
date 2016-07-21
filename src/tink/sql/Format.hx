@@ -1,8 +1,10 @@
 package tink.sql;
 
 import tink.core.Any;
+import tink.sql.Connection.Update;
 import tink.sql.Expr;
 import tink.sql.Info;
+import tink.sql.Limit;
 
 using StringTools;
 using Lambda;
@@ -73,7 +75,7 @@ class Format {
       ) + s.value(part.name)      
     ].join(', '), c, s, limit);
     
-  static public function insert<Insert:{}, Row:Insert>(table:TableInfo<Insert, Row>, rows:Array<Insert>, s:Sanitizer) {
+  static public function insert<Row:{}>(table:TableInfo<Row>, rows:Array<Insert<Row>>, s:Sanitizer) {
     return
       'INSERT INTO ${s.ident(table.getName())} (${[for (f in table.fieldnames()) s.ident(f)].join(", ")}) VALUES ' +
          [for (row in rows) '(' + table.sqlizeRow(row, s.value).join(', ') + ')'].join(', ');
@@ -96,6 +98,22 @@ class Format {
           case Left:  'LEFT';
           //case Outer: 'FULL OUTER';
         }) + ' JOIN ' + target(right, s) + ' ON ' + expr(cond, s);
+    }
+    
+    static public function update<Row:{}>(table:TableInfo<Row>, c:Null<Condition>, max:Null<Int>, update:Update<Row>, s:Sanitizer) {
+      var ret = 
+        'UPDATE ${table.getName()} SET ' + 
+          [for (u in update) 
+            s.ident(u.field.name) + ' = ' + expr(u.expr.data, s)
+          ].join(', ');
+      
+      if (c != null)
+        ret += ' WHERE ' + expr(c, s);
+        
+      if (max != null)
+        ret += 'LIMIT '+s.value(max);
+        
+      return ret;
     }
   
 }

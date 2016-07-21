@@ -8,7 +8,7 @@ class Database implements DatabaseInfo {
   
   public var name(default, null):String;
   
-  var tables:Map<String, TableInfo<Dynamic, Dynamic>>;
+  var tables:Map<String, TableInfo<Dynamic>>;
   var driver:Driver;
   
   function new(name, driver, tables) {
@@ -22,7 +22,7 @@ class Database implements DatabaseInfo {
       iterator: function () return tables.keys()
     };
   
-  public function tableinfo<Insert:{}, Row:Insert>(name:String):TableInfo<Insert, Row> 
+  public function tableinfo<Row:{}>(name:String):TableInfo<Row> 
     return switch tables[name] {
       case null: throw new Error(NotFound, 'Table `${this.name}.$name` not found');
       case v: cast v;

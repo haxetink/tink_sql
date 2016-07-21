@@ -1,6 +1,7 @@
 package ;
 
 import Db;
+import tink.sql.Expr;
 
 using tink.CoreApi;
 
@@ -40,8 +41,8 @@ class Run {
       id: cast null,
       name: 'Dave',
       email: 'dave2@example.com',
-    }]), function (id) {
-      return id > -1;//asserting a sensible value seems to fail for Java on Travis -- the test below (i.e. adding tags for the newly inserted post) should test that for single inserts though, which is where it matters most
+    }]), function (v) {
+      return v > -1;//asserting a sensible value seems to fail for Java on Travis -- the test below (i.e. adding tags for the newly inserted post) should test that for single inserts though, which is where it matters most
     });
     
     assertCount(5, db.User.all());
@@ -51,25 +52,21 @@ class Run {
     
     function post(title:String, author:String, tags:Array<String>) 
       return 
-        db.User.where(User.name == author).all() 
-          >> function (users:Array<User>) {
-            return switch users {
-              case [author]:
-                db.Post.insertOne({
-                  id: cast null, 
-                  title: title,
-                  author: author.id,
-                  content: 'A wonderful post about "$title"',
-                }) >> function (post:Int) {
-                  return db.PostTags.insertMany([for (tag in tags) {
-                    tag: tag,
-                    post: post,
-                  }]);
-                }
-              case v:
-                Future.sync(Failure(new Error('Expected to find one user called $author but found ${v.length}')));
+        db.User.where(User.name == author).first() 
+          >> function (author:User) {
+            return 
+              db.Post.insertOne({
+                id: cast null, 
+                title: title,
+                author: author.id,
+                content: 'A wonderful post about "$title"',
+              }) >> function (post:Int) {
+                return db.PostTags.insertMany([for (tag in tags) {
+                  tag: tag,
+                  post: post,
+                }]);
+              }
             }
-          }
     
     retain();
     Future.ofMany([
@@ -86,6 +83,11 @@ class Run {
       assertCount(2, db.PostTags.join(db.Post).on(PostTags.post == Post.id && PostTags.tag == 'off-topic').all());
       assertCount(3, db.PostTags.join(db.Post).on(PostTags.post == Post.id && PostTags.tag == 'test').all());
       
+      assertAsync(
+        db.User.update(function (u) return [u.name.set(EConst('Donald'))], { where: function (u) return u.name == 'Dave' } ), 
+        'Update two rows', 
+        function (x) return x.rowsAffected == 2
+      );
       release();
     });
     
