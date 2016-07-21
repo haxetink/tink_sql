@@ -3,6 +3,7 @@ package tink.sql;
 import haxe.DynamicAccess;
 import tink.sql.Expr;
 import tink.sql.Dataset;
+import tink.sql.types.Id;
 import tink.streams.Stream;
 import tink.sql.Info;
 import tink.sql.Projection;
@@ -14,7 +15,7 @@ interface Connection<Db> {
   
   //function selectProjection<A, Res>(t:Dataset<A, Db>, ?c:Condition, p:Projection<Res>):Stream<A>;
   function selectAll<A:{}>(t:Target<A, Db>, ?c:Condition, ?limit:Limit):Stream<A>;
-  function insert<Row:{}>(table:TableInfo<Row>, items:Array<Insert<Row>>):Surprise<LastInsertId, Error>;
+  function insert<Row:{}>(table:TableInfo<Row>, items:Array<Insert<Row>>):Surprise<Id<Row>, Error>;
   function update<Row:{}>(table:TableInfo<Row>, ?c:Condition, ?max:Int, update:Update<Row>):Surprise<{ rowsAffected: Int }, Error>;
 }
 
@@ -30,5 +31,3 @@ class FieldUpdate<Row> {
     this.expr = expr;
   }
 }
-
-typedef LastInsertId = Int;

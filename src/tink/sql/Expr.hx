@@ -158,6 +158,11 @@ enum UnOp<A, Ret> {
   Neg<T:Float>:UnOp<T, T>;
 }
 
+abstract Value<Data>(Expr<Data>) from Expr<Data> to Expr<Data> {
+  @:from static function ofAny<V>(value:V):Value<V>
+    return EConst(value);
+}
+
 @:forward
 abstract Field<Data, Owner>(Expr<Data>) to Expr<Data> {
   public var name(get, never):String;
@@ -176,7 +181,7 @@ abstract Field<Data, Owner>(Expr<Data>) to Expr<Data> {
         case v: throw 'assert: invalid field $v';
       }   
       
-  public function set(e:Expr<Data>):FieldUpdate<Owner>
+  public function set(e:Value<Data>):FieldUpdate<Owner>
     return new FieldUpdate(cast this, e);
       
   public inline function new(table, name)

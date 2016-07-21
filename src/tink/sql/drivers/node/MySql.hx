@@ -7,6 +7,7 @@ import tink.sql.Limit;
 import tink.sql.Expr;
 import tink.sql.Info;
 import tink.sql.drivers.sys.MySql.MySqlSettings;
+import tink.sql.types.Id;
 import tink.streams.Stream;
 using tink.CoreApi;
 
@@ -93,12 +94,12 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
   function toError<A>(error:js.Error):Outcome<A, Error>
     return Failure(Error.withData(error.message, error));//TODO: give more information
   
-  public function insert<Row:{}>(table:TableInfo<Row>, items:Array<Insert<Row>>):Surprise<Int, Error>
+  public function insert<Row:{}>(table:TableInfo<Row>, items:Array<Insert<Row>>):Surprise<Id<Row>, Error>
     return Future.async(function (cb) {
       cnx.query(
         { sql: Format.insert(table, items, this) }, 
         function (error, result: { insertId: Int }) cb(switch [error, result] {
-          case [null, { insertId: id }]: Success(id);
+          case [null, { insertId: id }]: Success(new Id(id));
           case [e, _]: toError(e);
         })
       );

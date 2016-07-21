@@ -6,6 +6,7 @@ import tink.sql.Info;
 import tink.sql.Expr;
 import tink.sql.Projection;
 import haxe.DynamicAccess;
+import tink.sql.types.Id;
 import tink.streams.Stream;
 
 using tink.CoreApi;
@@ -112,10 +113,10 @@ class StdConnection<Db:DatabaseInfo> implements Connection<Db> {
           }
       }
   
-  public function insert<Row:{}>(table:TableInfo<Row>, items:Array<Insert<Row>>):Surprise<Int, Error> 
+  public function insert<Row:{}>(table:TableInfo<Row>, items:Array<Insert<Row>>):Surprise<Id<Row>, Error> 
     return Future.sync(try {
       makeRequest(Format.insert(table, items, sanitizer));
-      Success(cnx.lastInsertId());
+      Success(new Id(cnx.lastInsertId()));
     }
     catch (e:Dynamic) {
       Failure(Error.withData('Failed to INSERT INTO ${table.getName()}', e));
