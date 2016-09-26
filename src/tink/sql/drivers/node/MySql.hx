@@ -6,7 +6,6 @@ import tink.sql.Format.Sanitizer;
 import tink.sql.Limit;
 import tink.sql.Expr;
 import tink.sql.Info;
-import tink.sql.drivers.sys.MySql.MySqlSettings;
 import tink.sql.types.Id;
 import tink.streams.Stream;
 using tink.CoreApi;
@@ -40,7 +39,7 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
   public function value(v:Any):String
     return NativeDriver.escape(v);
     
-  public function ident(s:String):String
+  public function ident(s:String):String 
     return NativeDriver.escapeId(s);
   
   public function new(db, cnx) {

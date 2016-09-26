@@ -19,7 +19,7 @@ class Format {
       case Div: '/';
       case Mod: 'MOD';
       case Or: 'OR';
-      case And: 'AND';
+      case And: 'AND ';
       case Equals: '=';
       case Greater: '>';
     }
@@ -38,7 +38,7 @@ class Format {
           case EUnOp(op, a):
             unOp(op) + ' ' + rec(a);
           case EBinOp(op, a, b):
-            '(' + rec(a) + binOp(op) + rec(b) + ')';
+            '(${rec(a)} ${binOp(op)} ${rec(b)})';
           case EField(table, name):
             s.ident(table) + '.' + s.ident(name);
           case EConst(value):          

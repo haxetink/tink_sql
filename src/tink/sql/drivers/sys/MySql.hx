@@ -2,13 +2,6 @@ package tink.sql.drivers.sys;
 
 import tink.sql.Driver;
 
-typedef MySqlSettings = {
-  @:optional var host(default, null):String;
-  @:optional var port(default, null):Int;
-  var user(default, null):String;
-  var password(default, null):String;
-}
-
 @:require(neko || java || php) //making sure this is not used on nodejs ... deserves refinement
 class MySql extends StdDriver {
   

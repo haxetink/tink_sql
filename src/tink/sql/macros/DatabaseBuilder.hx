@@ -47,9 +47,11 @@ class DatabaseBuilder {
       
       m.kind = FProp('default', 'null', macro : tink.sql.Table<$type>);
       
-      init.push(macro @:pos(m.pos) this.$table.init(cnx));
+      var fieldName = m.name;
       
-      tables.push(macro @:pos(m.pos) $v{table} => this.$table);
+      init.push(macro @:pos(m.pos) this.$fieldName.init(cnx));
+      
+      tables.push(macro @:pos(m.pos) $v{table} => this.$fieldName);
     }
     
     if (c.hasConstructor())
@@ -58,17 +60,10 @@ class DatabaseBuilder {
     var ctor = c.getConstructor((macro function (name, driver:tink.sql.Driver) {
       var cnx = driver.open(name, this);
       $b{init};
-      //super(name, driver, $a{tables});
       super(name, driver, $a{tables});
     }).getFunction().sure());
     
     ctor.publish();
-    
-    //ctor.addArg('driver', macro : tink.sql.Driver);
-    
-    //ctor.addStatement(macro {
-      
-    //});
   }
   static function build() {
     return ClassBuilder.run([doBuild]);
