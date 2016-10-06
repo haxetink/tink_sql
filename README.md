@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/haxetink/tink_sql.svg?branch=master)](https://travis-ci.org/haxetink/tink_sql)
+
 # Tinkerbell SQL
 
 This library embeds SQL right into the Haxe language. Think LINQ (not the syntax sugar, but the framework).
