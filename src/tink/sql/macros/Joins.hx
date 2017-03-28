@@ -52,7 +52,7 @@ class Joins {
               for (p in parts)
                 add(p.name, switch byName[p.name] {
                   case null: e.reject('Lost track of ${p.name}');
-                  case f: f.getVar().sure().type;
+                  case f: (f:Member).getVar().sure().type;
                 }, true);
             default:
               e.reject();
