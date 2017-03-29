@@ -7,8 +7,9 @@
 	"version": "0.0.0-alpha.0",
 	"dependencies": {
 		"tink_streams": "",
-    "tink_macro": "",
-    "tink_url": ""
+		"tink_macro": "",
+		"tink_json": "",
+		"tink_url": ""
 	},
 	"releasenote": "Initial release",
 	"contributors": ["back2dos"], 
