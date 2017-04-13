@@ -119,7 +119,6 @@ class Run {
     }
   
   function insertUsers() {
-    trace('insert');
     return db.User.insertMany([{
       id: cast null,
       name: 'Alice',
