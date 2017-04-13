@@ -48,7 +48,8 @@ class Format {
     return rec(e);
   }
   
-  
+  static public function dropTable<Row:{}>(table:TableInfo<Row>, s:Sanitizer)
+    return 'DROP TABLE ' + s.ident(table.getName());
   
   static public function createTable<Row:{}>(table:TableInfo<Row>, s:Sanitizer, ifNotExists = false) {
     var sql = 'CREATE TABLE ';

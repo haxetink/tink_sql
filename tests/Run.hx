@@ -112,6 +112,15 @@ class Run {
     var update = @:await db.User.update(function (u) return [u.name.set(EConst('Donald'))], { where: function (u) return u.name == 'Dave' } );
     asserts.assert(update.rowsAffected == 2);
     
+    // drop
+    asserts.assert(@:await db.User.drop() == Noise);
+    @:await Future.async(function(cb) {
+      db.User.all().handle(function(o) {
+        asserts.assert(!o.isSuccess());
+        cb(Noise);
+      });
+    });
+    
     return asserts.done();
   }
   
