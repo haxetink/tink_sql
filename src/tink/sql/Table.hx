@@ -39,6 +39,9 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
     );
   }
   
+  public function drop()
+    return cnx.dropTable(this);
+  
   public function insertMany(rows:Array<Insert<Row>>)
     return cnx.insert(this, rows);
     
