@@ -18,12 +18,12 @@ interface TableInfo<Row:{}> {
 typedef Column = {
   > FieldType,
   name:String,
+  key:Option<KeyType>,
 }
   
 typedef FieldType = {
   nullable:Bool,
   type:DataType,
-  key:Option<KeyType>,
 }
 
 enum KeyType {

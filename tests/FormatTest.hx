@@ -31,7 +31,7 @@ class FakeTable1 extends FakeTable {
 	override function getName():String
 		return 'fake';
 	
-	override function getFields():Iterable<{>FieldType, name:String}>
+	override function getFields():Iterable<Column>
 		return [
 			{name: 'id', nullable: false, type: DInt(11, false, true), key: None},
 			{name: 'username', nullable: false, type: DString(50), key: None},
@@ -46,7 +46,7 @@ class FakeTable implements TableInfo<{}> {
 	public function getName():String
 		throw 'abstract';
 		
-	public function getFields():Iterable<{>FieldType, name:String}>
+	public function getFields():Iterable<Column>
 		throw 'abstract';
 		
 	public function fieldnames():Iterable<String>
