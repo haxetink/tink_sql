@@ -57,11 +57,12 @@ class TableBuilder {
                 var name = macro $v{fName};
                 var nullable = macro $v{f.meta.has(':optional')}; // TODO: handle Null<T>
                 var type = switch fType.toType().sure().getID() {
+                  case 'tink.sql.types.Id':
+                    var maxLength = 12; // TODO: make these configurable
+                    macro tink.sql.Info.DataType.DInt($v{maxLength}, false, $v{f.meta.has(':autoIncrement')});
                   case 'Int':
                     var maxLength = 12; // TODO: make these configurable
-                    var signed = false;
-                    var autoIncrement = false;
-                    macro tink.sql.Info.DataType.DInt($v{maxLength}, $v{signed}, $v{autoIncrement});
+                    macro tink.sql.Info.DataType.DInt($v{maxLength}, false, false);
                   case 'Bool':
                     macro tink.sql.Info.DataType.DBool;
                   case 'String':
@@ -71,10 +72,20 @@ class TableBuilder {
                   
                   case v: throw 'Unsupported type $v';
                 }
+                
+                var primary = f.meta.has(':primary');
+                var unique = f.meta.has(':unique'); // primary already implies unique
+                
+                var key =
+                  if(primary) macro haxe.ds.Option.Some(tink.sql.Info.KeyType.Primary);
+                  else if(unique) macro haxe.ds.Option.Some(tink.sql.Info.KeyType.Unique);
+                  else macro haxe.ds.Option.None;
+                
                 EObjectDecl([
                   {field: 'name', expr: name},
                   {field: 'nullable', expr: nullable},
                   {field: 'type', expr: type},
+                  {field: 'key', expr: key},
                 ]).at(f.pos);
               });
             }

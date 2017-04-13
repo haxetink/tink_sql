@@ -59,12 +59,12 @@ class Format {
     
     sql += [for(f in table.getFields()) {
       var sql = f.name + ' ';
-      var options = '';
+      var autoIncrement = false;
       sql += switch f.type {
         case DBool:
           'BIT(1)';
-        case DInt(bits, signed, autoIncrement):
-          if(autoIncrement) options += ' AUTO_INCREMENT';
+        case DInt(bits, signed, autoInc):
+          if(autoInc) autoIncrement = true;
           'INT($bits)' + if(!signed) ' UNSIGNED' else '';
         case DString(maxLength):
           'VARCHAR($maxLength)';
@@ -72,7 +72,12 @@ class Format {
           'VARBINARY($maxLength)';
       }
       sql += if(f.nullable) ' NULL' else ' NOT NULL';
-      sql += options;
+      if(autoIncrement) sql += ' AUTO_INCREMENT';
+      switch f.key {
+        case Some(Unique): sql += ' UNIQUE';
+        case Some(Primary): sql += ' PRIMARY KEY';
+        case None: // do nothing
+      }
       sql;
     }].join(', ');
     

@@ -39,6 +39,9 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
     );
   }
   
+  public function create()
+    return cnx.createTable(this);
+  
   public function drop()
     return cnx.dropTable(this);
   

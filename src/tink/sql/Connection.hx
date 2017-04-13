@@ -15,6 +15,7 @@ interface Connection<Db> {
   
   //function selectProjection<A, Res>(t:Dataset<A, Db>, ?c:Condition, p:Projection<Res>):Stream<A>;
   function dropTable<Row:{}>(table:TableInfo<Row>):Surprise<Noise, Error>;
+  function createTable<Row:{}>(table:TableInfo<Row>):Surprise<Noise, Error>;
   function selectAll<A:{}>(t:Target<A, Db>, ?c:Condition, ?limit:Limit):RealStream<A>;
   function insert<Row:{}>(table:TableInfo<Row>, items:Array<Insert<Row>>):Surprise<Id<Row>, Error>;
   function update<Row:{}>(table:TableInfo<Row>, ?c:Condition, ?max:Int, update:Update<Row>):Surprise<{ rowsAffected: Int }, Error>;

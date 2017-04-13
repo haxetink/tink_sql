@@ -1,5 +1,6 @@
 package tink.sql;
 
+import haxe.ds.Option;
 import tink.core.Any;
 
 interface DatabaseInfo {
@@ -22,6 +23,12 @@ typedef Column = {
 typedef FieldType = {
   nullable:Bool,
   type:DataType,
+  key:Option<KeyType>,
+}
+
+enum KeyType {
+  Primary;
+  Unique;
 }
 
 enum DataType {
