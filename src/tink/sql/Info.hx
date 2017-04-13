@@ -9,9 +9,14 @@ interface DatabaseInfo {
 
 interface TableInfo<Row:{}> {
   function getName():String;
-  function getFields():Iterable<{>FieldType, name:String}>;
+  function getFields():Iterable<Column>;
   function fieldnames():Iterable<String>;
   function sqlizeRow(row:Insert<Row>, val:Any->String):Array<String>;
+}
+  
+typedef Column = {
+  > FieldType,
+  name:String,
 }
   
 typedef FieldType = {

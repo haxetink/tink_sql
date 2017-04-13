@@ -2,16 +2,27 @@ package;
 
 import tink.sql.Format;
 import tink.sql.Info;
+import tink.sql.drivers.MySql;
 import tink.unit.Assert.assert;
 
 using tink.CoreApi;
 
+@:allow(tink.unit)
 class FormatTest {
-	public function new() {}
 	
-	public function createTable() {
-		var sql = Format.createTable(new FakeTable1(), new tink.sql.drivers.node.MySql.MySqlConnection(null, null)); // TODO: should separate out the sanitizer
-		return assert(sql == 'CREATE TABLE `fake` (id INT(11) UNSIGNED NOT NULL AUTO_INCREMENT, username VARCHAR(50) NOT NULL, admin BIT(1) NOT NULL, age INT(11) UNSIGNED NULL)');
+	var db:Db;
+	var driver:MySql;
+	
+	public function new() {
+		driver = new MySql({user: 'root', password: ''});
+		db = new Db('test', driver);
+	}
+	
+	@:variant(new FormatTest.FakeTable1(), 'CREATE TABLE `fake` (id INT(11) UNSIGNED NOT NULL AUTO_INCREMENT, username VARCHAR(50) NOT NULL, admin BIT(1) NOT NULL, age INT(11) UNSIGNED NULL)')
+	@:variant(target.db.User, 'CREATE TABLE `User` (email VARCHAR(50) NOT NULL, id INT(12) UNSIGNED NOT NULL, name VARCHAR(50) NOT NULL)')
+	public function createTable(table:TableInfo<Dynamic>, sql:String) {
+		// TODO: should separate out the sanitizer
+		return assert(Format.createTable(table, new tink.sql.drivers.node.MySql.MySqlConnection(null, null)) == sql);
 	}
 }
 

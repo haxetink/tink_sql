@@ -50,7 +50,7 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
   }
   
   @:noCompletion 
-  public function getFields()
+  public function getFields():Array<Column>
     throw 'not implemented';
   
   @:noCompletion 
