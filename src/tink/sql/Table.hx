@@ -39,6 +39,12 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
     );
   }
   
+  public function create()
+    return cnx.createTable(this);
+  
+  public function drop()
+    return cnx.dropTable(this);
+  
   public function insertMany(rows:Array<Insert<Row>>)
     return cnx.insert(this, rows);
     
@@ -48,6 +54,10 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
   public function update(f:Fields->Update<Row>, options:{ where: Filter, ?max:Int }) {
     return cnx.update(this, toCondition(options.where), options.max, f(this.fields));
   }
+  
+  @:noCompletion 
+  public function getFields():Array<Column>
+    throw 'not implemented';
   
   @:noCompletion 
   public function fieldnames():Array<String>

@@ -48,6 +48,24 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
     this.cnx = cnx;
   }
   
+  public function dropTable<Row:{}>(table:TableInfo<Row>):Surprise<Noise, Error> {
+    return Future.async(function(cb) {
+      cnx.query(
+        {sql: Format.dropTable(table, this)},
+        function(err, _) cb(if(err == null) Success(Noise) else toError(err))
+      );
+    });
+  }
+        
+  public function createTable<Row:{}>(table:TableInfo<Row>):Surprise<Noise, Error> {
+    return Future.async(function(cb) {
+      cnx.query(
+        {sql: Format.createTable(table, this)},
+        function(err, _) cb(if(err == null) Success(Noise) else toError(err))
+      );
+    });
+  }
+  
   public function selectAll<A:{}>(t:Target<A, Db>, ?c:Condition, ?limit:Limit):RealStream<A>
     return Stream.promise(Future.async(function (cb) {
       cnx.query( 

@@ -12,11 +12,13 @@ using tink.CoreApi;
 
 @:asserts
 @:await
+@:allow(tink.unit)
 class Run {  
   
   static function main() {
     
     Runner.run(TestBatch.make([
+      new FormatTest(),
       new Run(),
     ])).handle(Runner.exit);
     
@@ -34,6 +36,31 @@ class Run {
   
   var db:Db;
   
+  @:before
+  public function createTables() {
+    return Future.ofMany([
+      db.User.create(),
+      db.Post.create(),
+      db.PostTags.create(),
+    ]).map(function(o) {
+      // for(o in o) trace(Std.string(o));
+      return Noise;
+    });
+  }
+  
+  @:after
+  public function dropTables() {
+    return Future.ofMany([
+      db.User.drop(),
+      db.Post.drop(),
+      db.PostTags.drop(),
+    ]).map(function(o) {
+      // for(o in o) trace(Std.string(o));
+      return Noise;
+    });
+  }
+  
+  
   public function info() {
     asserts.assert(db.name == 'test');
     asserts.assert(sorted(db.tablesnames()).join(',') == 'Post,PostTags,User');
@@ -41,12 +68,58 @@ class Run {
     return asserts.done();
   }
   
-  @:async public function operations() {
-    asserts.assert((@:await db.User.all()).length == 0);
-    asserts.assert((@:await db.Post.all()).length == 0);
-    asserts.assert((@:await db.PostTags.all()).length == 0);
+  @:variant(target.db.User.all(), 0)
+  @:variant(target.db.Post.all(), 0)
+  @:variant(target.db.PostTags.all(), 0)
+  public function count<T>(query:Surprise<Array<T>, Error>, expected:Int) {
+    return query >> function(a:Array<T>) return assert(a.length == expected);
+  }
+  
+  public function insert()
+    return insertUsers() >> function(insert:Int) return assert(insert > 0);
+  
+  @:variant(target.db.User.all, 5)
+  @:variant(target.db.User.where(User.name == 'Evan').all, 0)
+  @:variant(target.db.User.where(User.name == 'Alice').all, 1)
+  @:variant(target.db.User.where(User.name == 'Dave').all, 2)
+  public function insertedCount<T>(query:Lazy<Surprise<Array<T>, Error>>, expected:Int)
+    return insertUsers() >> function(_) return count(query.get(), expected, asserts);
+  
+  public function update() {
+    await(runUpdate, asserts);
+    return asserts;
+  }
+  
+  function await(run:AssertionBuffer->Surprise<Noise, Dynamic>, asserts:AssertionBuffer)
+    run(asserts).handle(function(o) switch o {
+      case Success(_): asserts.done();
+      case Failure(e): asserts.fail(Std.string(e));
+    }); 
+  
+  // this is what we do if we want to use tink_await while also want to return the assertbuffer early...
+  @:async function runUpdate(asserts:AssertionBuffer) {
+      @:await insertUsers();
+      var results = @:await Future.ofMany([
+        insertPost('test', 'Alice', ['test', 'off-topic']),
+        insertPost('test2', 'Alice', ['test']),
+        insertPost('Some ramblings', 'Alice', ['off-topic']),
+        insertPost('Just checking', 'Bob', ['test']),
+      ]);
       
-    var insert = @:await db.User.insertMany([{
+      for (x in results)
+        asserts.assert(x.isSuccess());
+        
+      asserts.assert((@:await db.PostTags.join(db.Post).on(PostTags.post == Post.id && PostTags.tag == 'off-topic').all()).length == 2);
+      asserts.assert((@:await db.PostTags.join(db.Post).on(PostTags.post == Post.id && PostTags.tag == 'test').all()).length == 3);
+      
+      var update = @:await db.User.update(function (u) return [u.name.set(EConst('Donald'))], { where: function (u) return u.name == 'Dave' } );
+      asserts.assert(update.rowsAffected == 2);
+      
+      return Noise;
+    }
+  
+  function insertUsers() {
+    return db.User.insertMany([{
       id: cast null,
       name: 'Alice',
       email: 'alice@example.com',
@@ -67,51 +140,24 @@ class Run {
       name: 'Dave',
       email: 'dave2@example.com',
     }]);
-    
-    asserts.assert((insert:Int) > 0); //asserting a sensible value seems to fail for Java on Travis -- the test below (i.e. adding tags for the newly inserted post) should test that for single inserts though, which is where it matters most
-    
-    asserts.assert((@:await db.User.all()).length == 5);
-    asserts.assert((@:await db.User.where(User.name == 'Evan').all()).length == 0);
-    asserts.assert((@:await db.User.where(User.name == 'Alice').all()).length == 1);
-    asserts.assert((@:await db.User.where(User.name == 'Dave').all()).length == 2);
-      
-      
-    function post(title:String, author:String, tags:Array<String>) {
-      return 
-        db.User.where(User.name == author).first() 
-          >> function (author:User) {
-            return 
-              db.Post.insertOne({
-                id: cast null, 
-                title: title,
-                author: author.id,
-                content: 'A wonderful post about "$title"',
-              }) >> function (post:Int) {
-                return db.PostTags.insertMany([for (tag in tags) {
-                  tag: tag,
-                  post: post,
-                }]);
-              }
-            }
-    }
-    
-    var result = @:await Future.ofMany([
-      post('test', 'Alice', ['test', 'off-topic']),
-      post('test2', 'Alice', ['test']),
-      post('Some ramblings', 'Alice', ['off-topic']),
-      post('Just checking', 'Bob', ['test']),
-    ]);
-    
-    for (x in result)
-      asserts.assert(x.isSuccess());
-    
-    asserts.assert((@:await db.PostTags.join(db.Post).on(PostTags.post == Post.id && PostTags.tag == 'off-topic').all()).length == 2);
-    asserts.assert((@:await db.PostTags.join(db.Post).on(PostTags.post == Post.id && PostTags.tag == 'test').all()).length == 3);
-    
-    var update = @:await db.User.update(function (u) return [u.name.set(EConst('Donald'))], { where: function (u) return u.name == 'Dave' } );
-    asserts.assert(update.rowsAffected == 2);
-    
-    return asserts.done();
   }
+  
+  function insertPost(title:String, author:String, tags:Array<String>)
+    return 
+      db.User.where(User.name == author).first() 
+        >> function (author:User) {
+          return 
+            db.Post.insertOne({
+              id: cast null, 
+              title: title,
+              author: author.id,
+              content: 'A wonderful post about "$title"',
+            }) >> function (post:Int) {
+              return db.PostTags.insertMany([for (tag in tags) {
+                tag: tag,
+                post: post,
+              }]);
+            }
+          }
   
 }

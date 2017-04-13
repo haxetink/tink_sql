@@ -19,7 +19,8 @@ class TableBuilder {
             
             var rowTypeFields = new Array<Field>(),
                 fieldsTypeFields = new Array<Field>(),
-                fieldsExprFields = [];
+                fieldsExprFields = [],
+                fieldsValues = [];
                 
             var rowType = TAnonymous(rowTypeFields),
                 fieldsType = TAnonymous(fieldsTypeFields);//caution: these are mutable until the function is done          
@@ -51,6 +52,42 @@ class TableBuilder {
                 field: f.name,
                 expr: macro new tink.sql.Expr.Field($v{name}, $v{f.name}),
               });
+              
+              fieldsValues.push({
+                var name = macro $v{fName};
+                var nullable = macro $v{f.meta.has(':optional')}; // TODO: handle Null<T>
+                var type = switch fType.toType().sure().getID() {
+                  case 'tink.sql.types.Id':
+                    var maxLength = 12; // TODO: make these configurable
+                    macro tink.sql.Info.DataType.DInt($v{maxLength}, false, $v{f.meta.has(':autoIncrement')});
+                  case 'Int':
+                    var maxLength = 12; // TODO: make these configurable
+                    macro tink.sql.Info.DataType.DInt($v{maxLength}, false, false);
+                  case 'Bool':
+                    macro tink.sql.Info.DataType.DBool;
+                  case 'String':
+                    var maxLength = 50; // TODO: make these configurable
+                    macro tink.sql.Info.DataType.DString($v{maxLength});
+                  // TODO case 'Blob':
+                  
+                  case v: throw 'Unsupported type $v';
+                }
+                
+                var primary = f.meta.has(':primary');
+                var unique = f.meta.has(':unique'); // primary already implies unique
+                
+                var key =
+                  if(primary) macro haxe.ds.Option.Some(tink.sql.Info.KeyType.Primary);
+                  else if(unique) macro haxe.ds.Option.Some(tink.sql.Info.KeyType.Unique);
+                  else macro haxe.ds.Option.None;
+                
+                EObjectDecl([
+                  {field: 'name', expr: name},
+                  {field: 'nullable', expr: nullable},
+                  {field: 'type', expr: type},
+                  {field: 'key', expr: key},
+                ]).at(f.pos);
+              });
             }
                             
             var filterType = (macro function ($name:$fieldsType):tink.sql.Expr.Condition return tink.sql.Expr.ExprData.EConst(true)).typeof().sure().toComplex({ direct: true });
@@ -63,6 +100,9 @@ class TableBuilder {
               }
               
               static var FIELD_NAMES = $v{names};
+              static var FIELDS = $a{fieldsValues};
+              @:noCompletion override public function getFields()
+                return FIELDS;
               @:noCompletion override public function fieldnames():Array<String>
                 return FIELD_NAMES;
                 
