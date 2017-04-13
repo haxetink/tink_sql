@@ -50,6 +50,10 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
   }
   
   @:noCompletion 
+  public function getFields()
+    throw 'not implemented';
+  
+  @:noCompletion 
   public function fieldnames():Array<String>
     return Reflect.fields(fields);
   

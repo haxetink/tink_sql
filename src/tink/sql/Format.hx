@@ -50,6 +50,35 @@ class Format {
   
   
   
+  static public function createTable<Row:{}>(table:TableInfo<Row>, s:Sanitizer, ifNotExists = false) {
+    var sql = 'CREATE TABLE ';
+    if(ifNotExists) sql += 'IF NOT EXISTS ';
+    sql += s.ident(table.getName());
+    sql += ' (';
+    
+    sql += [for(f in table.getFields()) {
+      var sql = f.name + ' ';
+      var options = '';
+      sql += switch f.type {
+        case DBool:
+          'BIT(1)';
+        case DInt(bits, signed, autoIncrement):
+          if(autoIncrement) options += ' AUTO_INCREMENT';
+          'INT($bits)' + if(!signed) ' UNSIGNED' else '';
+        case DString(maxLength):
+          'VARCHAR($maxLength)';
+        case DBlob(maxLength):
+          'VARBINARY($maxLength)';
+      }
+      sql += if(f.nullable) ' NULL' else ' NOT NULL';
+      sql += options;
+      sql;
+    }].join(', ');
+    
+    sql += ')';
+    return sql;
+  }
+  
   static public function selectAll<A:{}, Db>(t:Target<A, Db>, ?c:Condition, s:Sanitizer, ?limit:Limit)         
     return select(t, '*', c, s, limit);
   

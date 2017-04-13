@@ -9,6 +9,7 @@ interface DatabaseInfo {
 
 interface TableInfo<Row:{}> {
   function getName():String;
+  function getFields():Iterable<{>FieldType, name:String}>;
   function fieldnames():Iterable<String>;
   function sqlizeRow(row:Insert<Row>, val:Any->String):Array<String>;
 }
@@ -20,7 +21,7 @@ typedef FieldType = {
 
 enum DataType {
   DBool;
-  DInt(bits:Int, signed:Bool);
+  DInt(bits:Int, signed:Bool, autoIncrement:Bool);
   DString(maxLength:Int);
   DBlob(maxLength:Int);
 }

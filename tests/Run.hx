@@ -18,6 +18,7 @@ class Run {
     
     Runner.run(TestBatch.make([
       new Run(),
+      new FormatTest(),
     ])).handle(Runner.exit);
     
   }
