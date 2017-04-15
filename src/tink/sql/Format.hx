@@ -57,8 +57,9 @@ class Format {
     sql += s.ident(table.getName());
     sql += ' (';
     
+    var primary = [];
     sql += [for(f in table.getFields()) {
-      var sql = f.name + ' ';
+      var sql = s.ident(f.name) + ' ';
       var autoIncrement = false;
       sql += switch f.type {
         case DBool:
@@ -75,11 +76,14 @@ class Format {
       if(autoIncrement) sql += ' AUTO_INCREMENT';
       switch f.key {
         case Some(Unique): sql += ' UNIQUE';
-        case Some(Primary): sql += ' PRIMARY KEY';
+        case Some(Primary): primary.push(f.name);
         case None: // do nothing
       }
       sql;
     }].join(', ');
+    
+    if(primary.length > 0)
+      sql += ', PRIMARY KEY (' + primary.map(s.ident).join(', ') + ')';
     
     sql += ')';
     return sql;
