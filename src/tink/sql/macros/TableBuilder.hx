@@ -26,9 +26,8 @@ class TableBuilder {
                 fieldsType = TAnonymous(fieldsTypeFields);//caution: these are mutable until the function is done          
                 
             for (f in fields) {
-              var fType = f.type.toComplex(),
+              var fType = f.type.reduce().toComplex(),
                   fName = f.name;
-              
               //var fStruct = TAnonymous([{
                 //name: fName,
                 //kind: FVar(fType),
@@ -41,6 +40,7 @@ class TableBuilder {
                 kind: FProp('default', 'null', fType),
               });
               
+              var followedType = f.type.reduce().toComplex();
               fieldsTypeFields.push({
                 pos: f.pos,
                 name: fName,
@@ -56,21 +56,26 @@ class TableBuilder {
               fieldsValues.push({
                 var name = macro $v{fName};
                 var nullable = macro $v{f.meta.has(':optional')}; // TODO: handle Null<T>
-                var type = switch fType.toType().sure().getID() {
-                  case 'tink.sql.types.Id':
+                var type = switch f.type {
+                  case TType(_.get() => {pack: ['tink', 'sql', 'types'], name: 'Integer'}, p):
+                    var maxLength = getInt(p[0], f.pos);
+                    macro tink.sql.Info.DataType.DInt($v{maxLength}, false, $v{f.meta.has(':autoIncrement')});
+                  
+                  case TType(_.get() => {pack: ['tink', 'sql', 'types'], name: 'Text'}, p):
+                    var maxLength = getInt(p[0], f.pos);
+                    macro tink.sql.Info.DataType.DString($v{maxLength});
+                  
+                  case TType(_.get() => {pack: ['tink', 'sql', 'types'], name: 'Blob'}, p):
+                    var maxLength = getInt(p[0], f.pos);
+                    macro tink.sql.Info.DataType.DBlob($v{maxLength});
+                  
+                  case _.getID() => 'tink.sql.types.Id':
                     var maxLength = 12; // TODO: make these configurable
                     macro tink.sql.Info.DataType.DInt($v{maxLength}, false, $v{f.meta.has(':autoIncrement')});
-                  case 'Int':
-                    var maxLength = 12; // TODO: make these configurable
-                    macro tink.sql.Info.DataType.DInt($v{maxLength}, false, false);
-                  case 'Bool':
-                    macro tink.sql.Info.DataType.DBool;
-                  case 'String':
-                    var maxLength = 50; // TODO: make these configurable
-                    macro tink.sql.Info.DataType.DString($v{maxLength});
-                  // TODO case 'Blob':
                   
-                  case v: throw 'Unsupported type $v';
+                  case _.getID() => v:
+                    if(v == null) v = Std.string(f.type);
+                    f.pos.error('Unsupported type $v. Use types from the tink.sql.types package.');
                 }
                 
                 var primary = f.meta.has(':primary');
@@ -89,7 +94,7 @@ class TableBuilder {
                 ]).at(f.pos);
               });
             }
-                            
+            
             var filterType = (macro function ($name:$fieldsType):tink.sql.Expr.Condition return tink.sql.Expr.ExprData.EConst(true)).typeof().sure().toComplex({ direct: true });
             
             macro class $cName<Db> extends tink.sql.Table.TableSource<$fieldsType, $filterType, $rowType, Db> {
@@ -114,6 +119,15 @@ class TableBuilder {
         }
       
     });
+  }
+  
+  static function getInt(p:haxe.macro.Type, pos:Position) {
+    return switch p {
+      case TInst(_.get().name => n, _) if(n.charCodeAt(0) == 'I'.code):
+        Std.parseInt(n.substr(1));
+      default:
+        throw pos.error('Expected integer as type parameter');
+    }
   }
   
 }
