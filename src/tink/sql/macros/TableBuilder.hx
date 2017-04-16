@@ -121,10 +121,10 @@ class TableBuilder {
     });
   }
   
-  static function getInt(p:haxe.macro.Type, pos:Position) {
+  static function getInt(p:haxe.macro.Type, pos:Position):Int {
     return switch p {
-      case TInst(_.get().name => n, _) if(n.charCodeAt(0) == 'I'.code):
-        Std.parseInt(n.substr(1));
+      case TInst(_.get().kind => KExpr(macro $v{(i:Int)}), _):
+        Std.parseInt(i);
       default:
         throw pos.error('Expected integer as type parameter');
     }
