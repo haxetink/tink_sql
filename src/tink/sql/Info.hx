@@ -36,6 +36,7 @@ enum DataType {
   DInt(bits:Int, signed:Bool, autoIncrement:Bool);
   DString(maxLength:Int);
   DBlob(maxLength:Int);
+  DDateTime;
 }
 
 typedef Insert<Row> = Row;

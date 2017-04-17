@@ -1,6 +1,8 @@
 package tink.sql.drivers.node;
 
+import js.node.Buffer;
 import haxe.DynamicAccess;
+import haxe.io.Bytes;
 import tink.sql.Connection.Update;
 import tink.sql.Format.Sanitizer;
 import tink.sql.Limit;
@@ -38,7 +40,7 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
   var db:Db;
   
   public function value(v:Any):String
-    return NativeDriver.escape(v);
+    return NativeDriver.escape(if(Std.is(v, Bytes)) Buffer.hxFromBytes(v) else v);
     
   public function ident(s:String):String 
     return NativeDriver.escapeId(s);
@@ -71,7 +73,15 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
       cnx.query( 
         { 
           sql: Format.selectAll(t, c, this), 
-          nestTables: !t.match(TTable(_, _))
+          nestTables: !t.match(TTable(_, _)),
+          typeCast: function (field, next) {
+            return switch field.type {
+              case 'BLOB':
+                (field.buffer():Buffer).hxToBytes();
+              default:
+                next();
+            }
+          }
         }, 
         function (error, result:Array<DynamicAccess<DynamicAccess<Any>>>) cb(switch [error, result] {
           case [null, result]:
@@ -148,6 +158,6 @@ private typedef Config = {>MySqlSettings,
 }
 
 private typedef NativeConnection = {
-  function query(q: { sql:String, ?nestTables:Bool }, cb:js.Error->Dynamic->Void):Void;
+  function query(q: { sql:String, ?nestTables:Bool, ?typeCast:Dynamic->(Void->Dynamic)->Dynamic }, cb:js.Error->Dynamic->Void):Void;
   //function release():Void; -- doesn't seem to work
 }

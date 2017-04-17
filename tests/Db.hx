@@ -24,6 +24,7 @@ typedef Types = {
   public var int(default, null):Integer<21>;
   public var text(default, null):Text<40>;
   public var blob(default, null):Blob<1000000>;
+  public var date(default, null):DateTime;
 }
 
 @:tables(User, Post, PostTags, Types)

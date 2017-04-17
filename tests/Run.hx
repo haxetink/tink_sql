@@ -18,6 +18,7 @@ class Run {
   static function main() {
     
     Runner.run(TestBatch.make([
+      new TypeTest(),
       new FormatTest(),
       new Run(),
     ])).handle(Runner.exit);

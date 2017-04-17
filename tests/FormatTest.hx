@@ -20,7 +20,7 @@ class FormatTest {
 	
 	@:variant(new FormatTest.FakeTable1(), 'CREATE TABLE `fake` (`id` INT(11) UNSIGNED NOT NULL AUTO_INCREMENT, `username` VARCHAR(50) NOT NULL, `admin` BIT(1) NOT NULL, `age` INT(11) UNSIGNED NULL)')
 	@:variant(target.db.User, 'CREATE TABLE `User` (`email` VARCHAR(50) NOT NULL, `id` INT(12) UNSIGNED NOT NULL AUTO_INCREMENT, `name` VARCHAR(50) NOT NULL, PRIMARY KEY (`id`))')
-	@:variant(target.db.Types, 'CREATE TABLE `Types` (`blob` VARBINARY(1000000) NOT NULL, `int` INT(21) UNSIGNED NOT NULL, `text` VARCHAR(40) NOT NULL)')
+	@:variant(target.db.Types, 'CREATE TABLE `Types` (`blob` BLOB NOT NULL, `date` DATETIME NOT NULL, `int` INT(21) UNSIGNED NOT NULL, `text` VARCHAR(40) NOT NULL)')
 	public function createTable(table:TableInfo<Dynamic>, sql:String) {
 		// TODO: should separate out the sanitizer
 		return assert(Format.createTable(table, new tink.sql.drivers.node.MySql.MySqlConnection(null, null)) == sql);

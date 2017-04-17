@@ -64,13 +64,25 @@ class Format {
       sql += switch f.type {
         case DBool:
           'BIT(1)';
+        
         case DInt(bits, signed, autoInc):
           if(autoInc) autoIncrement = true;
           'INT($bits)' + if(!signed) ' UNSIGNED' else '';
+        
         case DString(maxLength):
-          'VARCHAR($maxLength)';
+          if(maxLength < 65536)
+            'VARCHAR($maxLength)';
+          else
+            'TEXT';
+        
         case DBlob(maxLength):
-          'VARBINARY($maxLength)';
+          if(maxLength < 65536)
+            'VARBINARY($maxLength)';
+          else
+            'BLOB';
+        
+        case DDateTime:
+          'DATETIME';
       }
       sql += if(f.nullable) ' NULL' else ' NOT NULL';
       if(autoIncrement) sql += ' AUTO_INCREMENT';
