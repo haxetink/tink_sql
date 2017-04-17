@@ -25,6 +25,16 @@ typedef Types = {
   public var text(default, null):Text<40>;
   public var blob(default, null):Blob<1000000>;
   public var date(default, null):DateTime;
+  
+  @:optional public var optionalInt(default, null):Integer<21>;
+  @:optional public var optionalText(default, null):Text<40>;
+  @:optional public var optionalBlob(default, null):Blob<1000000>;
+  @:optional public var optionalDate(default, null):DateTime;
+  
+  public var nullInt(default, null):Null<Integer<21>>;
+  public var nullText(default, null):Null<Text<40>>;
+  public var nullBlob(default, null):Null<Blob<1000000>>;
+  public var nullDate(default, null):Null<DateTime>;
 }
 
 @:tables(User, Post, PostTags, Types)
