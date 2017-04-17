@@ -63,7 +63,7 @@ class Format {
       var autoIncrement = false;
       sql += switch f.type {
         case DBool:
-          'BIT(1)';
+          'TINYINT(1)';
         
         case DInt(bits, signed, autoInc):
           if(autoInc) autoIncrement = true;

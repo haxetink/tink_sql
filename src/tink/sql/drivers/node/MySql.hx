@@ -74,13 +74,18 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
         { 
           sql: Format.selectAll(t, c, this), 
           nestTables: !t.match(TTable(_, _)),
-          typeCast: function (field, next) {
+          typeCast: function (field, next):Dynamic {
             return switch field.type {
               case 'BLOB':
                 switch (field.buffer():Buffer) {
                   case null: null;
                   case buf: buf.hxToBytes();
                 }
+              case 'TINY' if(field.length == 1):
+                switch field.string() {
+                  case null: null;
+                  case v: v != '0';
+                } 
               default:
                 next();
             }

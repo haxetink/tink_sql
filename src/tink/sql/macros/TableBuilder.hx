@@ -82,6 +82,9 @@ class TableBuilder {
                     case TType(_.get() => {pack: ['tink', 'sql', 'types'], name: 'DateTime'}, p):
                       macro tink.sql.Info.DataType.DDateTime;
                     
+                    case _.getID() => 'Bool':
+                      macro tink.sql.Info.DataType.DBool;
+                    
                     case _.getID() => 'tink.sql.types.Id':
                       var maxLength = 12; // TODO: make these configurable
                       macro tink.sql.Info.DataType.DInt($v{maxLength}, false, $v{f.meta.has(':autoIncrement')});

@@ -37,11 +37,14 @@ class TypeTest {
 			text: 'mytext',
 			blob: haxe.io.Bytes.ofString('myblob'),
 			date: mydate,
+			boolTrue: true,
+			boolFalse: false,
 			
 			nullInt: null,
 			nullText: null,
 			nullBlob: null,
 			nullDate: null,
+			nullBool: null,
 		}) >> 
 			function(id:Int) return db.Types.first() >>
 			function(row:Types) {
@@ -49,16 +52,20 @@ class TypeTest {
 				asserts.assert(row.text == 'mytext');
 				asserts.assert(row.date.getTime() == mydate.getTime());
 				asserts.assert(row.blob.toHex() == '6d79626c6f62');
+				asserts.assert(row.boolTrue == true);
+				asserts.assert(row.boolFalse == false);
 				
 				asserts.assert(row.optionalInt == null);
 				asserts.assert(row.optionalText == null);
 				asserts.assert(row.optionalDate == null);
 				asserts.assert(row.optionalBlob == null);
+				asserts.assert(row.optionalBool == null);
 				
 				asserts.assert(row.nullInt == null);
 				asserts.assert(row.nullText == null);
 				asserts.assert(row.nullDate == null);
 				asserts.assert(row.nullBlob == null);
+				asserts.assert(row.nullBool == null);
 			}
 			
 		future.handle(function(o) switch o {
