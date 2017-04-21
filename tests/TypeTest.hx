@@ -45,9 +45,9 @@ class TypeTest {
 			nullBlob: null,
 			nullDate: null,
 			nullBool: null,
-		}) >> 
-			function(id:Int) return db.Types.first() >>
-			function(row:Types) {
+		})
+			.next(function(id:Int) return db.Types.first())
+			.next(function(row:Types) {
 				asserts.assert(row.int == 123);
 				asserts.assert(row.text == 'mytext');
 				asserts.assert(row.date.getTime() == mydate.getTime());
@@ -66,7 +66,9 @@ class TypeTest {
 				asserts.assert(row.nullDate == null);
 				asserts.assert(row.nullBlob == null);
 				asserts.assert(row.nullBool == null);
-			}
+				
+				return Noise;
+			});
 			
 		future.handle(function(o) switch o {
 			case Success(_): asserts.done();
