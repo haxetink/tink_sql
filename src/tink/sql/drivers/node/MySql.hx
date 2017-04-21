@@ -50,7 +50,7 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
     this.cnx = cnx;
   }
   
-  public function dropTable<Row:{}>(table:TableInfo<Row>):Surprise<Noise, Error> {
+  public function dropTable<Row:{}>(table:TableInfo<Row>):Promise<Noise> {
     return Future.async(function(cb) {
       cnx.query(
         {sql: Format.dropTable(table, this)},
@@ -59,7 +59,7 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
     });
   }
         
-  public function createTable<Row:{}>(table:TableInfo<Row>):Surprise<Noise, Error> {
+  public function createTable<Row:{}>(table:TableInfo<Row>):Promise<Noise> {
     return Future.async(function(cb) {
       cnx.query(
         {sql: Format.createTable(table, this)},
@@ -130,7 +130,7 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
   function toError<A>(error:js.Error):Outcome<A, Error>
     return Failure(Error.withData(error.message, error));//TODO: give more information
   
-  public function insert<Row:{}>(table:TableInfo<Row>, items:Array<Insert<Row>>):Surprise<Id<Row>, Error>
+  public function insert<Row:{}>(table:TableInfo<Row>, items:Array<Insert<Row>>):Promise<Id<Row>>
     return Future.async(function (cb) {
       cnx.query(
         { sql: Format.insert(table, items, this) }, 
@@ -142,7 +142,7 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
     });
     
         
-  public function update<Row:{}>(table:TableInfo<Row>, ?c:Condition, ?max:Int, update:Update<Row>):Surprise<{rowsAffected:Int}, Error> 
+  public function update<Row:{}>(table:TableInfo<Row>, ?c:Condition, ?max:Int, update:Update<Row>):Promise<{rowsAffected:Int}>
     return Future.async(function (cb) {
       cnx.query(
         { sql: Format.update(table, c, max, update, this) },
