@@ -12,10 +12,12 @@ class FormatTest {
 	
 	var db:Db;
 	var driver:MySql;
+	var sanitizer:Sanitizer;
 	
 	public function new() {
 		driver = new MySql({user: 'root', password: ''});
 		db = new Db('test', driver);
+		sanitizer = new tink.sql.drivers.node.MySql.MySqlConnection(null, null);
 	}
 	
 	@:variant(new FormatTest.FakeTable1(), 'CREATE TABLE `fake` (`id` INT(11) UNSIGNED NOT NULL AUTO_INCREMENT, `username` VARCHAR(50) NOT NULL, `admin` TINYINT(1) NOT NULL, `age` INT(11) UNSIGNED NULL)')
@@ -23,7 +25,12 @@ class FormatTest {
 	@:variant(target.db.Types, 'CREATE TABLE `Types` (`blob` BLOB NOT NULL, `boolFalse` TINYINT(1) NOT NULL, `boolTrue` TINYINT(1) NOT NULL, `date` DATETIME NOT NULL, `int` INT(21) UNSIGNED NOT NULL, `nullBlob` BLOB NULL, `nullBool` TINYINT(1) NULL, `nullDate` DATETIME NULL, `nullInt` INT(21) UNSIGNED NULL, `nullText` VARCHAR(40) NULL, `optionalBlob` BLOB NULL, `optionalBool` TINYINT(1) NULL, `optionalDate` DATETIME NULL, `optionalInt` INT(21) UNSIGNED NULL, `optionalText` VARCHAR(40) NULL, `text` VARCHAR(40) NOT NULL)')
 	public function createTable(table:TableInfo<Dynamic>, sql:String) {
 		// TODO: should separate out the sanitizer
-		return assert(Format.createTable(table, new tink.sql.drivers.node.MySql.MySqlConnection(null, null)) == sql);
+		return assert(Format.createTable(table, sanitizer) == sql);
+	}
+	
+	public function compareNull() {
+		var dataset = db.Types.where(Types.optionalInt == null);
+		return assert(Format.selectAll(@:privateAccess dataset.target, @:privateAccess dataset.condition, sanitizer) == 'SELECT * FROM `Types` WHERE `Types`.`optionalInt` = NULL');
 	}
 }
 
