@@ -72,26 +72,26 @@ class Run {
   @:variant(target.db.User.all(), 0)
   @:variant(target.db.Post.all(), 0)
   @:variant(target.db.PostTags.all(), 0)
-  public function count<T>(query:Surprise<Array<T>, Error>, expected:Int) {
-    return query >> function(a:Array<T>) return assert(a.length == expected);
+  public function count<T>(query:Promise<Array<T>>, expected:Int) {
+    return query.next(function(a:Array<T>) return assert(a.length == expected));
   }
   
   public function insert()
-    return insertUsers() >> function(insert:Int) return assert(insert > 0);
+    return insertUsers().next(function(insert:Int) return assert(insert > 0));
   
   @:variant(target.db.User.all, 5)
   @:variant(target.db.User.where(User.name == 'Evan').all, 0)
   @:variant(target.db.User.where(User.name == 'Alice').all, 1)
   @:variant(target.db.User.where(User.name == 'Dave').all, 2)
-  public function insertedCount<T>(query:Lazy<Surprise<Array<T>, Error>>, expected:Int)
-    return insertUsers() >> function(_) return count(query.get(), expected, asserts);
+  public function insertedCount<T>(query:Lazy<Promise<Array<T>>>, expected:Int)
+    return insertUsers().next(function(_) return count(query.get(), expected, asserts));
   
   public function update() {
     await(runUpdate, asserts);
     return asserts;
   }
   
-  function await(run:AssertionBuffer->Surprise<Noise, Dynamic>, asserts:AssertionBuffer)
+  function await(run:AssertionBuffer->Promise<Noise>, asserts:AssertionBuffer)
     run(asserts).handle(function(o) switch o {
       case Success(_): asserts.done();
       case Failure(e): asserts.fail(Std.string(e));
@@ -146,19 +146,19 @@ class Run {
   function insertPost(title:String, author:String, tags:Array<String>)
     return 
       db.User.where(User.name == author).first() 
-        >> function (author:User) {
-          return 
-            db.Post.insertOne({
-              id: cast null, 
-              title: title,
-              author: author.id,
-              content: 'A wonderful post about "$title"',
-            }) >> function (post:Int) {
-              return db.PostTags.insertMany([for (tag in tags) {
-                tag: tag,
-                post: post,
-              }]);
-            }
-          }
+        .next(function (author:User) {
+          return db.Post.insertOne({
+            id: cast null, 
+            title: title,
+            author: author.id,
+            content: 'A wonderful post about "$title"',
+          });
+        })
+        .next(function (post:Int) {
+          return db.PostTags.insertMany([for (tag in tags) {
+            tag: tag,
+            post: post,
+          }]);
+        });
   
 }

@@ -15,7 +15,7 @@ abstract Id<T>(Int) to Int {
   @:to public function toExpr():Expr<Id<T>>
     return Expr.ExprData.EConst(new Id(this));
     
-  @:from static inline function ofRep(r:Representation<Int>) 
+  @:from static inline function ofRe<T>(r:Representation<Int>):Id<T>
     return new Id(r.get());
   
   @:to inline function toRep():Representation<Int>
