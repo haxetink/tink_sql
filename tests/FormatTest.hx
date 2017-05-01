@@ -32,6 +32,12 @@ class FormatTest {
 		var dataset = db.Types.where(Types.optionalInt == null);
 		return assert(Format.selectAll(@:privateAccess dataset.target, @:privateAccess dataset.condition, sanitizer) == 'SELECT * FROM `Types` WHERE `Types`.`optionalInt` = NULL');
 	}
+	
+	// https://github.com/haxetink/tink_sql/issues/10
+	// public function compareNull() {
+	// 	var dataset = db.Types.where(Types.optionalInt == null);
+	// 	return assert(Format.selectAll(@:privateAccess dataset.target, @:privateAccess dataset.condition, sanitizer) == 'SELECT * FROM `Types` WHERE `Types`.`optionalInt` = NULL');
+	// }
 }
 
 class FakeTable1 extends FakeTable {
