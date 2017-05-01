@@ -22,6 +22,7 @@ class Format {
       case And: 'AND ';
       case Equals: '=';
       case Greater: '>';
+      case Like: 'LIKE';
     }
     
   static function unOp(o:UnOp<Dynamic, Dynamic>)
