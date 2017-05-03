@@ -9,6 +9,6 @@
   },
   "dependencies": {
     "haxeshim": "0.6.3",
-    "lix.pm": "*"
+    "lix.pm": "0.5.3"
   }
 }
