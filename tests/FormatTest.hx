@@ -28,7 +28,7 @@ class FormatTest {
 		return assert(Format.createTable(table, sanitizer) == sql);
 	}
 	
-	}
+	// }
 	
 	// https://github.com/haxetink/tink_sql/issues/10
 	// public function compareNull() {

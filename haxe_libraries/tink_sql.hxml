@@ -1,0 +1,6 @@
+-cp src
+
+-lib tink_streams
+-lib tink_macro
+-lib tink_json
+-lib tink_url
