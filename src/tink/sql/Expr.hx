@@ -135,9 +135,6 @@ enum ExprData<T> {
   public function like(b:Expr<String>):Condition
     return EBinOp(Like, this, b);
   
-  public function likeConst(b:String):Condition
-    return like(EConst(b));
-  
   @:from static function ofBool(b:Bool):Condition 
     return EConst(b);
     
