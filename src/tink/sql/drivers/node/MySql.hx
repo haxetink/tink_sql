@@ -152,6 +152,17 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
         })
       );
     });
+        
+  public function delete<Row:{}>(table:TableInfo<Row>, ?c:Condition, ?max:Int):Promise<{rowsAffected:Int}>
+    return Future.async(function (cb) {
+      cnx.query(
+        { sql: Format.delete(table, c, max, this) },
+        function (error, result: { changedRows: Int } ) cb(switch [error, result] {
+          case [null, { changedRows: id }]: Success({ rowsAffected: id });
+          case [e, _]: toError(e);
+        })
+      );
+    });
 }
 
 @:jsRequire("mysql")
