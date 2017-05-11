@@ -19,6 +19,7 @@ interface Connection<Db> {
   function selectAll<A:{}>(t:Target<A, Db>, ?c:Condition, ?limit:Limit):RealStream<A>;
   function insert<Row:{}>(table:TableInfo<Row>, items:Array<Insert<Row>>):Promise<Id<Row>>;
   function update<Row:{}>(table:TableInfo<Row>, ?c:Condition, ?max:Int, update:Update<Row>):Promise<{ rowsAffected: Int }>;
+  function delete<Row:{}>(table:TableInfo<Row>, ?c:Condition, ?max:Int):Promise<{ rowsAffected: Int }>;
 }
 
 typedef Update<Row> = Array<FieldUpdate<Row>>;

@@ -163,7 +163,19 @@ class Format {
         ret += ' WHERE ' + expr(c, s);
         
       if (max != null)
-        ret += 'LIMIT '+s.value(max);
+        ret += ' LIMIT '+s.value(max);
+        
+      return ret;
+    }
+    
+    static public function delete<Row:{}>(table:TableInfo<Row>, c:Null<Condition>, max:Null<Int>, s:Sanitizer) {
+      var ret = 'DELETE FROM ${table.getName()} ';
+      
+      if (c != null)
+        ret += ' WHERE ' + expr(c, s);
+        
+      if (max != null)
+        ret += ' LIMIT '+s.value(max);
         
       return ret;
     }

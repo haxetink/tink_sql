@@ -55,6 +55,10 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
     return cnx.update(this, toCondition(options.where), options.max, f(this.fields));
   }
   
+  public function delete(options:{ where: Filter, ?max:Int }) {
+    return cnx.delete(this, toCondition(options.where), options.max);
+  }
+  
   @:noCompletion 
   public function getFields():Array<Column>
     throw 'not implemented';

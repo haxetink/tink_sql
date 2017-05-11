@@ -1,0 +1,4 @@
+# @install: lix --silent download haxelib:jdbc.mysql#5.0.8 into jdbc.mysql/5.0.8/haxelib
+-D jdbc.mysql=5.0.8
+-cp ${HAXESHIM_LIBCACHE}/jdbc.mysql/5.0.8/haxelib/src
+--macro jdbc.mysql.Include.library()
