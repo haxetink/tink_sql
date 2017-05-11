@@ -34,11 +34,16 @@ class Format {
   
   static public function expr<A>(e:Expr<A>, s:Sanitizer):String {
     
+    function isEmptyArray(e:ExprData<Dynamic>)
+      return e.match(EArray([]));
+    
     function rec(e:ExprData<Dynamic>)
       return
         switch e {
           case EUnOp(op, a):
             unOp(op) + ' ' + rec(a);
+          case EBinOp(In, a, b) if(isEmptyArray(b)):
+            'false';
           case EBinOp(op, a, b):
             '(${rec(a)} ${binOp(op)} ${rec(b)})';
           case EField(table, name):
