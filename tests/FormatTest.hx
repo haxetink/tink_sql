@@ -28,7 +28,10 @@ class FormatTest {
 		return assert(Format.createTable(table, sanitizer) == sql);
 	}
 	
-	// }
+	public function like() {
+		var dataset = db.Types.where(Types.text.like('mystring'));
+		return assert(Format.selectAll(@:privateAccess dataset.target, @:privateAccess dataset.condition, sanitizer) == 'SELECT * FROM `Types` WHERE (`Types`.`text` LIKE \'mystring\')');
+	}
 	
 	// https://github.com/haxetink/tink_sql/issues/10
 	// public function compareNull() {

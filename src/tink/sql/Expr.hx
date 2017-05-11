@@ -132,11 +132,14 @@ enum ExprData<T> {
       
   //} endregion  
   
+  public function like(b:Expr<String>):Condition
+    return EBinOp(Like, this, b);
+  
   @:from static function ofBool(b:Bool):Condition 
     return EConst(b);
     
-  //@:from static function ofString(s:String):Condition 
-    //return EConst(s);
+  @:from static function ofString(s:String):Expr<String>
+    return EConst(s);
 
 }
 
@@ -151,6 +154,7 @@ enum BinOp<A, B, Ret> {
   Equals<T>:BinOp<T, T, Bool>;
   And:BinOp<Bool, Bool, Bool>;
   Or:BinOp<Bool, Bool, Bool>;
+  Like<T:String>:BinOp<T, T, Bool>;
 }
 
 enum UnOp<A, Ret> {
