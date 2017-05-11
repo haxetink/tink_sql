@@ -34,7 +34,7 @@ class Format {
   
   static public function expr<A>(e:Expr<A>, s:Sanitizer):String {
     
-    function isEmptyArray(e:ExprData<Dynamic>)
+    inline function isEmptyArray(e:ExprData<Dynamic>)
       return e.match(EArray([]));
     
     function rec(e:ExprData<Dynamic>)
@@ -42,7 +42,7 @@ class Format {
         switch e {
           case EUnOp(op, a):
             unOp(op) + ' ' + rec(a);
-          case EBinOp(In, a, b) if(isEmptyArray(b)):
+          case EBinOp(In, a, b) if(isEmptyArray(b)): // workaround haxe's weird behavior with abstract over enum
             'false';
           case EBinOp(op, a, b):
             '(${rec(a)} ${binOp(op)} ${rec(b)})';
