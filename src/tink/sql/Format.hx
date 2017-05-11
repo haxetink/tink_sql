@@ -43,7 +43,7 @@ class Format {
           case EUnOp(op, a):
             unOp(op) + ' ' + rec(a);
           case EBinOp(In, a, b) if(isEmptyArray(b)): // workaround haxe's weird behavior with abstract over enum
-            'false';
+            s.value(false);
           case EBinOp(op, a, b):
             '(${rec(a)} ${binOp(op)} ${rec(b)})';
           case EField(table, name):
