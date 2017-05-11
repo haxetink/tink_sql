@@ -23,6 +23,7 @@ class Format {
       case Equals: '=';
       case Greater: '>';
       case Like: 'LIKE';
+      case In: 'IN';
     }
     
   static function unOp(o:UnOp<Dynamic, Dynamic>)
@@ -33,17 +34,24 @@ class Format {
   
   static public function expr<A>(e:Expr<A>, s:Sanitizer):String {
     
+    inline function isEmptyArray(e:ExprData<Dynamic>)
+      return e.match(EArray([]));
+    
     function rec(e:ExprData<Dynamic>)
       return
         switch e {
           case EUnOp(op, a):
             unOp(op) + ' ' + rec(a);
+          case EBinOp(In, a, b) if(isEmptyArray(b)): // workaround haxe's weird behavior with abstract over enum
+            'false';
           case EBinOp(op, a, b):
             '(${rec(a)} ${binOp(op)} ${rec(b)})';
           case EField(table, name):
             s.ident(table) + '.' + s.ident(name);
           case EConst(value):          
             s.value(value);
+          case EArray(value):          
+            '(${value.map(s.value).join(', ')})';
         }
       
     return rec(e);
