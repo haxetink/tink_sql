@@ -33,6 +33,12 @@ class FormatTest {
 		return assert(Format.selectAll(@:privateAccess dataset.target, @:privateAccess dataset.condition, sanitizer) == 'SELECT * FROM `Types` WHERE (`Types`.`text` LIKE \'mystring\')');
 	}
 	
+	@:describe('in')
+	public function inArray() {
+		var dataset = db.Types.where(Types.int.inArray([1, 2, 3]));
+		return assert(Format.selectAll(@:privateAccess dataset.target, @:privateAccess dataset.condition, sanitizer) == 'SELECT * FROM `Types` WHERE (`Types`.`int` IN (1, 2, 3))');
+	}
+	
 	// https://github.com/haxetink/tink_sql/issues/10
 	// public function compareNull() {
 	// 	var dataset = db.Types.where(Types.optionalInt == null);

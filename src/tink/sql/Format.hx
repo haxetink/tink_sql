@@ -23,6 +23,7 @@ class Format {
       case Equals: '=';
       case Greater: '>';
       case Like: 'LIKE';
+      case In: 'IN';
     }
     
   static function unOp(o:UnOp<Dynamic, Dynamic>)
@@ -44,6 +45,8 @@ class Format {
             s.ident(table) + '.' + s.ident(name);
           case EConst(value):          
             s.value(value);
+          case EArray(value):          
+            '(${value.map(s.value).join(', ')})';
         }
       
     return rec(e);
