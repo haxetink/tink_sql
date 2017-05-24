@@ -22,14 +22,14 @@ class MySql implements Driver {
   }
   
   public function open<Db:DatabaseInfo>(name:String, info:Db):Connection<Db> {
-    var cnx = NativeDriver.createConnection({
+    var cnx = NativeDriver.createPool({
       user: settings.user,
       password: settings.password,
       host: settings.host,
       port: settings.port,
       database: name,
     });
-    //cnx.release(); //TODO: this doesn't work. Make it autorelease somehow
+    
     return new MySqlConnection(info, cnx);
   }  
 }
@@ -169,7 +169,7 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
 private extern class NativeDriver {
   static function escape(value:Any):String;
   static function escapeId(ident:String):String;
-  static function createConnection(config:Config):NativeConnection;
+  static function createPool(config:Config):NativeConnection;
 }
 
 private typedef Config = {>MySqlSettings,
