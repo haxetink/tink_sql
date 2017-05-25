@@ -89,6 +89,9 @@ class TableBuilder {
                       var maxLength = 12; // TODO: make these configurable
                       macro tink.sql.Info.DataType.DInt($v{maxLength}, false, $v{f.meta.has(':autoIncrement')});
                     
+                    case TAbstract(_.get() => {type: type}, _):
+                      resolveType(type);
+                      
                     case _.getID() => v:
                       if(v == null) v = Std.string(type);
                       f.pos.error('Unsupported type $v. Use types from the tink.sql.types package.');
