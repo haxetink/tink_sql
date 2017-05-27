@@ -24,4 +24,11 @@ abstract Id<T>(Int) to Int {
   @:to inline function toRep():Representation<Int>
     return new Representation(this);
     
+  @:op(A>B) static function gt<T>(a:Id<T>, b:Id<T>):Bool;
+  @:op(A<B) static function lt<T>(a:Id<T>, b:Id<T>):Bool;
+  @:op(A>=B) static function gte<T>(a:Id<T>, b:Id<T>):Bool;
+  @:op(A>=B) static function lte<T>(a:Id<T>, b:Id<T>):Bool;
+  @:op(A==B) static function eq<T>(a:Id<T>, b:Id<T>):Bool;
+  @:op(A!=B) static function neq<T>(a:Id<T>, b:Id<T>):Bool;
+    
 }
