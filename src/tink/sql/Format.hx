@@ -74,6 +74,9 @@ class Format {
         case DBool:
           'TINYINT(1)';
         
+        case DFloat(bits):
+          'FLOAT($bits)';
+        
         case DInt(bits, signed, autoInc):
           if(autoInc) autoIncrement = true;
           'INT($bits)' + if(!signed) ' UNSIGNED' else '';
