@@ -67,23 +67,23 @@ class TableBuilder {
                     case TType(_.get() => {pack: [], name: 'Null'}, [p]):
                       nullable = true;
                       resolveType(p);
-                    case TType(_.get() => {pack: ['tink', 'sql', 'types'], name: 'Integer'}, p):
+                    case TType(_.get() => {module: 'tink.sql.types.Integer'}, p):
                       var maxLength = getInt(p[0], f.pos);
                       macro tink.sql.Info.DataType.DInt($v{maxLength}, false, $v{f.meta.has(':autoIncrement')});
                     
-                    case TType(_.get() => {pack: ['tink', 'sql', 'types'], name: 'Number'}, p):
+                    case TType(_.get() => {module: 'tink.sql.types.Number'}, p):
                       var maxLength = getInt(p[0], f.pos);
                       macro tink.sql.Info.DataType.DFloat($v{maxLength});
                     
-                    case TType(_.get() => {pack: ['tink', 'sql', 'types'], name: 'Text'}, p):
+                    case TType(_.get() => {module: 'tink.sql.types.Text'}, p):
                       var maxLength = getInt(p[0], f.pos);
                       macro tink.sql.Info.DataType.DString($v{maxLength});
                     
-                    case TType(_.get() => {pack: ['tink', 'sql', 'types'], name: 'Blob'}, p):
+                    case TType(_.get() => {module: 'tink.sql.types.Blob'}, p):
                       var maxLength = getInt(p[0], f.pos);
                       macro tink.sql.Info.DataType.DBlob($v{maxLength});
                     
-                    case TType(_.get() => {pack: ['tink', 'sql', 'types'], name: 'DateTime'}, p):
+                    case TType(_.get() => {module: 'tink.sql.types.DateTime'}, p):
                       macro tink.sql.Info.DataType.DDateTime;
                     
                     case _.getID() => 'Bool':
