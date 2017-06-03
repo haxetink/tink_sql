@@ -74,7 +74,9 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
       var fval = Reflect.field(row, fname);
       switch f.type {
         case DPoint:
-          'ST_GeomFromGeoJSON(\'${haxe.Json.stringify(fval)}\')';
+          var point:geojson.Point = fval;
+          'Point(${point.longitude}, ${point.latitude})';
+          // 'ST_GeomFromGeoJSON(\'${haxe.Json.stringify(fval)}\')'; // this also works, but more costly
         default:
           val(fval);
       }
