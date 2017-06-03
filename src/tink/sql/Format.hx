@@ -46,10 +46,15 @@ class Format {
             s.value(false);
           case EBinOp(op, a, b):
             '(${rec(a)} ${binOp(op)} ${rec(b)})';
+          case ECall(name, args):
+            '$name(${[for(arg in args) rec(arg)].join(',')})';
           case EField(table, name):
             s.ident(table) + '.' + s.ident(name);
-          case EConst(value):          
-            s.value(value);
+          case EConst(value):
+            if(Reflect.isObject(value) && Reflect.hasField(value, 'type')  && Reflect.hasField(value, 'coordinates'))
+              'ST_GeomFromGeoJSON(\'${haxe.Json.stringify(value)}\')'; // TODO: this is so hacky
+            else
+              s.value(value);
           case EArray(value):          
             '(${value.map(s.value).join(', ')})';
         }

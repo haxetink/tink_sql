@@ -9,6 +9,7 @@ enum ExprData<T> {
   EField(table:String, name:String):ExprData<T>;
   EConst<T>(value:T):ExprData<T>;
   EArray<T>(value:Array<T>):ExprData<Array<T>>;
+  ECall(name:String, args:Array<Expr<Any>>):ExprData<T>;
 }
 
 @:notNull abstract Expr<T>(ExprData<T>) {
@@ -148,7 +149,15 @@ enum ExprData<T> {
     
   @:from static function ofString(s:String):Expr<String>
     return EConst(s);
+    
+  @:from static function ofPoint(p:geojson.Point):Expr<geojson.Point>
+    return EConst(p);
 
+}
+
+class Functions {
+  public static function stDistanceSphere(g1:Expr<tink.sql.types.Point>, g2:Expr<tink.sql.types.Point>):Expr<Float>
+    return ECall('ST_Distance_Sphere', cast [g1, g2]);
 }
 
 enum BinOp<A, B, Ret> {
