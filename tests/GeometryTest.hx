@@ -21,19 +21,23 @@ class GeometryTest {
 	
 	@:before
 	public function createTable() {
-		return db.Geometry.create();
+		return db.Geometry.drop().flatMap(function(_) return db.Geometry.create());
 	}
 	
-	@:after
-	public function dropTable() {
-		// return db.Geometry.drop();
-		return Noise;
+	public function insert() {
+		return db.Geometry.insertOne({point: new geojson.Point(1.0, 2.0)})
+			.swap(assert(true));
 	}
 	
-	@:include
-	public function test() {
-		return db.Geometry.insertOne({
-			point: new geojson.Point(1.0, 2.0),
-		}).swap(assert(true));
+	public function retrieve() {
+		return db.Geometry.insertOne({point: new geojson.Point(1.0, 2.0)})
+			.next(function(_) return db.Geometry.first())
+			.next(function(row) {
+				var point:geojson.Point = row.point;
+				asserts.assert(point.type == 'Point');
+				asserts.assert(point.latitude == 1.0);
+				asserts.assert(point.longitude == 2.0);
+				return asserts.done();
+			});
 	}
 }
