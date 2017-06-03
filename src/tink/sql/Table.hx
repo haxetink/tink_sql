@@ -68,8 +68,11 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
     return Reflect.fields(fields);
   
   @:noCompletion 
-  public function sqlizeRow(row:Insert<Row>, val:Any->String):Array<String> 
+  public function sqlizeRow(row:Insert<Row>, val:Any->String):Array<String> {
+    // trace('sql');
+    trace(getFields());
     return [for (f in fieldnames()) val(Reflect.field(row, f))];
+  }
     
   @:noCompletion
   macro public function init(e:Expr, rest:Array<Expr>) {

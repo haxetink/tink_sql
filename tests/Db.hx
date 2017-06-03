@@ -41,5 +41,9 @@ typedef Types = {
   public var nullBool(default, null):Null<Bool>;
 }
 
-@:tables(User, Post, PostTags, Types)
+typedef Geometry = {
+  public var point(default, null):Null<Point>;
+}
+
+@:tables(User, Post, PostTags, Types, Geometry)
 class Db extends tink.sql.Database {}

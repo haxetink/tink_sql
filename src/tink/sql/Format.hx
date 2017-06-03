@@ -95,6 +95,9 @@ class Format {
         
         case DDateTime:
           'DATETIME';
+        
+        case DPoint:
+          'POINT';
       }
       sql += if(f.nullable) ' NULL' else ' NOT NULL';
       if(autoIncrement) sql += ' AUTO_INCREMENT';

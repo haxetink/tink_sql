@@ -83,8 +83,14 @@ class TableBuilder {
                       var maxLength = getInt(p[0], f.pos);
                       macro tink.sql.Info.DataType.DBlob($v{maxLength});
                     
-                    case TType(_.get() => {module: 'tink.sql.types.DateTime'}, p):
+                    case TType(_.get() => {module: 'tink.sql.types.DateTime'}, _):
                       macro tink.sql.Info.DataType.DDateTime;
+                      
+                    case _.getID() => 'Date': // should merge with the prev case: https://github.com/HaxeFoundation/haxe/issues/6327
+                      macro tink.sql.Info.DataType.DDateTime;
+                    
+                    case TType(_.get() => {module: 'tink.sql.types.Point'}, p):
+                      macro tink.sql.Info.DataType.DPoint;
                     
                     case _.getID() => 'Bool':
                       macro tink.sql.Info.DataType.DBool;

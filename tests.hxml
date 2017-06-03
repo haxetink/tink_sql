@@ -4,3 +4,5 @@
 # -lib tink_await
 -cp tests
 -main Run
+
+-lib geojson

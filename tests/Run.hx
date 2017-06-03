@@ -20,6 +20,7 @@ class Run {
     Runner.run(TestBatch.make([
       new TypeTest(),
       new FormatTest(),
+      new GeometryTest(),
       new Run(),
     ])).handle(Runner.exit);
     
