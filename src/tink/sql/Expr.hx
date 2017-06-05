@@ -1,4 +1,7 @@
 package tink.sql;
+
+import haxe.io.Bytes;
+import tink.sql.types.*;
 import tink.sql.Connection.FieldUpdate;
 
 typedef Condition = Expr<Bool>;
@@ -7,9 +10,19 @@ enum ExprData<T> {
   EUnOp<A, Ret>(op:UnOp<A, Ret>, a:Expr<A>):ExprData<Ret>;
   EBinOp<A, B, Ret>(op:BinOp<A, B, Ret>, a:Expr<A>, b:Expr<B>):ExprData<Ret>;
   EField(table:String, name:String):ExprData<T>;
-  EConst<T>(value:T):ExprData<T>;
-  EArray<T>(value:Array<T>):ExprData<Array<T>>;
   ECall(name:String, args:Array<Expr<Any>>):ExprData<T>;
+  EValue<T>(value:T, type:ValueType<T>):ExprData<T>;
+}
+
+enum ValueType<T> {
+  // VAny:ValueType<T>;
+  VString:ValueType<String>;
+  VBool:ValueType<Bool>;
+  VFloat:ValueType<Float>;
+  VInt:ValueType<Int>;
+  VArray<T>(type:ValueType<T>):ValueType<Array<T>>;
+  VBytes:ValueType<Bytes>;
+  VGeometry<T>(type:geojson.GeometryType<T>):ValueType<T>;
 }
 
 @:notNull abstract Expr<T>(ExprData<T>) {
@@ -64,51 +77,67 @@ enum ExprData<T> {
   //{ region arithmetics for constants
     @:commutative
     @:op(a + b) static function addConst<T:Float>(a:Expr<T>, b:T):Expr<T>
-      return add(a, EConst(b));
+      return add(a, EValue(b, cast VFloat));
       
     @:op(a - b) static function subtByConst<T:Float>(a:Expr<T>, b:T):Expr<T>
-      return subt(a, EConst(b));
+      return subt(a, EValue(b, cast VFloat));
       
     @:op(a - b) static function subtConst<T:Float>(a:T, b:Expr<T>):Expr<T>
-      return subt(EConst(a), b);
+      return subt(EValue(a, cast VFloat), b);
     
     @:commutative
     @:op(a * b) static function multConst<T:Float>(a:Expr<T>, b:T):Expr<T>
-      return mult(a, EConst(b));
+      return mult(a, EValue(b, cast VFloat));
       
     @:op(a / b) static function divByConst<T:Float>(a:Expr<T>, b:T):Expr<Float>
-      return div(a, EConst(b));
+      return div(a, EValue(b, cast VFloat));
       
     @:op(a / b) static function divConst<T:Float>(a:T, b:Expr<T>):Expr<Float>
-      return div(EConst(a), b);
+      return div(EValue(a, cast VFloat), b);
       
     @:op(a % b) static function modByConst<T:Float>(a:Expr<T>, b:T):Expr<T>
-      return mod(a, EConst(b));
+      return mod(a, EValue(b, cast VFloat));
       
     @:op(a % b) static function modConst<T:Float>(a:T, b:Expr<T>):Expr<T>
-      return mod(EConst(a), b);  
+      return mod(EValue(a, cast VFloat), b);  
   //} endregion
     
   //{ region relations for constants
     @:commutative  
-    @:op(a == b) static function eqConst<T>(a:Expr<T>, b:T):Condition
-      return eq(a, EConst(b)); 
+    @:op(a == b) static function eqBool(a:Expr<Bool>, b:Bool):Condition
+      return eq(a, EValue(b, VBool)); 
     
     @:commutative
-    @:op(a != b) static function neqConst<T>(a:Expr<T>, b:T):Condition
-      return neq(a, EConst(b));    
+    @:op(a != b) static function neqBool(a:Expr<Bool>, b:Bool):Condition
+      return neq(a, EValue(b, VBool)); 
+         
+    @:commutative  
+    @:op(a == b) static function eqString(a:Expr<String>, b:String):Condition
+      return eq(a, EValue(b, VString)); 
+    
+    @:commutative
+    @:op(a != b) static function neqString(a:Expr<String>, b:String):Condition
+      return neq(a, EValue(b, VString));   
+      
+    @:commutative  
+    @:op(a == b) static function eqFloat<T:Float>(a:Expr<T>, b:T):Condition
+      return eq(a, EValue(b, cast VFloat)); 
+    
+    @:commutative
+    @:op(a != b) static function neqFloat<T:Float>(a:Expr<T>, b:T):Condition
+      return neq(a, EValue(b, cast VFloat));      
         
     @:op(a > b) static function gtConst<T:Float>(a:Expr<T>, b:T):Condition
-      return gt(a, EConst(b)); 
+      return gt(a, EValue(b, cast VFloat)); 
       
     @:op(a < b) static function ltConst<T:Float>(a:Expr<T>, b:T):Condition
-      return lt(a, EConst(b)); 
+      return lt(a, EValue(b, cast VFloat)); 
       
-    @:op(a >= b) static function gteConst<T:Float>(a:Expr<T>, b:T):Condition
-      return gte(a, EConst(b)); 
+    @:op(a >= b) static function gtEValue<T:Float>(a:Expr<T>, b:T):Condition
+      return gte(a, EValue(b, cast VFloat)); 
       
-    @:op(a <= b) static function lteConst<T:Float>(a:Expr<T>, b:T):Condition
-      return lte(a, EConst(b));   
+    @:op(a <= b) static function ltEValue<T:Float>(a:Expr<T>, b:T):Condition
+      return lte(a, EValue(b, cast VFloat));   
   //} endregion  
      
   //{ region logic
@@ -127,10 +156,10 @@ enum ExprData<T> {
       return EBinOp(Or, a, b);  
       
     @:op(a || b) static function constOr(a:Bool, b:Condition):Condition
-      return EBinOp(Or, EConst(a), b);  
+      return EBinOp(Or, EValue(a, VBool), b);  
       
     @:op(a || b) static function orConst(a:Condition, b:Bool):Condition
-      return EBinOp(Or, a, EConst(b)); 
+      return EBinOp(Or, a, EValue(b, VBool)); 
       
   //} endregion  
   
@@ -141,22 +170,28 @@ enum ExprData<T> {
   public function like(b:Expr<String>):Condition
     return EBinOp(Like, this, b);
   
-  @:from static function ofArray<T>(v:Array<T>):Expr<Array<T>>
-    return EArray(v);
+  @:from static function ofIntArray(v:Array<Int>):Expr<Array<Int>>
+    return EValue(v, VArray(VInt));
+  
+  @:from static function ofFloatArray(v:Array<Float>):Expr<Array<Float>>
+    return EValue(v, VArray(VFloat));
+  
+  @:from static function ofStringArray(v:Array<String>):Expr<Array<String>>
+    return EValue(v, VArray(VString));
   
   @:from static function ofBool(b:Bool):Condition 
-    return EConst(b);
+    return EValue(b, VBool);
     
   @:from static function ofString(s:String):Expr<String>
-    return EConst(s);
+    return EValue(s, VString);
     
-  @:from static function ofPoint(p:geojson.Point):Expr<geojson.Point>
-    return EConst(p);
+  @:from static function ofPoint(p:Point):Expr<Point>
+    return EValue(p, VGeometry(Point));
 
 }
 
 class Functions {
-  public static function stDistanceSphere(g1:Expr<tink.sql.types.Point>, g2:Expr<tink.sql.types.Point>):Expr<Float>
+  public static function stDistanceSphere(g1:Expr<Point>, g2:Expr<Point>):Expr<Float>
     return ECall('ST_Distance_Sphere', cast [g1, g2]);
 }
 
@@ -180,11 +215,6 @@ enum UnOp<A, Ret> {
   Neg<T:Float>:UnOp<T, T>;
 }
 
-abstract Value<Data>(Expr<Data>) from Expr<Data> to Expr<Data> {
-  @:from static function ofAny<V>(value:V):Value<V>
-    return EConst(value);
-}
-
 @:forward
 abstract Field<Data, Owner>(Expr<Data>) to Expr<Data> {
   public var name(get, never):String;
@@ -203,7 +233,7 @@ abstract Field<Data, Owner>(Expr<Data>) to Expr<Data> {
         case v: throw 'assert: invalid field $v';
       }   
       
-  public function set(e:Value<Data>):FieldUpdate<Owner>
+  public function set(e:Expr<Data>):FieldUpdate<Owner>
     return new FieldUpdate(cast this, e);
       
   public inline function new(table, name)
@@ -245,59 +275,71 @@ abstract Field<Data, Owner>(Expr<Data>) to Expr<Data> {
     @:op(a <= b) static function lte<T:Float, X, Y>(a:Field<T, X>, b:Field<T, Y>):Condition
       return !(a > b);   
   //} endregion  
-  
-  
-  static inline function EConst<T>(v:T):Expr<T>
-    return ExprData.EConst(v);
     
   //{ region arithmetics for constants
     @:commutative
     @:op(a + b) static function addConst<T:Float, S>(a:Field<T, S>, b:T):Expr<T>
-      return a + EConst(b);
+      return (a:Expr<T>) + EValue(b, cast VFloat);
       
     @:op(a - b) static function subtByConst<T:Float, S>(a:Field<T, S>, b:T):Expr<T>
-      return a - EConst(b);
+      return (a:Expr<T>) - EValue(b, cast VFloat);
       
     @:op(a - b) static function subtConst<T:Float, S>(a:T, b:Field<T, S>):Expr<T>
-      return EConst(a) - b;
+      return EValue(a, cast VFloat) - (b:Expr<T>);
     
     @:commutative
     @:op(a * b) static function multConst<T:Float, S>(a:Field<T, S>, b:T):Expr<T>
-      return a * EConst(b);
+      return (a:Expr<T>) * EValue(b, cast VFloat);
       
     @:op(a / b) static function divByConst<T:Float, S>(a:Field<T, S>, b:T):Expr<Float>
-      return a / EConst(b);
+      return (a:Expr<T>) / EValue(b, cast VFloat);
       
     @:op(a / b) static function divConst<T:Float, S>(a:T, b:Field<T, S>):Expr<Float>
-      return EConst(a) / b;
+      return EValue(a, cast VFloat) / (b:Expr<T>);
       
     @:op(a % b) static function modByConst<T:Float, S>(a:Field<T, S>, b:T):Expr<T>
-      return a % EConst(b);
+      return (a:Expr<T>) % EValue(b, cast VFloat);
       
     @:op(a % b) static function modConst<T:Float, S>(a:T, b:Field<T, S>):Expr<T>
-      return EConst(a) % b;  
+      return EValue(a, cast VFloat) % (b:Expr<T>);  
   //} endregion
     
   //{ region relations for constants
     @:commutative  
-    @:op(a == b) static function eqConst<T, S>(a:Field<T, S>, b:T):Condition
-      return a == EConst(b); 
+    @:op(a == b) static function eqBool<S>(a:Field<Bool, S>, b:Bool):Condition
+      return (a:Expr<Bool>) == EValue(b, VBool); 
     
     @:commutative
-    @:op(a != b) static function neqConst<T, S>(a:Field<T, S>, b:T):Condition
-      return a != EConst(b);    
+    @:op(a != b) static function neqBool<S>(a:Field<Bool, S>, b:Bool):Condition
+      return (a:Expr<Bool>) != EValue(b, VBool); 
+      
+    @:commutative  
+    @:op(a == b) static function eqString<S>(a:Field<String, S>, b:String):Condition
+      return (a:Expr<String>) == EValue(b, VString); 
+    
+    @:commutative
+    @:op(a != b) static function neqString<S>(a:Field<String, S>, b:String):Condition
+      return (a:Expr<String>) != EValue(b, VString); 
+      
+    @:commutative  
+    @:op(a == b) static function eqFloat<T:Float, S>(a:Field<T, S>, b:T):Condition
+      return (a:Expr<T>) == EValue(b, cast VFloat); 
+    
+    @:commutative
+    @:op(a != b) static function neqFloat<T:Float, S>(a:Field<T, S>, b:T):Condition
+      return (a:Expr<T>) != EValue(b, cast VFloat);    
         
     @:op(a > b) static function gtConst<T:Float, S>(a:Field<T, S>, b:T):Condition
-      return a > EConst(b); 
+      return (a:Expr<T>) > EValue(b, cast VFloat); 
       
     @:op(a < b) static function ltConst<T:Float, S>(a:Field<T, S>, b:T):Condition
-      return a < EConst(b);
+      return (a:Expr<T>) < EValue(b, cast VFloat);
       
-    @:op(a >= b) static function gteConst<T:Float, S>(a:Field<T, S>, b:T):Condition
-      return a >= EConst(b);
+    @:op(a >= b) static function gtEValue<T:Float, S>(a:Field<T, S>, b:T):Condition
+      return (a:Expr<T>) >= EValue(b, cast VFloat);
       
-    @:op(a <= b) static function lteConst<T:Float, S>(a:Field<T, S>, b:T):Condition
-      return a <= EConst(b);   
+    @:op(a <= b) static function ltEValue<T:Float, S>(a:Field<T, S>, b:T):Condition
+      return (a:Expr<T>) <= EValue(b, cast VFloat);   
   //} endregion  
   
   //{ region logic
