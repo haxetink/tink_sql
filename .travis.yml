@@ -3,9 +3,9 @@ dist: trusty
 addons:
   apt:
     packages:
-    - mysql-server-5.6
-    - mysql-client-core-5.6
-    - mysql-client-5.6
+    # - mysql-server-5.6
+    # - mysql-client-core-5.6
+    # - mysql-client-5.6
     - php5-mysql
     
 
@@ -17,6 +17,11 @@ node_js: 6
 
 os:
   - linux
+  
+before_install:
+  - bash travis_mysql_5.7.sh
+  - bash mysql-reset-root-password.sh
+  - mysql --version
       
 install:
   - npm install

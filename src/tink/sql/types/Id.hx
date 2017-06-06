@@ -1,4 +1,6 @@
 package tink.sql.types;
+
+import tink.sql.Expr;
 import tink.json.Representation;
 
 abstract Id<T>(Int) to Int {
@@ -16,7 +18,7 @@ abstract Id<T>(Int) to Int {
     return Std.string(this);
     
   @:to public function toExpr():Expr<Id<T>>
-    return Expr.ExprData.EConst(new Id(this));
+    return Expr.ExprData.EValue(new Id(this), cast VInt);
     
   @:from static inline function ofRe<T>(r:Representation<Int>):Id<T>
     return new Id(r.get());

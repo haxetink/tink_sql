@@ -38,6 +38,7 @@ enum DataType {
   DString(maxLength:Int);
   DBlob(maxLength:Int);
   DDateTime;
+  DPoint; // geojson
 }
 
 typedef Insert<Row> = Row;

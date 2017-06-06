@@ -86,6 +86,23 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
                   case null: null;
                   case v: v != '0';
                 } 
+              case 'GEOMETRY':
+                var v:Dynamic = field.geometry();
+                // https://github.com/mysqljs/mysql/blob/310c6a7d1b2e14b63b572dbfbfa10128f20c6d52/lib/protocol/Parser.js#L342-L389
+                if(v == null) {
+                  null;
+                } else if(Std.is(v, Array)) {
+                  if(Std.is(v[0], Array)) {
+                    // Polygon
+                    throw 'not implemented';
+                  } else {
+                    // Line
+                    throw 'not implemented';
+                  }
+                } else {
+                  // Point
+                  new geojson.Point(v.y, v.x);
+                }
               default:
                 next();
             }
@@ -130,7 +147,7 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
   function toError<A>(error:js.Error):Outcome<A, Error>
     return Failure(Error.withData(error.message, error));//TODO: give more information
   
-  public function insert<Row:{}>(table:TableInfo<Row>, items:Array<Insert<Row>>):Promise<Id<Row>>
+  public function insert<Row:{}>(table:TableInfo<Row>, items:Array<Insert<Row>>):Promise<Id<Row>> 
     return Future.async(function (cb) {
       cnx.query(
         { sql: Format.insert(table, items, this) }, 

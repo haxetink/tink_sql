@@ -6,9 +6,6 @@ import tink.sql.Expr;
 import tink.sql.Info;
 import tink.sql.Limit;
 
-using StringTools;
-using Lambda;
-
 class Format {
   
   static function binOp(o:BinOp<Dynamic, Dynamic, Dynamic>) 
@@ -35,8 +32,11 @@ class Format {
   static public function expr<A>(e:Expr<A>, s:Sanitizer):String {
     
     inline function isEmptyArray(e:ExprData<Dynamic>)
-      return e.match(EArray([]));
-    
+      return e.match(EValue([], VArray(_)));
+      
+    inline function json(v)
+      return haxe.Json.stringify(v);
+      
     function rec(e:ExprData<Dynamic>)
       return
         switch e {
@@ -46,12 +46,34 @@ class Format {
             s.value(false);
           case EBinOp(op, a, b):
             '(${rec(a)} ${binOp(op)} ${rec(b)})';
+          case ECall(name, args):
+            '$name(${[for(arg in args) rec(arg)].join(',')})';
           case EField(table, name):
             s.ident(table) + '.' + s.ident(name);
-          case EConst(value):          
-            s.value(value);
-          case EArray(value):          
+          case EValue(v, VBool):
+            s.value(v);
+          case EValue(v, VString):
+            s.value(v);
+          case EValue(v, VInt):
+            s.value(v);
+          case EValue(v, VFloat):
+            s.value(v);
+          case EValue(bytes, VBytes):
+            s.value(bytes);
+          case EValue(geom, VGeometry(Point)):
+            'ST_GeomFromGeoJSON(\'${json(geom)}\')';
+          case EValue(geom, VGeometry(_)):
+            throw 'not implemented';
+          case EValue(value, VArray(VBool)):          
             '(${value.map(s.value).join(', ')})';
+          case EValue(value, VArray(VInt)):          
+            '(${value.map(s.value).join(', ')})';
+          case EValue(value, VArray(VFloat)):          
+            '(${value.map(s.value).join(', ')})';
+          case EValue(value, VArray(VString)):          
+            '(${value.map(s.value).join(', ')})';
+          case EValue(_, VArray(_)):          
+            throw 'Only arrays of primitive types are supported';
         }
       
     return rec(e);
@@ -95,6 +117,9 @@ class Format {
         
         case DDateTime:
           'DATETIME';
+        
+        case DPoint:
+          'POINT';
       }
       sql += if(f.nullable) ' NULL' else ' NOT NULL';
       if(autoIncrement) sql += ' AUTO_INCREMENT';

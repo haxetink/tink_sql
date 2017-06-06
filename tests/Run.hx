@@ -20,6 +20,7 @@ class Run {
     Runner.run(TestBatch.make([
       new TypeTest(),
       new FormatTest(),
+      new GeometryTest(),
       new Run(),
     ])).handle(Runner.exit);
     
@@ -64,7 +65,7 @@ class Run {
   
   public function info() {
     asserts.assert(db.name == 'test');
-    asserts.assert(sorted(db.tablesnames()).join(',') == 'Post,PostTags,Types,User');
+    asserts.assert(sorted(db.tablesnames()).join(',') == 'Geometry,Post,PostTags,Types,User');
     asserts.assert(sorted(db.tableinfo('Post').fieldnames()).join(',') == 'author,content,id,title');
     return asserts.done();
   }
@@ -113,7 +114,7 @@ class Run {
       asserts.assert((@:await db.PostTags.join(db.Post).on(PostTags.post == Post.id && PostTags.tag == 'off-topic').all()).length == 2);
       asserts.assert((@:await db.PostTags.join(db.Post).on(PostTags.post == Post.id && PostTags.tag == 'test').all()).length == 3);
       
-      var update = @:await db.User.update(function (u) return [u.name.set(EConst('Donald'))], { where: function (u) return u.name == 'Dave' } );
+      var update = @:await db.User.update(function (u) return [u.name.set('Donald')], { where: function (u) return u.name == 'Dave' } );
       asserts.assert(update.rowsAffected == 2);
       
       return Noise;
