@@ -48,7 +48,8 @@ class Format {
     return rec(e);
   }
   
-  
+  static public function dropTable<Row:{}>(table:TableInfo<Row>, s:Sanitizer)
+    return 'DROP TABLE ' + s.ident(table.getName());
   
   static public function selectAll<A:{}, Db>(t:Target<A, Db>, ?c:Condition, s:Sanitizer, ?limit:Limit)         
     return select(t, '*', c, s, limit);

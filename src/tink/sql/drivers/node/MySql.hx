@@ -8,6 +8,7 @@ import tink.sql.Expr;
 import tink.sql.Info;
 import tink.sql.types.Id;
 import tink.streams.Stream;
+import tink.streams.RealStream;
 using tink.CoreApi;
 
 class MySql implements Driver {
@@ -47,8 +48,17 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
     this.cnx = cnx;
   }
   
-  public function selectAll<A:{}>(t:Target<A, Db>, ?c:Condition, ?limit:Limit):Stream<A>
-    return Stream.later(Future.async(function (cb) {
+  public function dropTable<Row:{}>(table:TableInfo<Row>):Surprise<Noise, Error> {
+    return Future.async(function(cb) {
+      cnx.query(
+        {sql: Format.dropTable(table, this)},
+        function(err, _) cb(if(err == null) Success(Noise) else toError(err))
+      );
+    });
+  }
+  
+  public function selectAll<A:{}>(t:Target<A, Db>, ?c:Condition, ?limit:Limit):RealStream<A>
+    return Stream.promise(Future.async(function (cb) {
       cnx.query( 
         { 
           sql: Format.selectAll(t, c, this), 
@@ -81,7 +91,7 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
                 (cast rowCopy : A);
               }];
               
-            Success((result.iterator() : Stream<A>));
+            Success(Stream.ofIterator(result.iterator()));
             
           case [e, _]:
             toError(e);

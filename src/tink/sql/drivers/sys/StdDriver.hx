@@ -7,7 +7,7 @@ import tink.sql.Expr;
 import tink.sql.Projection;
 import haxe.DynamicAccess;
 import tink.sql.types.Id;
-import tink.streams.Stream;
+import tink.streams.RealStream;
 
 using tink.CoreApi;
 
@@ -68,7 +68,7 @@ class StdConnection<Db:DatabaseInfo> implements Connection<Db> {
     return cnx.request(s);
   }
   
-  public function selectAll<A:{}>(t:Target<A, Db>, ?c:Condition, ?limit:Limit):Stream<A> 
+  public function selectAll<A:{}>(t:Target<A, Db>, ?c:Condition, ?limit:Limit):RealStream<A> 
     return 
       switch t {
         case TTable(_, _): 
