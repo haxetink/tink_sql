@@ -58,6 +58,8 @@ class Format {
             s.value(v);
           case EValue(v, VFloat):
             s.value(v);
+          case EValue(v, VDate):
+            s.value(v);
           case EValue(bytes, VBytes):
             s.value(bytes);
           case EValue(geom, VGeometry(Point)):

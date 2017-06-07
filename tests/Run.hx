@@ -21,6 +21,7 @@ class Run {
       new TypeTest(),
       new FormatTest(),
       new GeometryTest(),
+      new ExprTest(),
       new Run(),
     ])).handle(Runner.exit);
     

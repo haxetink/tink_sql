@@ -174,17 +174,17 @@ enum ValueType<T> {
   @:from static function ofIdArray<T>(v:Array<Id<T>>):Expr<Array<Id<T>>>
     return EValue(v, cast VArray(VInt));
   
-  @:from static function ofIntArray(v:Array<Int>):Expr<Array<Int>>
-    return EValue(v, VArray(VInt));
+  @:from static function ofIntArray<T:Int>(v:Array<T>):Expr<Array<T>>
+    return EValue(v, VArray(cast VInt));
   
-  @:from static function ofFloatArray(v:Array<Float>):Expr<Array<Float>>
-    return EValue(v, VArray(VFloat));
+  @:from static function ofFloatArray<T:Float>(v:Array<T>):Expr<Array<T>>
+    return EValue(v, VArray(cast VFloat));
   
-  @:from static function ofStringArray(v:Array<String>):Expr<Array<String>>
-    return EValue(v, VArray(VString));
+  @:from static function ofStringArray<T:String>(v:Array<T>):Expr<Array<T>>
+    return EValue(v, VArray(cast VString));
   
-  @:from static function ofBool(b:Bool):Condition 
-    return EValue(b, VBool);
+  @:from static function ofBool<S:Bool>(b:S):Expr<S>
+    return cast EValue(b, cast VBool);
     
   @:from static function ofDate<S:Date>(s:S):Expr<S>
     return EValue(s, cast VDate);
@@ -327,12 +327,12 @@ abstract Field<Data, Owner>(Expr<Data>) to Expr<Data> {
       return (a:Expr<Bool>) != EValue(b, VBool); 
       
     @:commutative  
-    @:op(a == b) static function eqString<T:String, S>(a:Field<T, S>, b:T):Condition
-      return (a:Expr<T>) == EValue(b, cast VString); 
+    @:op(a == b) static function eqString<T:String, S>(a:Field<T, S>, b:String):Condition
+      return (a:Expr<T>) == cast EValue(b, VString);
     
     @:commutative
-    @:op(a != b) static function neqString<T:String, S>(a:Field<T, S>, b:T):Condition
-      return (a:Expr<T>) != EValue(b, cast VString); 
+    @:op(a != b) static function neqString<T:String, S>(a:Field<T, S>, b:String):Condition
+      return (a:Expr<T>) != cast EValue(b, VString); 
       
     @:commutative  
     @:op(a == b) static function eqFloat<T:Float, S>(a:Field<T, S>, b:T):Condition
@@ -354,7 +354,7 @@ abstract Field<Data, Owner>(Expr<Data>) to Expr<Data> {
     @:op(a <= b) static function ltEValue<T:Float, S>(a:Field<T, S>, b:T):Condition
       return (a:Expr<T>) <= EValue(b, cast VFloat);   
   //} endregion  
-  
+       
   //{ region logic
     @:op(!a) static function not<X, Y>(c:Field<Bool, Y>):Condition 
       return EUnOp(Not, c);

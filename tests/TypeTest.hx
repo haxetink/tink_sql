@@ -34,6 +34,7 @@ class TypeTest {
 		var mydate = new Date(2000, 0, 1, 0, 0, 0);
 		var future = db.Types.insertOne({
 			int: 123,
+			float: 1.23,
 			text: 'mytext',
 			blob: haxe.io.Bytes.ofString('myblob'),
 			date: mydate,
