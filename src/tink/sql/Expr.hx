@@ -22,6 +22,7 @@ enum ValueType<T> {
   VInt:ValueType<Int>;
   VArray<T>(type:ValueType<T>):ValueType<Array<T>>;
   VBytes:ValueType<Bytes>;
+  VDate:ValueType<Date>;
   VGeometry<T>(type:geojson.GeometryType<T>):ValueType<T>;
 }
 
@@ -170,6 +171,9 @@ enum ValueType<T> {
   public function like(b:Expr<String>):Condition
     return EBinOp(Like, this, b);
   
+  @:from static function ofIdArray<T>(v:Array<Id<T>>):Expr<Array<Id<T>>>
+    return EValue(v, cast VArray(VInt));
+  
   @:from static function ofIntArray(v:Array<Int>):Expr<Array<Int>>
     return EValue(v, VArray(VInt));
   
@@ -182,8 +186,17 @@ enum ValueType<T> {
   @:from static function ofBool(b:Bool):Condition 
     return EValue(b, VBool);
     
-  @:from static function ofString(s:String):Expr<String>
-    return EValue(s, VString);
+  @:from static function ofDate<S:Date>(s:S):Expr<S>
+    return EValue(s, cast VDate);
+    
+  @:from static function ofString<S:String>(s:S):Expr<S>
+    return EValue(s, cast VString);
+    
+  @:from static function ofInt(s:Int):Expr<Int>
+    return EValue(s, VInt);
+    
+  @:from static function ofFloat(s:Float):Expr<Float>
+    return EValue(s, VFloat);
     
   @:from static function ofPoint(p:Point):Expr<Point>
     return EValue(p, VGeometry(Point));
@@ -314,12 +327,12 @@ abstract Field<Data, Owner>(Expr<Data>) to Expr<Data> {
       return (a:Expr<Bool>) != EValue(b, VBool); 
       
     @:commutative  
-    @:op(a == b) static function eqString<S>(a:Field<String, S>, b:String):Condition
-      return (a:Expr<String>) == EValue(b, VString); 
+    @:op(a == b) static function eqString<T:String, S>(a:Field<T, S>, b:T):Condition
+      return (a:Expr<T>) == EValue(b, cast VString); 
     
     @:commutative
-    @:op(a != b) static function neqString<S>(a:Field<String, S>, b:String):Condition
-      return (a:Expr<String>) != EValue(b, VString); 
+    @:op(a != b) static function neqString<T:String, S>(a:Field<T, S>, b:T):Condition
+      return (a:Expr<T>) != EValue(b, cast VString); 
       
     @:commutative  
     @:op(a == b) static function eqFloat<T:Float, S>(a:Field<T, S>, b:T):Condition
