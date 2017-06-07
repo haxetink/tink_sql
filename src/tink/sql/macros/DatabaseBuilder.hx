@@ -28,7 +28,7 @@ class DatabaseBuilder {
     var init = [],
         tables = [];
       
-    for (m in c) {
+    for (m in c) if(!m.isStatic) {
       var table = 
         switch (m:Field).meta.getValues(':table') {
           case []: null;

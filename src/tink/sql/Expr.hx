@@ -8,6 +8,7 @@ enum ExprData<T> {
   EBinOp<A, B, Ret>(op:BinOp<A, B, Ret>, a:Expr<A>, b:Expr<B>):ExprData<Ret>;
   EField(table:String, name:String):ExprData<T>;
   EConst<T>(value:T):ExprData<T>;
+  EArray<T>(value:Array<T>):ExprData<Array<T>>;
 }
 
 @:notNull abstract Expr<T>(ExprData<T>) {
@@ -132,11 +133,21 @@ enum ExprData<T> {
       
   //} endregion  
   
+  // @:op(a in b) // https://github.com/HaxeFoundation/haxe/issues/6224
+  public function inArray<T>(b:Expr<Array<T>>):Condition
+    return EBinOp(In, this, b);
+  
+  public function like(b:Expr<String>):Condition
+    return EBinOp(Like, this, b);
+  
+  @:from static function ofArray<T>(v:Array<T>):Expr<Array<T>>
+    return EArray(v);
+  
   @:from static function ofBool(b:Bool):Condition 
     return EConst(b);
     
-  //@:from static function ofString(s:String):Condition 
-    //return EConst(s);
+  @:from static function ofString(s:String):Expr<String>
+    return EConst(s);
 
 }
 
@@ -151,6 +162,8 @@ enum BinOp<A, B, Ret> {
   Equals<T>:BinOp<T, T, Bool>;
   And:BinOp<Bool, Bool, Bool>;
   Or:BinOp<Bool, Bool, Bool>;
+  Like<T:String>:BinOp<T, T, Bool>;
+  In<T>:BinOp<T, Array<T>, Bool>;
 }
 
 enum UnOp<A, Ret> {

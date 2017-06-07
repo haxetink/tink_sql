@@ -7,7 +7,7 @@ import tink.sql.Expr;
 import tink.sql.Projection;
 import haxe.DynamicAccess;
 import tink.sql.types.Id;
-import tink.streams.Stream;
+import tink.streams.RealStream;
 
 using tink.CoreApi;
 
@@ -53,7 +53,7 @@ class StdConnection<Db:DatabaseInfo> implements Connection<Db> {
     this.sanitizer = sanitizer;
   }
   
-  public function update<Row:{}>(table:TableInfo<Row>, ?c:Condition, ?max:Int, update:Update<Row>):Surprise<{ rowsAffected: Int }, Error> {
+  public function update<Row:{}>(table:TableInfo<Row>, ?c:Condition, ?max:Int, update:Update<Row>):Promise<{ rowsAffected: Int }> {
     return Future.sync(
       try Success({
         rowsAffected:  cnx.request(Format.update(table, c, max, update, sanitizer)).length, //this is very likely neko-specific
@@ -68,7 +68,7 @@ class StdConnection<Db:DatabaseInfo> implements Connection<Db> {
     return cnx.request(s);
   }
   
-  public function selectAll<A:{}>(t:Target<A, Db>, ?c:Condition, ?limit:Limit):Stream<A> 
+  public function selectAll<A:{}>(t:Target<A, Db>, ?c:Condition, ?limit:Limit):RealStream<A> 
     return 
       switch t {
         case TTable(_, _): 
@@ -113,7 +113,7 @@ class StdConnection<Db:DatabaseInfo> implements Connection<Db> {
           }
       }
   
-  public function insert<Row:{}>(table:TableInfo<Row>, items:Array<Insert<Row>>):Surprise<Id<Row>, Error> 
+  public function insert<Row:{}>(table:TableInfo<Row>, items:Array<Insert<Row>>):Promise<Id<Row>> 
     return Future.sync(try {
       makeRequest(Format.insert(table, items, sanitizer));
       Success(new Id(cnx.lastInsertId()));

@@ -34,35 +34,6 @@ class DbFixture {
   }
   static function main() {
     clear();
-    
-    connect('test', function (cnx) {
-      Manager.cnx = cnx;
-      Manager.initialize();
-      var all:Array<Manager<Dynamic>> = [User.manager, Post.manager, PostTags.manager];
-      for (m in all)
-        TableCreate.create(m);
-    });
-    
   }
-  
-}
-
-class User extends Object {
-  public var id:SId;
-  public var name:String;
-  public var email:String;
-}
-
-class Post extends Object {
-  public var id:SId;
-  public var author:SInt;
-  public var title:String;
-  public var content:String;
-}
-
-@:id(post, tag)
-class PostTags extends Object {
-  public var post:SInt;
-  public var tag:SString<200>;
 }
 #end

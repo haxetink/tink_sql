@@ -6,6 +6,9 @@ abstract Id<T>(Int) to Int {
   public inline function new(v) 
     this = v;
   
+  @:from static inline function ofStringly<T>(s:tink.Stringly):Id<T>
+    return new Id(s);
+  
   @:from static inline function ofInt<T>(i:Int):Id<T>
     return new Id(i);
     
@@ -15,7 +18,7 @@ abstract Id<T>(Int) to Int {
   @:to public function toExpr():Expr<Id<T>>
     return Expr.ExprData.EConst(new Id(this));
     
-  @:from static inline function ofRep(r:Representation<Int>) 
+  @:from static inline function ofRe<T>(r:Representation<Int>):Id<T>
     return new Id(r.get());
   
   @:to inline function toRep():Representation<Int>

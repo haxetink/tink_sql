@@ -1,5 +1,6 @@
 package tink.sql;
 
+import haxe.ds.Option;
 import tink.core.Any;
 
 interface DatabaseInfo {
@@ -9,8 +10,15 @@ interface DatabaseInfo {
 
 interface TableInfo<Row:{}> {
   function getName():String;
+  function getFields():Iterable<Column>;
   function fieldnames():Iterable<String>;
   function sqlizeRow(row:Insert<Row>, val:Any->String):Array<String>;
+}
+  
+typedef Column = {
+  > FieldType,
+  name:String,
+  key:Option<KeyType>,
 }
   
 typedef FieldType = {
@@ -18,11 +26,17 @@ typedef FieldType = {
   type:DataType,
 }
 
+enum KeyType {
+  Primary;
+  Unique;
+}
+
 enum DataType {
   DBool;
-  DInt(bits:Int, signed:Bool);
+  DInt(bits:Int, signed:Bool, autoIncrement:Bool);
   DString(maxLength:Int);
   DBlob(maxLength:Int);
+  DDateTime;
 }
 
 typedef Insert<Row> = Row;

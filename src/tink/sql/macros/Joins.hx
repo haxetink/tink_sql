@@ -13,7 +13,7 @@ class Joins {
   static function getRow(e:Expr)
     return Context.typeof(macro @:pos(e.pos) {
       var source = $e, x = null;
-      source.stream().forEach(function (y) { x = y; return true; } );
+      source.stream().forEach(function (y) { x = y; return tink.streams.Stream.Handled.Resume; } );
       x;
     });
     
@@ -95,7 +95,7 @@ class Joins {
       );
       
       if (false) {
-        (ret.on(null).stream() : tink.streams.Stream<$rowType>);
+        (ret.on(null).stream() : tink.streams.RealStream<$rowType>);
       }
       
       ret;

@@ -22,6 +22,8 @@ class Format {
       case And: 'AND ';
       case Equals: '=';
       case Greater: '>';
+      case Like: 'LIKE';
+      case In: 'IN';
     }
     
   static function unOp(o:UnOp<Dynamic, Dynamic>)
@@ -32,23 +34,81 @@ class Format {
   
   static public function expr<A>(e:Expr<A>, s:Sanitizer):String {
     
+    inline function isEmptyArray(e:ExprData<Dynamic>)
+      return e.match(EArray([]));
+    
     function rec(e:ExprData<Dynamic>)
       return
         switch e {
           case EUnOp(op, a):
             unOp(op) + ' ' + rec(a);
+          case EBinOp(In, a, b) if(isEmptyArray(b)): // workaround haxe's weird behavior with abstract over enum
+            s.value(false);
           case EBinOp(op, a, b):
             '(${rec(a)} ${binOp(op)} ${rec(b)})';
           case EField(table, name):
             s.ident(table) + '.' + s.ident(name);
           case EConst(value):          
             s.value(value);
+          case EArray(value):          
+            '(${value.map(s.value).join(', ')})';
         }
       
     return rec(e);
   }
   
+  static public function dropTable<Row:{}>(table:TableInfo<Row>, s:Sanitizer)
+    return 'DROP TABLE ' + s.ident(table.getName());
   
+  static public function createTable<Row:{}>(table:TableInfo<Row>, s:Sanitizer, ifNotExists = false) {
+    var sql = 'CREATE TABLE ';
+    if(ifNotExists) sql += 'IF NOT EXISTS ';
+    sql += s.ident(table.getName());
+    sql += ' (';
+    
+    var primary = [];
+    sql += [for(f in table.getFields()) {
+      var sql = s.ident(f.name) + ' ';
+      var autoIncrement = false;
+      sql += switch f.type {
+        case DBool:
+          'TINYINT(1)';
+        
+        case DInt(bits, signed, autoInc):
+          if(autoInc) autoIncrement = true;
+          'INT($bits)' + if(!signed) ' UNSIGNED' else '';
+        
+        case DString(maxLength):
+          if(maxLength < 65536)
+            'VARCHAR($maxLength)';
+          else
+            'TEXT';
+        
+        case DBlob(maxLength):
+          if(maxLength < 65536)
+            'VARBINARY($maxLength)';
+          else
+            'BLOB';
+        
+        case DDateTime:
+          'DATETIME';
+      }
+      sql += if(f.nullable) ' NULL' else ' NOT NULL';
+      if(autoIncrement) sql += ' AUTO_INCREMENT';
+      switch f.key {
+        case Some(Unique): sql += ' UNIQUE';
+        case Some(Primary): primary.push(f.name);
+        case None: // do nothing
+      }
+      sql;
+    }].join(', ');
+    
+    if(primary.length > 0)
+      sql += ', PRIMARY KEY (' + primary.map(s.ident).join(', ') + ')';
+    
+    sql += ')';
+    return sql;
+  }
   
   static public function selectAll<A:{}, Db>(t:Target<A, Db>, ?c:Condition, s:Sanitizer, ?limit:Limit)         
     return select(t, '*', c, s, limit);
@@ -111,7 +171,19 @@ class Format {
         ret += ' WHERE ' + expr(c, s);
         
       if (max != null)
-        ret += 'LIMIT '+s.value(max);
+        ret += ' LIMIT '+s.value(max);
+        
+      return ret;
+    }
+    
+    static public function delete<Row:{}>(table:TableInfo<Row>, c:Null<Condition>, max:Null<Int>, s:Sanitizer) {
+      var ret = 'DELETE FROM ${table.getName()} ';
+      
+      if (c != null)
+        ret += ' WHERE ' + expr(c, s);
+        
+      if (max != null)
+        ret += ' LIMIT '+s.value(max);
         
       return ret;
     }

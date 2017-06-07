@@ -1,2 +1,6 @@
-bin/*.js
-/bin
+bin/*
+!bin/node
+bin/node/*
+!bin/node/package.json
+fixture.n
+node_modules
