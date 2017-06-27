@@ -99,8 +99,13 @@ class TableBuilder {
                       var maxLength = 12; // TODO: make these configurable
                       macro tink.sql.Info.DataType.DInt($v{maxLength}, false, $v{f.meta.has(':autoIncrement')});
                     
-                    case TAbstract(_.get() => {type: type}, _):
-                      resolveType(type);
+                    case TAbstract(_.get() => {name: name, type: type}, _):
+                      switch type {
+                        case TAbstract(_.get() => {name: core, meta: meta}, _) if(meta.has(':coreType')):
+                          f.pos.error('$core as underlying type for the abstract $name is unsupported. Use types from the tink.sql.types package.');
+                        default:
+                          resolveType(type);
+                      }
                       
                     case _.getID() => v:
                       if(v == null) v = Std.string(type);
