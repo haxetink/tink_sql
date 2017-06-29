@@ -63,10 +63,10 @@ class Db extends tink.sql.Database {}
 abstract AInt(Integer<1>) from Int to Int {}
 abstract AFloat(Number<1>) from Float to Float {}
 abstract AString(Text<255>) from String to String {}
-abstract ABool(Bool) from Bool to Bool {}
+abstract ABool(Boolean) from Bool to Bool {}
 abstract ADate(DateTime) from Date to Date {}
 
 @:enum abstract EInt(Integer<1>) to Int {var I = 1;}
 @:enum abstract EFloat(Number<1>) to Float {var F = 1.0;}
 @:enum abstract EString(Text<255>) to String {var S = 'a';}
-@:enum abstract EBool(Bool) to Bool {var B = true;}
+@:enum abstract EBool(Boolean) to Bool {var B = true;}

@@ -25,6 +25,7 @@ class Format {
     
   static function unOp(o:UnOp<Dynamic, Dynamic>)
     return switch o {
+      case IsNull: 'IS NULL';
       case Not: 'NOT';
       case Neg: '-';      
     }
@@ -40,8 +41,10 @@ class Format {
     function rec(e:ExprData<Dynamic>)
       return
         switch e {
-          case EUnOp(op, a):
+          case EUnOp(op, a, false):
             unOp(op) + ' ' + rec(a);
+          case EUnOp(op, a, true):
+            rec(a) + ' ' + unOp(op);
           case EBinOp(In, a, b) if(isEmptyArray(b)): // workaround haxe's weird behavior with abstract over enum
             s.value(false);
           case EBinOp(op, a, b):

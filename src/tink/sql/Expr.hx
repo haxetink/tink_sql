@@ -7,7 +7,7 @@ import tink.sql.Connection.FieldUpdate;
 typedef Condition = Expr<Bool>;
 
 enum ExprData<T> {
-  EUnOp<A, Ret>(op:UnOp<A, Ret>, a:Expr<A>):ExprData<Ret>;
+  EUnOp<A, Ret>(op:UnOp<A, Ret>, a:Expr<A>, postfix:Bool):ExprData<Ret>;
   EBinOp<A, B, Ret>(op:BinOp<A, B, Ret>, a:Expr<A>, b:Expr<B>):ExprData<Ret>;
   EField(table:String, name:String):ExprData<T>;
   ECall(name:String, args:Array<Expr<Any>>):ExprData<T>;
@@ -143,7 +143,7 @@ enum ValueType<T> {
      
   //{ region logic
     @:op(!a) static function not(c:Condition):Condition 
-      return EUnOp(Not, c);
+      return EUnOp(Not, c, false);
       
     @:op(a && b) static function and(a:Condition, b:Condition):Condition
       return 
@@ -163,6 +163,9 @@ enum ValueType<T> {
       return EBinOp(Or, a, EValue(b, VBool)); 
       
   //} endregion  
+  
+  public function isNull<T>():Condition
+    return EUnOp(IsNull, this, true);
   
   // @:op(a in b) // https://github.com/HaxeFoundation/haxe/issues/6224
   public function inArray<T>(b:Expr<Array<T>>):Condition
@@ -225,6 +228,7 @@ enum BinOp<A, B, Ret> {
 
 enum UnOp<A, Ret> {
   Not:UnOp<Bool, Bool>;
+  IsNull<T>:UnOp<T, Bool>;
   Neg<T:Float>:UnOp<T, T>;
 }
 
@@ -357,7 +361,7 @@ abstract Field<Data, Owner>(Expr<Data>) to Expr<Data> {
        
   //{ region logic
     @:op(!a) static function not<X, Y>(c:Field<Bool, Y>):Condition 
-      return EUnOp(Not, c);
+      return EUnOp(Not, c, false);
       
     @:op(a && b) static function and<X, Y>(a:Field<Bool, X>, b:Field<Bool, Y>):Condition
       return EBinOp(And, a, b);    
