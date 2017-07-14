@@ -43,6 +43,11 @@ class FormatTest {
 		return assert(Format.selectAll(@:privateAccess dataset.target, @:privateAccess dataset.condition, sanitizer) == 'SELECT * FROM `Types` WHERE false');
 	}
 	
+	public function orderBy() {
+		var dataset = db.Types;
+		return assert(Format.selectAll(@:privateAccess dataset.target, @:privateAccess dataset.condition, sanitizer, {limit: 1, offset: 0}, [{field: 'int', order: Desc}]) == 'SELECT * FROM `Types` LIMIT 1 OFFSET 0 ORDER BY `int` DESC');
+	}
+	
 	// https://github.com/haxetink/tink_sql/issues/10
 	// public function compareNull() {
 	// 	var dataset = db.Types.where(Types.optionalInt == null);

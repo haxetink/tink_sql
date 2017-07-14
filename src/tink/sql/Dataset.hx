@@ -32,18 +32,19 @@ class Dataset<Fields, Filter, Result:{}, Db> {
   function _where(filter:Filter):Dataset<Fields, Filter, Result, Db>
     return new Dataset(fields, cnx, target, toCondition, condition && toCondition(filter));
   
-  public function stream():RealStream<Result>
-    return cnx.selectAll(target, condition);
+  public function stream(?limit:Limit, ?orderBy:OrderBy):RealStream<Result>
+    return cnx.selectAll(target, condition, limit, orderBy);
     
   //TODO: add order
-  public function first():Promise<Result> 
-    return all().next(function (r:Array<Result>) return switch r {
-      case []: Failure(new Error(NotFound, 'The requested item was not found'));
-      case v: Success(v[v.length - 1]);
-    });
+  public function first(?orderBy:OrderBy):Promise<Result> 
+    return all({limit:1, offset:0}, orderBy)
+      .next(function (r:Array<Result>) return switch r {
+        case []: Failure(new Error(NotFound, 'The requested item was not found'));
+        case v: Success(v[0]);
+      });
     
-  public function all():Promise<Array<Result>>
-    return stream().collect();
+  public function all(?limit:Limit, ?orderBy:OrderBy):Promise<Array<Result>>
+    return stream(limit, orderBy).collect();
   
   @:noCompletion 
   static public function get<Fields, Filter, Result:{}, Db>(v:Dataset<Fields, Filter, Result, Db>) {
