@@ -68,11 +68,11 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
     });
   }
   
-  public function selectAll<A:{}>(t:Target<A, Db>, ?c:Condition, ?limit:Limit):RealStream<A>
+  public function selectAll<A:{}>(t:Target<A, Db>, ?c:Condition, ?limit:Limit, ?orderBy:OrderBy):RealStream<A>
     return Stream.promise(Future.async(function (cb) {
       cnx.query( 
         { 
-          sql: Format.selectAll(t, c, this), 
+          sql: Format.selectAll(t, c, this, limit, orderBy), 
           nestTables: !t.match(TTable(_, _)),
           typeCast: function (field, next):Dynamic {
             return switch field.type {

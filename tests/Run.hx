@@ -81,10 +81,10 @@ class Run {
   public function insert()
     return insertUsers().next(function(insert:Int) return assert(insert > 0));
   
-  @:variant(target.db.User.all, 5)
-  @:variant(target.db.User.where(User.name == 'Evan').all, 0)
-  @:variant(target.db.User.where(User.name == 'Alice').all, 1)
-  @:variant(target.db.User.where(User.name == 'Dave').all, 2)
+  @:variant(target.db.User.all.bind(), 5)
+  @:variant(target.db.User.where(User.name == 'Evan').all.bind(), 0)
+  @:variant(target.db.User.where(User.name == 'Alice').all.bind(), 1)
+  @:variant(target.db.User.where(User.name == 'Dave').all.bind(), 2)
   public function insertedCount<T>(query:Lazy<Promise<Array<T>>>, expected:Int)
     return insertUsers().next(function(_) return count(query.get(), expected, asserts));
   

@@ -16,7 +16,7 @@ interface Connection<Db> {
   //function selectProjection<A, Res>(t:Dataset<A, Db>, ?c:Condition, p:Projection<Res>):Stream<A>;
   function dropTable<Row:{}>(table:TableInfo<Row>):Promise<Noise>;
   function createTable<Row:{}>(table:TableInfo<Row>):Promise<Noise>;
-  function selectAll<A:{}>(t:Target<A, Db>, ?c:Condition, ?limit:Limit):RealStream<A>;
+  function selectAll<A:{}>(t:Target<A, Db>, ?c:Condition, ?limit:Limit, ?orderBy:OrderBy):RealStream<A>;
   function insert<Row:{}>(table:TableInfo<Row>, items:Array<Insert<Row>>):Promise<Id<Row>>;
   function update<Row:{}>(table:TableInfo<Row>, ?c:Condition, ?max:Int, update:Update<Row>):Promise<{ rowsAffected: Int }>;
   function delete<Row:{}>(table:TableInfo<Row>, ?c:Condition, ?max:Int):Promise<{ rowsAffected: Int }>;
