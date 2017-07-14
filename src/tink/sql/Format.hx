@@ -152,11 +152,11 @@ class Format {
     if (c != null)
       sql += ' WHERE ' + expr(c, s);
       
-    if (limit != null) 
-      sql += ' LIMIT ${limit.limit} OFFSET ${limit.offset}';
-      
     if (orderBy != null)
       sql += ' ORDER BY ' + [for(o in orderBy) s.ident(o.field) + ' ' + o.order.getName().toUpperCase()].join(', ');
+      
+    if (limit != null) 
+      sql += ' LIMIT ${limit.limit} OFFSET ${limit.offset}';
       
     return sql;    
   }
