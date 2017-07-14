@@ -45,7 +45,7 @@ class FormatTest {
 	
 	public function orderBy() {
 		var dataset = db.Types;
-		return assert(Format.selectAll(@:privateAccess dataset.target, @:privateAccess dataset.condition, sanitizer, {limit: 1, offset: 0}, [{field: 'int', order: Desc}]) == 'SELECT * FROM `Types` LIMIT 1 OFFSET 0 ORDER BY `int` DESC');
+		return assert(Format.selectAll(@:privateAccess dataset.target, @:privateAccess dataset.condition, sanitizer, {limit: 1, offset: 0}, [{field: 'int', order: Desc}]) == 'SELECT * FROM `Types` ORDER BY `int` DESC LIMIT 1 OFFSET 0');
 	}
 	
 	// https://github.com/haxetink/tink_sql/issues/10
