@@ -73,6 +73,18 @@ enum ValueType<T> {
       
     @:op(a <= b) static function lte<T:Float>(a:Expr<T>, b:Expr<T>):Condition
       return not(EBinOp(Greater, a, b));   
+      
+    @:op(a > b) static function gtDate(a:Expr<Date>, b:Expr<Date>):Condition
+      return EBinOp(Greater, a, b); 
+      
+    @:op(a < b) static function ltDate(a:Expr<Date>, b:Expr<Date>):Condition
+      return EBinOp(Greater, b, a); 
+      
+    @:op(a >= b) static function gteDate(a:Expr<Date>, b:Expr<Date>):Condition
+      return not(EBinOp(Greater, b, a)); 
+      
+    @:op(a <= b) static function lteDate(a:Expr<Date>, b:Expr<Date>):Condition
+      return not(EBinOp(Greater, a, b));   
   //} endregion  
     
   //{ region arithmetics for constants
@@ -134,11 +146,23 @@ enum ValueType<T> {
     @:op(a < b) static function ltConst<T:Float>(a:Expr<T>, b:T):Condition
       return lt(a, EValue(b, cast VFloat)); 
       
-    @:op(a >= b) static function gtEValue<T:Float>(a:Expr<T>, b:T):Condition
+    @:op(a >= b) static function gteConst<T:Float>(a:Expr<T>, b:T):Condition
       return gte(a, EValue(b, cast VFloat)); 
       
-    @:op(a <= b) static function ltEValue<T:Float>(a:Expr<T>, b:T):Condition
+    @:op(a <= b) static function lteConst<T:Float>(a:Expr<T>, b:T):Condition
       return lte(a, EValue(b, cast VFloat));   
+        
+    @:op(a > b) static function gtDateConst(a:Expr<Date>, b:Date):Condition
+      return gtDate(a, EValue(b, VDate)); 
+      
+    @:op(a < b) static function ltDateConst(a:Expr<Date>, b:Date):Condition
+      return ltDate(a, EValue(b, VDate)); 
+      
+    @:op(a >= b) static function gteDateConst(a:Expr<Date>, b:Date):Condition
+      return gteDate(a, EValue(b, VDate)); 
+      
+    @:op(a <= b) static function lteDateConst(a:Expr<Date>, b:Date):Condition
+      return lteDate(a, EValue(b, VDate));   
   //} endregion  
      
   //{ region logic
@@ -218,7 +242,7 @@ enum BinOp<A, B, Ret> {
   Mod<T:Float>:BinOp<T, T, T>;
   Div<T:Float>:BinOp<T, T, Float>;
   
-  Greater<T:Float>:BinOp<T, T, Bool>;
+  Greater<T>:BinOp<T, T, Bool>;
   Equals<T>:BinOp<T, T, Bool>;
   And:BinOp<Bool, Bool, Bool>;
   Or:BinOp<Bool, Bool, Bool>;
@@ -291,6 +315,18 @@ abstract Field<Data, Owner>(Expr<Data>) to Expr<Data> {
       
     @:op(a <= b) static function lte<T:Float, X, Y>(a:Field<T, X>, b:Field<T, Y>):Condition
       return !(a > b);   
+      
+    @:op(a > b) static function gtDate<X, Y>(a:Field<Date, X>, b:Field<Date, Y>):Condition
+      return EBinOp(Greater, a, b); 
+      
+    @:op(a < b) static function ltDate<X, Y>(a:Field<Date, X>, b:Field<Date, Y>):Condition
+      return EBinOp(Greater, b, a); 
+      
+    @:op(a >= b) static function gteDate<X, Y>(a:Field<Date, X>, b:Field<Date, Y>):Condition
+      return !(b > a); 
+      
+    @:op(a <= b) static function lteDate<X, Y>(a:Field<Date, X>, b:Field<Date, Y>):Condition
+      return !(a > b);   
   //} endregion  
     
   //{ region arithmetics for constants
@@ -352,11 +388,24 @@ abstract Field<Data, Owner>(Expr<Data>) to Expr<Data> {
     @:op(a < b) static function ltConst<T:Float, S>(a:Field<T, S>, b:T):Condition
       return (a:Expr<T>) < EValue(b, cast VFloat);
       
-    @:op(a >= b) static function gtEValue<T:Float, S>(a:Field<T, S>, b:T):Condition
+    @:op(a >= b) static function gteConst<T:Float, S>(a:Field<T, S>, b:T):Condition
       return (a:Expr<T>) >= EValue(b, cast VFloat);
       
-    @:op(a <= b) static function ltEValue<T:Float, S>(a:Field<T, S>, b:T):Condition
-      return (a:Expr<T>) <= EValue(b, cast VFloat);   
+    @:op(a <= b) static function lteConst<T:Float, S>(a:Field<T, S>, b:T):Condition
+      return (a:Expr<T>) <= EValue(b, cast VFloat);
+        
+    @:op(a > b) static function gtDateConst<S>(a:Field<Date, S>, b:Date):Condition
+      return (a:Expr<Date>) > EValue(b, VDate); 
+      
+    @:op(a < b) static function ltDateConst<S>(a:Field<Date, S>, b:Date):Condition
+      return (a:Expr<Date>) < EValue(b, VDate);
+      
+    @:op(a >= b) static function gteDateConst<S>(a:Field<Date, S>, b:Date):Condition
+      return (a:Expr<Date>) >= EValue(b, VDate);
+      
+    @:op(a <= b) static function lteDateConst<S>(a:Field<Date, S>, b:Date):Condition
+      return (a:Expr<Date>) <= EValue(b, VDate);
+      
   //} endregion  
        
   //{ region logic
