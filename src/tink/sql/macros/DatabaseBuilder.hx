@@ -31,7 +31,7 @@ class DatabaseBuilder {
     for (m in c) if(!m.isStatic) {
       var table = 
         switch (m:Field).meta.getValues(':table') {
-          case []: null;
+          case []: continue;
           case [[]]: m.name;
           case [[v]]: v.getName().sure();
           default: m.pos.error('Invalid use of @:table');
