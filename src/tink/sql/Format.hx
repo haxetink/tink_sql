@@ -143,17 +143,17 @@ class Format {
     return sql;
   }
   
-  static public function selectAll<A:{}, Db>(t:Target<A, Db>, ?c:Condition, s:Sanitizer, ?limit:Limit, ?orderBy:OrderBy)         
+  static public function selectAll<A:{}, Db>(t:Target<A, Db>, ?c:Condition, s:Sanitizer, ?limit:Limit, ?orderBy:OrderBy<A>)         
     return select(t, '*', c, s, limit, orderBy);
   
-  static function select<A:{}, Db>(t:Target<A, Db>, what:String, ?c:Condition, s:Sanitizer, ?limit:Limit, ?orderBy:OrderBy) {
+  static function select<A:{}, Db>(t:Target<A, Db>, what:String, ?c:Condition, s:Sanitizer, ?limit:Limit, ?orderBy:OrderBy<A>) {
     var sql = 'SELECT $what FROM ' + target(t, s);
     
     if (c != null)
       sql += ' WHERE ' + expr(c, s);
       
     if (orderBy != null)
-      sql += ' ORDER BY ' + [for(o in orderBy) s.ident(o.field) + ' ' + o.order.getName().toUpperCase()].join(', ');
+      sql += ' ORDER BY ' + [for(o in orderBy) s.ident(o.field.table) + '.' + s.ident(o.field.name) + ' ' + o.order.getName().toUpperCase()].join(', ');
       
     if (limit != null) 
       sql += ' LIMIT ${limit.limit} OFFSET ${limit.offset}';
