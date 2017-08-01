@@ -55,7 +55,7 @@ class TableBuilder {
               
               fieldsExprFields.push({
                 field: f.name,
-                expr: macro new tink.sql.Expr.Field($v{name}, $v{f.name}),
+                expr: macro new tink.sql.Expr.Field(tableName, $v{f.name}),
               });
               
               fieldsValues.push({
@@ -135,9 +135,8 @@ class TableBuilder {
             
             macro class $cName<Db> extends tink.sql.Table.TableSource<$fieldsType, $filterType, $rowType, Db> {
               
-              public function new(cnx) {                
-                  
-                super(cnx, new tink.sql.Table.TableName($v{name}), ${EObjectDecl(fieldsExprFields).at(ctx.pos)});
+              public function new(cnx, tableName) {                
+                super(cnx, new tink.sql.Table.TableName(tableName), ${EObjectDecl(fieldsExprFields).at(ctx.pos)});
               }
               
               static var FIELD_NAMES = $v{names};

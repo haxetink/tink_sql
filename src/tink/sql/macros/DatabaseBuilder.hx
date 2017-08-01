@@ -38,18 +38,18 @@ class DatabaseBuilder {
         }
       
       m.publish();
+
+      var fieldName = m.name;
       
       var type = TAnonymous([{
-        name : table,
+        name : fieldName,
         pos: m.pos,
         kind: FVar(m.getVar().sure().type),
       }]);
       
       m.kind = FProp('default', 'null', macro : tink.sql.Table<$type>);
-      
-      var fieldName = m.name;
-      
-      init.push(macro @:pos(m.pos) this.$fieldName.init(cnx));
+
+      init.push(macro @:pos(m.pos) this.$fieldName.init(cnx, $v{table}));
       
       tables.push(macro @:pos(m.pos) $v{table} => this.$fieldName);
     }
