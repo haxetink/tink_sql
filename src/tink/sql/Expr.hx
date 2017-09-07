@@ -231,6 +231,9 @@ enum ValueType<T> {
 }
 
 class Functions {
+  public static function iif<T>(cond:Expr<Bool>, ifTrue:Expr<T>, ifFalse:Expr<T>):Expr<T>
+    return ECall('IF', [cast cond, cast ifTrue, cast ifFalse]);
+    
   public static function stDistanceSphere(g1:Expr<Point>, g2:Expr<Point>):Expr<Float>
     return ECall('ST_Distance_Sphere', cast [g1, g2]);
 }
