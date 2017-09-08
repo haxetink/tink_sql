@@ -16,14 +16,14 @@ language: haxe
   
 haxe:
   - "3.4.0"
-  #- development
+  - development
 
 services:
   - mysql
   
-#matrix:
-#  allow_failures:
-#    - haxe: development
+matrix:
+  allow_failures:
+    - haxe: development
     
 install:
   - npm install mysql
