@@ -28,6 +28,7 @@ class MySql implements Driver {
       host: settings.host,
       port: settings.port,
       database: name,
+      connectionLimit: 3,
     });
     
     return new MySqlConnection(info, cnx);
@@ -191,6 +192,7 @@ private extern class NativeDriver {
 
 private typedef Config = {>MySqlSettings,
   public var database(default, null):String;
+  @:optional public var connectionLimit(default, null):Int;
 }
 
 private typedef NativeConnection = {
