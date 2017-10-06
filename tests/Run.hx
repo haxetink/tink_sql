@@ -87,6 +87,14 @@ class Run {
   @:variant(target.db.User.where(User.name == 'Dave').all.bind(), 2)
   public function insertedCount<T>(query:Lazy<Promise<Array<T>>>, expected:Int)
     return insertUsers().next(function(_) return count(query.get(), expected, asserts));
+
+  @:variant(target.db.User.count.bind(), 5)
+  @:variant(target.db.User.where(User.name == 'Evan').count.bind(), 0)
+  @:variant(target.db.User.where(User.name == 'Alice').count.bind(), 1)
+  @:variant(target.db.User.where(User.name == 'Dave').count.bind(), 2)
+  public function insertedCountAll<T>(count:Lazy<Promise<Int>>, expected:Int)
+    return insertUsers().next(function(_) return count.get())
+      .next(function(total) return assert(total == expected));
   
   public function update() {
     await(runUpdate, asserts);
