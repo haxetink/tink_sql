@@ -45,6 +45,9 @@ class Dataset<Fields, Filter, Result:{}, Db> {
     
   public function all(?limit:Limit, ?orderBy:Fields->OrderBy<Result>):Promise<Array<Result>>
     return stream(limit, orderBy).collect();
+
+  public function countAll():Promise<Int>
+    return cnx.countAll(target, condition);
   
   @:noCompletion 
   static public function get<Fields, Filter, Result:{}, Db>(v:Dataset<Fields, Filter, Result, Db>) {

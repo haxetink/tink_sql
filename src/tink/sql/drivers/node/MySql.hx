@@ -144,6 +144,17 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
       );
     }));
   
+  public function countAll<A:{}>(t:Target<A, Db>, ?c:Condition):Promise<Int> {
+    return Future.async(function (cb) {
+      cnx.query(
+        { sql: Format.countAll(t, c, this) },
+        function (error, result: Array<{count: Int}>) cb(switch [error, result] {
+          case [null, [{count: count}]]: Success(count);
+          case [e, _]: toError(e);
+        })
+      );
+    });
+  }
   
   function toError<A>(error:js.Error):Outcome<A, Error>
     return Failure(Error.withData(error.message, error));//TODO: give more information

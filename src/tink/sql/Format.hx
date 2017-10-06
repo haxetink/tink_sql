@@ -145,6 +145,9 @@ class Format {
   
   static public function selectAll<A:{}, Db>(t:Target<A, Db>, ?c:Condition, s:Sanitizer, ?limit:Limit, ?orderBy:OrderBy<A>)         
     return select(t, '*', c, s, limit, orderBy);
+
+  static public function countAll<A:{}, Db>(t:Target<A, Db>, ?c:Condition, s:Sanitizer)
+    return select(t, 'COUNT(*) as count', c, s);
   
   static function select<A:{}, Db>(t:Target<A, Db>, what:String, ?c:Condition, s:Sanitizer, ?limit:Limit, ?orderBy:OrderBy<A>) {
     var sql = 'SELECT $what FROM ' + target(t, s);
