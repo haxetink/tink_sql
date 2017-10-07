@@ -19,7 +19,7 @@ class Run {
     
     Runner.run(TestBatch.make([
       new TypeTest(),
-      new FormatTest(),
+      #if nodejs new FormatTest(), #end
       new GeometryTest(),
       new ExprTest(),
       new Run(),
