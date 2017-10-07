@@ -47,8 +47,8 @@ class MySQLiConnection<Db:DatabaseInfo> implements Connection<Db> implements San
     return "'"+cnx.real_escape_string('$v')+"'";
   }
     
-  public function ident(s:String):String // TODO: this can't be right
-    return '`$s`';
+  public function ident(s:String):String
+    return tink.sql.drivers.MySql.getSanitizer(null).ident(s);
   
   function query<R, T>(query: String, ?process: R -> T):Promise<T> {
     var result = cnx.query(query);
