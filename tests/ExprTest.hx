@@ -12,12 +12,10 @@ class ExprTest {
 	
 	var db:Db;
 	var driver:MySql;
-	var sanitizer:Sanitizer;
 	
 	public function new() {
 		driver = new MySql({user: 'root', password: ''});
 		db = new Db('test', driver);
-		sanitizer = new tink.sql.drivers.node.MySql.MySqlConnection(null, null);
 	}
 	
 	public function expr() {
