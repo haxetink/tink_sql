@@ -64,7 +64,8 @@ class TableBuilder {
                 
                 function resolveType(type:haxe.macro.Type) {
                   return switch type {
-                    case TType(_.get() => {pack: [], name: 'Null'}, [p]):
+                    case TType(_.get() => {pack: [], name: 'Null'}, [p]),
+                         TAbstract(_.get() => {pack: [], name: 'Null'}, [p]):
                       nullable = true;
                       resolveType(p);
                     case TType(_.get() => {module: 'tink.sql.types.Integer'}, p):
