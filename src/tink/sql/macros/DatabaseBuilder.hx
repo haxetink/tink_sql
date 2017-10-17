@@ -28,28 +28,28 @@ class DatabaseBuilder {
     var init = [],
         tables = [];
       
-    for (m in c) {
+    for (m in c) if(!m.isStatic) {
       var table = 
         switch (m:Field).meta.getValues(':table') {
-          case []: null;
+          case []: continue;
           case [[]]: m.name;
           case [[v]]: v.getName().sure();
           default: m.pos.error('Invalid use of @:table');
         }
       
       m.publish();
+
+      var fieldName = m.name;
       
       var type = TAnonymous([{
-        name : table,
+        name : fieldName,
         pos: m.pos,
         kind: FVar(m.getVar().sure().type),
       }]);
       
       m.kind = FProp('default', 'null', macro : tink.sql.Table<$type>);
-      
-      var fieldName = m.name;
-      
-      init.push(macro @:pos(m.pos) this.$fieldName.init(cnx));
+
+      init.push(macro @:pos(m.pos) this.$fieldName.init(cnx, $v{table}));
       
       tables.push(macro @:pos(m.pos) $v{table} => this.$fieldName);
     }

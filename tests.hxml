@@ -1,4 +1,7 @@
 --macro DbFixture.run()
 -lib jdbc.mysql
+-lib tink_unittest
 -cp tests
 -main Run
+
+-lib geojson

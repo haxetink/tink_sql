@@ -2,7 +2,7 @@ package tink.sql;
 
 
 import tink.sql.Expr;
-import tink.streams.Stream;
+import tink.streams.RealStream;
 import tink.sql.Table;
 
 using tink.CoreApi;
@@ -32,24 +32,22 @@ class Dataset<Fields, Filter, Result:{}, Db> {
   function _where(filter:Filter):Dataset<Fields, Filter, Result, Db>
     return new Dataset(fields, cnx, target, toCondition, condition && toCondition(filter));
   
-  public function stream():Stream<Result>
-    return cnx.selectAll(target, condition);
+  public function stream(?limit:Limit, ?orderBy:Fields->OrderBy<Result>):RealStream<Result>
+    return cnx.selectAll(target, condition, limit, orderBy == null ? null : orderBy(fields));
     
   //TODO: add order
-  public function first():Surprise<Result, Error> 
-    return all() >> function (r:Array<Result>) return switch r {
-      case []: Failure(new Error(NotFound, 'The requested item was not found'));
-      case v: Success(v[v.length - 1]);
-    }
+  public function first(?orderBy:Fields->OrderBy<Result>):Promise<Result> 
+    return all({limit:1, offset:0}, orderBy)
+      .next(function (r:Array<Result>) return switch r {
+        case []: Failure(new Error(NotFound, 'The requested item was not found'));
+        case v: Success(v[0]);
+      });
     
-  public function all():Surprise<Array<Result>, Error>
-    return Future.async(function (cb) {
-      var ret = [];
-      stream().forEach(function (result) {
-        ret.push(result);
-        return true;
-      }).handle(function (o) cb(o.map(function (_) return ret)));
-    });
+  public function all(?limit:Limit, ?orderBy:Fields->OrderBy<Result>):Promise<Array<Result>>
+    return stream(limit, orderBy).collect();
+
+  public function count():Promise<Int>
+    return cnx.countAll(target, condition);
   
   @:noCompletion 
   static public function get<Fields, Filter, Result:{}, Db>(v:Dataset<Fields, Filter, Result, Db>) {

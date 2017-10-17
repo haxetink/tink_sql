@@ -39,6 +39,12 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
     );
   }
   
+  public function create()
+    return cnx.createTable(this);
+  
+  public function drop()
+    return cnx.dropTable(this);
+  
   public function insertMany(rows:Array<Insert<Row>>)
     return cnx.insert(this, rows);
     
@@ -49,13 +55,31 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
     return cnx.update(this, toCondition(options.where), options.max, f(this.fields));
   }
   
+  public function delete(options:{ where: Filter, ?max:Int }) {
+    return cnx.delete(this, toCondition(options.where), options.max);
+  }
+  
+  @:noCompletion 
+  public function getFields():Array<Column>
+    throw 'not implemented';
+  
   @:noCompletion 
   public function fieldnames():Array<String>
-    return Reflect.fields(fields);
+    return getFields().map(function(f) return f.name);
   
   @:noCompletion 
   public function sqlizeRow(row:Insert<Row>, val:Any->String):Array<String> 
-    return [for (f in fieldnames()) val(Reflect.field(row, f))];
+    return [for (f in getFields()) {
+      var fname = f.name;
+      var fval = Reflect.field(row, fname);
+      if(fval == null) val(null);
+      else switch f.type {
+        case DPoint:
+          'ST_GeomFromGeoJSON(\'${haxe.Json.stringify(fval)}\')';
+        default:
+          val(fval);
+      }
+    }];
     
   @:noCompletion
   macro public function init(e:Expr, rest:Array<Expr>) {

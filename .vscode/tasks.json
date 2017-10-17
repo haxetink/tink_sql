@@ -1,0 +1,10 @@
+{
+    "version": "2.0.0",
+    "command": "npm",
+    "args": ["run","--silent","travix","node","."],
+    "problemMatcher": "$haxe",
+    "group": {
+        "kind": "build",
+        "isDefault": true
+    }
+}

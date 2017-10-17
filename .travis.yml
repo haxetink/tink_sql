@@ -3,36 +3,31 @@ dist: trusty
 addons:
   apt:
     packages:
-    - mysql-server-5.6
-    - mysql-client-core-5.6
-    - mysql-client-5.6
+    # - mysql-server-5.6
+    # - mysql-client-core-5.6
+    # - mysql-client-5.6
     - php5-mysql
     
-language: haxe
-
-#os:
-#  - linux
-#  - osx
-  
-haxe:
-  - "3.4.0"
-  - development
 
 services:
   - mysql
+
+language: node_js
+node_js: 6
+
+os:
+  - linux
   
-matrix:
-  allow_failures:
-    - haxe: development
-    
+before_install:
+  - bash travis_mysql_5.7.sh
+  - bash mysql-reset-root-password.sh
+  - mysql --version
+      
 install:
-  - npm install mysql
-  - haxelib install jdbc.mysql
-  - haxelib install travix
-  - haxelib run travix install
+  - npm install
 
 script:
-  - haxelib run travix neko
-  - haxelib run travix node
-  - haxelib run travix php
-  - haxelib run travix java
+  # - npm run travix neko .
+  - npm run travix node .
+  - npm run travix php .
+  # - npm run travix java .
