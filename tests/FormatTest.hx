@@ -42,6 +42,16 @@ class FormatTest {
 		var dataset = db.Types.where(Types.int.inArray([]));
 		return assert(Format.selectAll(@:privateAccess dataset.target, @:privateAccess dataset.condition, sanitizer) == 'SELECT * FROM `Types` WHERE false');
 	}
+
+	public function tableAlias() {
+		var dataset = db.Types.as('alias');
+		return assert(Format.selectAll(@:privateAccess dataset.target, @:privateAccess dataset.condition, sanitizer) == 'SELECT * FROM `Types` AS `alias`');
+	}
+	
+	public function tableAliasJoin() {
+		var dataset = db.Types.leftJoin(db.Types.as('alias')).on(Types.int == alias.int);
+		return assert(Format.selectAll(@:privateAccess dataset.target, @:privateAccess dataset.condition, sanitizer) == 'SELECT * FROM `Types` LEFT JOIN `Types` AS `alias` ON (`Types`.`int` = `alias`.`int`)');
+	}
 	
 	public function orderBy() {
 		var dataset = db.Types;
