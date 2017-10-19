@@ -55,7 +55,7 @@ class MySQLiConnection<Db:DatabaseInfo> implements Connection<Db> implements San
     if (process == null) process = function(_): T return cast Noise;
     return Future.sync(
       if (Std.is(result, Bool) && !result)
-        Failure(new Error(cnx.errno, '"$query"\n'+cnx.error))
+        Failure(new Error(cnx.errno, cnx.error))
       else
         Success(process(cast result))
     );
@@ -75,25 +75,29 @@ class MySQLiConnection<Db:DatabaseInfo> implements Connection<Db> implements San
           case TTable(_, _): false;
           case TJoin(_, _, _, _): true;
         }
+        #if php7
+        var fields = result.fetch_fields();
+        #else
         var fields: Array<NativeFieldInfo> = cast php.Lib.toHaxeArray(result.fetch_fields());
+        #end
         return Stream.ofIterator({
           hasNext: function() {
             return switch result.fetch_row() {
               case null: false;
               case v:
-                current = php.Lib.toHaxeArray(v);
+                #if php7 current = v; #else current = php.Lib.toHaxeArray(v); #end
                 true;
             }
           },
           next: function() {
             var res: DynamicAccess<Any> = {};
             var target = res;
-            for (i in 0 ... fields.length) {
-              var field = fields[i];
+            var i = 0;
+            for (field in fields) {
               if (nest) target = 
                 if (!res.exists(field.table)) res[field.table] = {}
                 else res[field.table];
-              var value = current[i];
+              var value = current[i++];
               target[field.name] = processField(field, value);
             }
             return cast res;
@@ -131,9 +135,9 @@ class MySQLiConnection<Db:DatabaseInfo> implements Connection<Db> implements San
   }
   
   public function countAll<A:{}>(t:Target<A, Db>, ?c:Condition):Promise<Int>
-    return query(Format.countAll(t, c, this), function (result)
-      return Std.parseInt(result.fetch_row()[0])
-    );
+    return query(Format.countAll(t, c, this), function (result: NativeResultSet) {
+      return Std.parseInt(result.fetch_row()[0]);
+    });
   
   public function insert<Row:{}>(table:TableInfo<Row>, items:Array<Insert<Row>>):Promise<Id<Row>>
     return query(Format.insert(table, items, this), function (_)
@@ -168,9 +172,8 @@ private extern class NativeConnection {
 private typedef NativeResult = haxe.extern.EitherType<Bool, NativeResultSet>;
 
 private extern class NativeResultSet {
-  public function fetch_row(): php.NativeArray;
-  //public function fetch_assoc(): php.NativeArray;
-  public function fetch_fields(): php.NativeArray;
+  public function fetch_row(): #if php7 php.NativeIndexedArray<Any> #else php.NativeArray #end;
+  public function fetch_fields(): #if php7 php.NativeIndexedArray<NativeFieldInfo> #else php.NativeArray #end;
 }
 
 private typedef NativeFieldInfo = {
