@@ -39,6 +39,7 @@ enum DataType {
   DBlob(maxLength:Int);
   DDateTime;
   DPoint; // geojson
+  DMultiPolygon; // geojson
 }
 
 typedef Insert<Row> = Row;

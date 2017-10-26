@@ -65,10 +65,8 @@ class Format {
             s.value(v);
           case EValue(bytes, VBytes):
             s.value(bytes);
-          case EValue(geom, VGeometry(Point)):
-            'ST_GeomFromGeoJSON(\'${json(geom)}\')';
           case EValue(geom, VGeometry(_)):
-            throw 'not implemented';
+            'ST_GeomFromGeoJSON(\'${json(geom)}\')';
           case EValue(value, VArray(VBool)):          
             '(${value.map(s.value).join(', ')})';
           case EValue(value, VArray(VInt)):          
@@ -125,6 +123,9 @@ class Format {
         
         case DPoint:
           'POINT';
+        
+        case DMultiPolygon:
+          'MULTIPOLYGON';
       }
       sql += if(f.nullable) ' NULL' else ' NOT NULL';
       if(autoIncrement) sql += ' AUTO_INCREMENT';

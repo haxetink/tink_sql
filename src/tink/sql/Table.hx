@@ -74,7 +74,7 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
       var fval = Reflect.field(row, fname);
       if(fval == null) val(null);
       else switch f.type {
-        case DPoint:
+        case DPoint | DMultiPolygon:
           'ST_GeomFromGeoJSON(\'${haxe.Json.stringify(fval)}\')';
         default:
           val(fval);
