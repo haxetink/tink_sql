@@ -1,6 +1,7 @@
 package tink.sql;
 
 import haxe.io.Bytes;
+import geojson.*;
 import tink.sql.types.*;
 import tink.sql.Connection.FieldUpdate;
 
@@ -233,6 +234,12 @@ enum ValueType<T> {
 class Functions {
   public static function iif<T>(cond:Expr<Bool>, ifTrue:Expr<T>, ifFalse:Expr<T>):Expr<T>
     return ECall('IF', [cast cond, cast ifTrue, cast ifFalse]);
+    
+  public static function stContains<T>(g1:Expr<Geometry>, g2:Expr<Geometry>):Expr<Bool>
+    return ECall('ST_Contains', cast [g1, g2]);
+    
+  public static function stWithin<T>(g1:Expr<Geometry>, g2:Expr<Geometry>):Expr<Bool>
+    return ECall('ST_Within', cast [g1, g2]);
     
   public static function stDistanceSphere(g1:Expr<Point>, g2:Expr<Point>):Expr<Float>
     return ECall('ST_Distance_Sphere', cast [g1, g2]);
