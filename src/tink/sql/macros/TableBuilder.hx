@@ -115,20 +115,22 @@ class TableBuilder {
                 }
                 
                 var type = resolveType(f.type);
-                var primary = f.meta.has(':primary');
-                var unique = f.meta.has(':unique'); // primary already implies unique
+                var keys = [];
+                if(f.meta.has(':primary')) keys.push(macro tink.sql.Info.KeyType.Primary);
+                for(m in f.meta.extract(':unique')) keys.push(macro tink.sql.Info.KeyType.Unique(${
+                  switch m.params {
+                    case []: macro None;
+                    case [_.getString() => Success(s)]: macro Some($v{s});
+                    case _: macro None; // TODO: should show a warning
+                  }
+                }));
                 
-                var key =
-                  if(primary) macro haxe.ds.Option.Some(tink.sql.Info.KeyType.Primary);
-                  else if(unique) macro haxe.ds.Option.Some(tink.sql.Info.KeyType.Unique);
-                  else macro haxe.ds.Option.None;
-                
-                EObjectDecl([
-                  {field: 'name', expr: name},
-                  {field: 'nullable', expr: macro $v{nullable}},
-                  {field: 'type', expr: type},
-                  {field: 'key', expr: key},
-                ]).at(f.pos);
+                macro @:pos(f.pos) {
+                  name: $name,
+                  nullable: $v{nullable},
+                  type: ${type},
+                  keys: $a{keys},
+                }
               });
             }
             

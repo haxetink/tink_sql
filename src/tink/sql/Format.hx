@@ -94,6 +94,7 @@ class Format {
     sql += ' (';
     
     var primary = [];
+    var unique = new Map();
     sql += [for(f in table.getFields()) {
       var sql = s.ident(f.name) + ' ';
       var autoIncrement = false;
@@ -128,16 +129,24 @@ class Format {
       }
       sql += if(f.nullable) ' NULL' else ' NOT NULL';
       if(autoIncrement) sql += ' AUTO_INCREMENT';
-      switch f.key {
-        case Some(Unique): sql += ' UNIQUE';
-        case Some(Primary): primary.push(f.name);
-        case None: // do nothing
+      
+      for(key in f.keys) switch key {
+        case Unique(name): 
+          if(!unique.exists(name)) unique.set(name, []);
+          unique.get(name).push(f.name);
+        case Primary:
+          primary.push(f.name);
       }
       sql;
     }].join(', ');
     
     if(primary.length > 0)
       sql += ', PRIMARY KEY (' + primary.map(s.ident).join(', ') + ')';
+      
+    for(key in unique.keys()) switch key {
+      case Some(name): sql += ', UNIQUE KEY ${s.ident(name)} (${unique.get(key).map(s.ident).join(', ')})';
+      case None: sql += ', UNIQUE KEY (${unique.get(key).map(s.ident).join(', ')})';
+    }
     
     sql += ')';
     return sql;
