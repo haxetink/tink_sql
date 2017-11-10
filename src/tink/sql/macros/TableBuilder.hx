@@ -93,6 +93,9 @@ class TableBuilder {
                     case TType(_.get() => {module: 'tink.sql.types.Point'}, p):
                       macro tink.sql.Info.DataType.DPoint;
                     
+                    case TType(_.get() => {module: 'tink.sql.types.MultiPolygon'}, p):
+                      macro tink.sql.Info.DataType.DMultiPolygon;
+                    
                     case _.getID() => 'Bool':
                       macro tink.sql.Info.DataType.DBool;
                     
