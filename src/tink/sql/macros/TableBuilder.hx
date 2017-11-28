@@ -12,7 +12,7 @@ class TableBuilder {
     return BuildCache.getType('tink.sql.Table', function (ctx:BuildContext) {
       return
         switch ctx.type {
-          case TAnonymous(_.get() => { fields: [{ kind: FVar(_, _), name: name, type: _.reduce() => TAnonymous(_.get().fields => fields) }] } ):
+          case TAnonymous(_.get() => { fields: [{ kind: FVar(_, _), name: name, type: Context.followWithAbstracts(_)  => TAnonymous(_.get().fields => fields) }] } ):
             
             var cName = ctx.name;
             var names = [for (f in fields) f.name];
