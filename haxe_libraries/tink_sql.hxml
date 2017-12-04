@@ -1,0 +1,4 @@
+-cp src
+-D tink_sql
+-lib tink_macro
+-lib tink_anon

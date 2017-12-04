@@ -1,0 +1,18 @@
+{
+  "name": "tink_sql",
+  "license": "MIT",
+  "tags": [
+    "sql"
+  ],
+  "classPath": "src",
+  "contributors": [
+    "kevinresol"
+  ],
+  "releasenote": "initial release",
+  "version": "0.0.0",
+  "url": "https://github.com/haxetink/tink_sql/",
+  "dependencies": {
+    "tink_macro": "",
+    "tink_anon": ""
+  }
+}
