@@ -75,6 +75,8 @@ class Format {
             '(${value.map(s.value).join(', ')})';
           case EValue(value, VArray(VString)):          
             '(${value.map(s.value).join(', ')})';
+          case EValue(value, VArray(VDate)):          
+            '(${value.map(s.value).join(', ')})';
           case EValue(_, VArray(_)):          
             throw 'Only arrays of primitive types are supported';
         }
