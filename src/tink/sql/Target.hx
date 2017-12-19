@@ -63,6 +63,6 @@ class Target<Datasets> {
 	}
 	
 	public inline function toSql(formatter:Formatter):String
-		return formatter.target(this);
+		return formatter.formatTarget(this);
 	
 }

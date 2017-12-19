@@ -65,7 +65,7 @@ class MysqlFormatter implements Formatter {
 	public function ident(v:String)
 		return '`$v`';
 	
-	public function dataset(dataset:Dataset<Dynamic>) {
+	public function formatDataset(dataset:Dataset<Dynamic>) {
 		var alias = switch dataset.alias {
 			case null: '';
 			case v: ' AS ${ident(v)}';
@@ -79,25 +79,25 @@ class MysqlFormatter implements Formatter {
           '${ident(column.dataset.alias)}.${ident(column.name)} AS ${ident(alias)}';
         }];
         
-        var sql = 'SELECT ${cols.join(', ')} ${target.toSql(this)}';
+        var sql = 'SELECT ${cols.join(', ')} ${formatTarget(target)}';
         if(alias != '') sql = '($sql)' + alias;
         sql;
         
       case Where(dataset, expr):
-        var sql = '${dataset.toSql(this)} WHERE $expr' + alias;
+        var sql = '${formatDataset(dataset)} WHERE $expr' + alias;
         if(alias != '') sql = '($sql)' + alias;
         sql;
 		}
 	}
 	
-	public function target(target:Target<Dynamic>) {
+	public function formatTarget(target:Target<Dynamic>) {
 		return switch target.type {
       case From(dataset):
-        'FROM ${dataset.toSql(this)}';
+        'FROM ${formatDataset(dataset)}';
 			case LeftJoin(target, dataset):
-        '${target.toSql(this)} LEFT JOIN ${dataset.toSql(this)}';
+        '${formatTarget(target)} LEFT JOIN ${formatDataset(dataset)}';
 			case On(target, expr):
-        '${target.toSql(this)} ON ${expr}';
+        '${formatTarget(target)} ON ${expr}';
 		}
 	}
 	

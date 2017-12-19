@@ -29,6 +29,6 @@ class Dataset<Columns> {
 		return new Dataset(Where(this, expr), alias, columns);
 		
 	public inline function toSql(formatter:Formatter)
-		return formatter.dataset(this);
+		return formatter.formatDataset(this);
 	
 }

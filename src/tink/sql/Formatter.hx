@@ -1,6 +1,6 @@
 package tink.sql;
 
 interface Formatter {
-	function target(target:Target<Dynamic>):String;
-	function dataset(dataset:Dataset<Dynamic>):String;
+	function formatTarget(target:Target<Dynamic>):String;
+	function formatDataset(dataset:Dataset<Dynamic>):String;
 }
