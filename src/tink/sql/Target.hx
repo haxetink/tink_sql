@@ -17,10 +17,12 @@ enum TargetType {
 class Target<Datasets> {
 	public var datasets(default, null):Datasets;
 	public var type(default, null):TargetType;
+	var sql:Sql;
 	
-	public function new(datasets, type) {
+	public function new(datasets, type, sql) {
 		this.datasets = datasets;
 		this.type = type;
+		this.sql = sql;
 	}
 	
 	/*
@@ -40,13 +42,14 @@ class Target<Datasets> {
 			var dataset = $expr;
 			new tink.sql.Target(
 				tink.Anon.merge(@:privateAccess _this.datasets, dataset),
-				LeftJoin(_this, dataset.$alias.as($v{alias}))
+				LeftJoin(_this, dataset.$alias.as($v{alias})),
+				@:privateAccess _this.sql
 			);
 		}
 	}
 	
 	public function on(expr:Dynamic) {
-		return new Target(datasets, On(this, expr));
+		return new Target(datasets, On(this, expr), @:privateAccess this.sql);
 	}
 	
 	/*
@@ -58,11 +61,11 @@ class Target<Datasets> {
 		return macro {
 			var _this = $ethis;
 			tink.sql.macro.Macro.splatFields(@:privateAccess _this.datasets, 'columns');
-			new Dataset(Select(_this), null, $expr);
+			new Dataset(Select(_this), null, $expr, @:privateAccess _this.sql);
 		}
 	}
 	
-	public inline function toSql(formatter:Formatter):String
-		return formatter.formatTarget(this);
+	public inline function toSql():String
+		return sql.formatter.formatTarget(this);
 	
 }

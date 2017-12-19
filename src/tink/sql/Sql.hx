@@ -12,7 +12,13 @@ using tink.sql.macro.MacroTools;
 #end
 
 class Sql {
-	public function new() {}
+	public var driver(default, null):Driver;
+	public var formatter(default, null):Formatter;
+	
+	public function new(driver, formatter) {
+		this.driver = driver;
+		this.formatter = formatter;
+	}
 	
 	public macro function from(ethis, expr) {
 		var type = Context.typeof(expr);
@@ -26,7 +32,7 @@ class Sql {
 		
 		return macro @:pos(expr.pos) {
 			var o = $expr;
-			new tink.sql.Target<$ct>(o, From(o.$alias.as($v{alias})));
+			new tink.sql.Target<$ct>(o, From(o.$alias.as($v{alias})), $ethis);
 		}
 	}
 }

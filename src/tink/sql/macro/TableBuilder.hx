@@ -13,8 +13,8 @@ class TableBuilder {
 			var ct = ctx.type.toComplex();
 			
 			var def = macro class $name extends tink.sql.Dataset<tink.sql.Columns<$ct>> {
-				public function new(name) {
-					super(Table(name), name, new tink.sql.Columns<$ct>(name));
+				public function new(name, ?sql) {
+					super(Table(name), name, new tink.sql.Columns<$ct>(name), sql);
 				}
 			}
 			
