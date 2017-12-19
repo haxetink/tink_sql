@@ -15,21 +15,18 @@ class Sql {
 	public function new() {}
 	
 	public macro function from(ethis, expr) {
-		return macro @:privateAccess {
-			var targets = $expr;
-			var aliases:haxe.DynamicAccess<tink.sql.Table.TableBase> = cast targets;
-			var query = [for(alias in aliases.keys()) aliases[alias].__name__ + ' AS ' + alias].join(', ');
-			new tink.sql.expr.From(targets, query);
+		var type = Context.typeof(expr);
+		var ct = type.toComplex();
+		var alias = switch type.reduce() {
+			case TAnonymous(_.get() => {fields: [field]}):
+				field.name;
+			default:
+				expr.pos.error('from() accepts anonymous object with one field');
+		}
+		
+		return macro @:pos(expr.pos) {
+			var o = $expr;
+			new tink.sql.Target<$ct>(o, From(o.$alias.as($v{alias})));
 		}
 	}
-	
-	// public macro function select(ethis, ?fields:Expr):Expr {
-	// 	var pos = Context.currentPos();
-	// 	var ct = pos.makeBlankType();
-	// 	return macro @:privateAccess $ethis._select((null:{a: $ct}));
-	// }
-	
-	// function _select<T:{}>(fields:T):Select<T> {
-	// 	return new Select();
-	// }
 }

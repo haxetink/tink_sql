@@ -5,6 +5,14 @@ import haxe.macro.Expr;
 using tink.MacroApi;
 
 class MacroTools {
+	
+	public static function getTypeParam(type:Type, index:Int):Type {
+		return switch type {
+			case TInst(_, v): v[index];
+			default: throw 'not implemented';
+		}
+	}
+	
 	public static function flattenColumns(type:Type, pos:Position):Type {
 		return switch type.reduce() {
 			case TAnonymous(_.get() => {fields: fields}):
