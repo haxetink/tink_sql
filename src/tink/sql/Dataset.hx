@@ -24,6 +24,9 @@ class Dataset<Columns> {
 		for(field in Reflect.fields(columns)) Reflect.field(columns, field).dataset = dataset;
 		return dataset;
 	}
+	
+	public function where(expr:Dynamic)
+		return new Dataset(Where(this, expr), alias, columns);
 		
 	public inline function toSql(formatter:Formatter)
 		return formatter.dataset(this);

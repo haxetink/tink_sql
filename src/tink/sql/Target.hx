@@ -10,6 +10,7 @@ using tink.MacroApi;
 enum TargetType {
 	From<T>(target:Dataset<T>);
 	LeftJoin<T1, T2>(target:Target<T1>, join:Dataset<T2>);
+	On<T>(target:Target<T>, expr:Dynamic);
 }
 
 // e.g. Datasets = {tbl1:Dataset, tbl2:Dataset}
@@ -42,6 +43,10 @@ class Target<Datasets> {
 				LeftJoin(_this, dataset.$alias.as($v{alias}))
 			);
 		}
+	}
+	
+	public function on(expr:Dynamic) {
+		return new Target(datasets, On(this, expr));
 	}
 	
 	/*

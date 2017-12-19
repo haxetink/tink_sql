@@ -28,7 +28,11 @@ class RunTests {
     // trace($type(@:privateAccess result.datasets.table2));
     // trace($type(@:privateAccess result.datasets.table2.columns.a));
     
-    var result = sql.from({table1: table1}).leftJoin({table2: table2}).select({col1: table1.a, col2: table2.a});
+    var result = sql.from({table1: table1})
+      .leftJoin({table2: table2}).on('<todo on>')
+      .select({col1: table1.a, col2: table2.a})
+      .where('<todo where>');
+      
     // trace($type(result));
     
     trace(result.toSql(new MysqlFormatter()));
@@ -92,6 +96,8 @@ class MysqlFormatter implements Formatter {
         'FROM ${dataset.toSql(this)}';
 			case LeftJoin(target, dataset):
         '${target.toSql(this)} LEFT JOIN ${dataset.toSql(this)}';
+			case On(target, expr):
+        '${target.toSql(this)} ON ${expr}';
 		}
 	}
 	
