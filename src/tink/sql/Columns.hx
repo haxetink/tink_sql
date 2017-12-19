@@ -1,7 +1,7 @@
 package tink.sql;
 
 #if !macro @:genericBuild(tink.sql.macro.ColumnsBuilder.build()) #end
-class Columns<T> {}
+class Columns<T, Dataset> {}
 
 /*
 Example:

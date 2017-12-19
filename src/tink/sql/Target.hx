@@ -10,9 +10,6 @@ using tink.MacroApi;
 enum TargetType {
 	From<T>(target:Dataset<T>);
 	LeftJoin<T1, T2>(target:Target<T1>, join:Dataset<T2>);
-	RightJoin<T1, T2>(target:Target<T1>, join:Dataset<T2>);
-	InnerJoin<T1, T2>(target:Target<T1>, join:Dataset<T2>);
-	OuterJoin<T1, T2>(target:Target<T1>, join:Dataset<T2>);
 }
 
 // e.g. Datasets = {tbl1:Dataset, tbl2:Dataset}
@@ -54,8 +51,9 @@ class Target<Datasets> {
 	*/
 	public macro function select(ethis, expr) {
 		return macro {
-			tink.sql.macro.Macro.splatFields(@:privateAccess $ethis.datasets, 'columns');
-			new Dataset(null, null, $expr);
+			var _this = $ethis;
+			tink.sql.macro.Macro.splatFields(@:privateAccess _this.datasets, 'columns');
+			new Dataset(Select(_this), null, $expr);
 		}
 	}
 	
