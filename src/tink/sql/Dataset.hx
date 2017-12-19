@@ -8,9 +8,9 @@ enum DatasetType {
 
 // e.g. Columns = {col1:Column, col2:Column}
 class Dataset<Columns> {
-	var type:DatasetType;
-	var alias:String;
-	var columns:Columns;
+	public var type(default, null):DatasetType;
+	public var alias(default, null):String;
+	public var columns(default, null):Columns;
 	
 	public function new(type, alias, columns) {
 		this.type = type;
@@ -18,7 +18,14 @@ class Dataset<Columns> {
 		this.columns = columns;
 	}
 	
-	public function as(alias:String):Dataset<Columns>
-		return new Dataset(type, alias, columns);
+	public function as(alias:String):Dataset<Columns> {
+		var columns = Reflect.copy(this.columns);
+		var dataset = new Dataset(type, alias, columns);
+		for(field in Reflect.fields(columns)) Reflect.field(columns, field).dataset = dataset;
+		return dataset;
+	}
+		
+	public inline function toSql(formatter:Formatter)
+		return formatter.dataset(this);
 	
 }

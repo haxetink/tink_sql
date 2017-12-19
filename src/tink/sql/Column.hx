@@ -1,20 +1,20 @@
 package tink.sql;
 
-class Column<T, D> {
-	var dataset:D;
-	var name:String;
-	var alias:String;
-	var type:DataType;
+class Column<T> {
+	public var dataset(default, null):{alias:String};
+	public var name(default, null):String;
+	public var alias(default, null):String;
+	public var type(default, null):DataType;
 	
 	public function new(dataset, name, alias, type) {
-		this.dataset = dataset;
+		this.dataset = {alias: dataset};
 		this.name = name;
 		this.alias = alias;
 		this.type = type;
 	}
 	
-	public function as(alias:String):Column<T, D>
-		return new Column(dataset, name, alias, type);
+	public function as(alias:String):Column<T>
+		return new Column(dataset.alias, name, alias, type);
 }
 
 enum DataType {

@@ -8,14 +8,13 @@ using tink.MacroApi;
 
 class ColumnsBuilder {
 	public static function build() {
-		return BuildCache.getType2('tink.sql.Columns', function(ctx) {
+		return BuildCache.getType('tink.sql.Columns', function(ctx) {
 			var name = ctx.name;
 			var ct = ctx.type.toComplex();
-			var ct2 = ctx.type2.toComplex();
 			
 			var inits = [];
 			var def = macro class $name {
-				public function new(dataset:$ct2) $b{inits}
+				public function new(datasetAlias) $b{inits};
 			}
 			
 			function add(cl:TypeDefinition) def.fields = def.fields.concat(cl.fields);
@@ -26,9 +25,9 @@ class ColumnsBuilder {
 						var ct = field.type.toComplex();
 						var fname = field.name;
 						add(macro class {
-							public var $fname(default, null):tink.sql.Column<$ct, $ct2>;
+							public var $fname(default, null):tink.sql.Column<$ct>;
 						});
-						inits.push(macro $i{fname} = new tink.sql.Column(dataset, $v{fname}, $v{fname}, DInt));
+						inits.push(macro $i{fname} = new tink.sql.Column(datasetAlias, $v{fname}, $v{fname}, DInt));
 					}
 				case _:
 			}

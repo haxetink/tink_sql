@@ -14,8 +14,8 @@ enum TargetType {
 
 // e.g. Datasets = {tbl1:Dataset, tbl2:Dataset}
 class Target<Datasets> {
-	var datasets:Datasets;
-	var type:TargetType;
+	public var datasets(default, null):Datasets;
+	public var type(default, null):TargetType;
 	
 	public function new(datasets, type) {
 		this.datasets = datasets;
@@ -56,5 +56,8 @@ class Target<Datasets> {
 			new Dataset(Select(_this), null, $expr);
 		}
 	}
+	
+	public inline function toSql(formatter:Formatter):String
+		return formatter.target(this);
 	
 }
