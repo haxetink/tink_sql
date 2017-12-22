@@ -12,7 +12,7 @@ class TableBuilder {
     return BuildCache.getType('tink.sql.Table', function (ctx:BuildContext) {
       return
         switch ctx.type {
-          case TAnonymous(_.get() => { fields: [{ kind: FVar(_, _), name: name, type: _.reduce() => TAnonymous(_.get().fields => fields) }] } ):
+          case TAnonymous(_.get() => { fields: [{ kind: FVar(_, _), name: name, type: Context.followWithAbstracts(_)  => TAnonymous(_.get().fields => fields) }] } ):
             
             var cName = ctx.name;
             var names = [for (f in fields) f.name];
@@ -93,6 +93,9 @@ class TableBuilder {
                     case TType(_.get() => {module: 'tink.sql.types.Point'}, p):
                       macro tink.sql.Info.DataType.DPoint;
                     
+                    case TType(_.get() => {module: 'tink.sql.types.MultiPolygon'}, p):
+                      macro tink.sql.Info.DataType.DMultiPolygon;
+                    
                     case _.getID() => 'Bool':
                       macro tink.sql.Info.DataType.DBool;
                     
@@ -115,20 +118,22 @@ class TableBuilder {
                 }
                 
                 var type = resolveType(f.type);
-                var primary = f.meta.has(':primary');
-                var unique = f.meta.has(':unique'); // primary already implies unique
+                var keys = [];
+                if(f.meta.has(':primary')) keys.push(macro tink.sql.Info.KeyType.Primary);
+                for(m in f.meta.extract(':unique')) keys.push(macro tink.sql.Info.KeyType.Unique(${
+                  switch m.params {
+                    case []: macro None;
+                    case [_.getString() => Success(s)]: macro Some($v{s});
+                    case _: macro None; // TODO: should show a warning
+                  }
+                }));
                 
-                var key =
-                  if(primary) macro haxe.ds.Option.Some(tink.sql.Info.KeyType.Primary);
-                  else if(unique) macro haxe.ds.Option.Some(tink.sql.Info.KeyType.Unique);
-                  else macro haxe.ds.Option.None;
-                
-                EObjectDecl([
-                  {field: 'name', expr: name},
-                  {field: 'nullable', expr: macro $v{nullable}},
-                  {field: 'type', expr: type},
-                  {field: 'key', expr: key},
-                ]).at(f.pos);
+                macro @:pos(f.pos) {
+                  name: $name,
+                  nullable: $v{nullable},
+                  type: ${type},
+                  keys: $a{keys},
+                }
               });
             }
             
@@ -136,8 +141,8 @@ class TableBuilder {
             
             macro class $cName<Db> extends tink.sql.Table.TableSource<$fieldsType, $filterType, $rowType, Db> {
               
-              public function new(cnx, tableName) {                
-                super(cnx, new tink.sql.Table.TableName(tableName), ${EObjectDecl(fieldsExprFields).at(ctx.pos)});
+              public function new(cnx, tableName, ?alias) {                
+                super(cnx, new tink.sql.Table.TableName(tableName), alias, ${EObjectDecl(fieldsExprFields).at(ctx.pos)});
               }
               
               static var FIELD_NAMES = $v{names};

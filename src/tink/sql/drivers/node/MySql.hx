@@ -92,17 +92,31 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
                 // https://github.com/mysqljs/mysql/blob/310c6a7d1b2e14b63b572dbfbfa10128f20c6d52/lib/protocol/Parser.js#L342-L389
                 if(v == null) {
                   null;
-                } else if(Std.is(v, Array)) {
-                  if(Std.is(v[0], Array)) {
-                    // Polygon
-                    throw 'not implemented';
-                  } else {
-                    // Line
-                    throw 'not implemented';
-                  }
                 } else {
-                  // Point
-                  new geojson.Point(v.y, v.x);
+                    if(Std.is(v, Array)) {
+                      if(Std.is(v[0], Array)) {
+                        if(Std.is(v[0][0], Array)) {
+                          new geojson.MultiPolygon(
+                            [for(polygon in (v:Array<Dynamic>))
+                              [for(line in (polygon:Array<Dynamic>))
+                                [for(point in (line:Array<Dynamic>))
+                                  new geojson.util.Coordinates(point.y, point.x)
+                                ]
+                              ]
+                            ]
+                          );
+                        } else {
+                          // Polygon
+                          throw 'Polygon parsing not implemented';
+                        }
+                      } else {
+                        // Line
+                        throw 'Line parsing not implemented';
+                      }
+                    } else {
+                      // Point
+                      new geojson.Point(v.y, v.x);
+                    }
                 }
               default:
                 next();

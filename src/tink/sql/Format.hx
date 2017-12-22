@@ -65,10 +65,8 @@ class Format {
             s.value(v);
           case EValue(bytes, VBytes):
             s.value(bytes);
-          case EValue(geom, VGeometry(Point)):
-            'ST_GeomFromGeoJSON(\'${json(geom)}\')';
           case EValue(geom, VGeometry(_)):
-            throw 'not implemented';
+            'ST_GeomFromGeoJSON(\'${json(geom)}\')';
           case EValue(value, VArray(VBool)):          
             '(${value.map(s.value).join(', ')})';
           case EValue(value, VArray(VInt)):          
@@ -76,6 +74,8 @@ class Format {
           case EValue(value, VArray(VFloat)):          
             '(${value.map(s.value).join(', ')})';
           case EValue(value, VArray(VString)):          
+            '(${value.map(s.value).join(', ')})';
+          case EValue(value, VArray(VDate)):          
             '(${value.map(s.value).join(', ')})';
           case EValue(_, VArray(_)):          
             throw 'Only arrays of primitive types are supported';
@@ -94,6 +94,7 @@ class Format {
     sql += ' (';
     
     var primary = [];
+    var unique = new Map();
     sql += [for(f in table.getFields()) {
       var sql = s.ident(f.name) + ' ';
       var autoIncrement = false;
@@ -125,19 +126,30 @@ class Format {
         
         case DPoint:
           'POINT';
+        
+        case DMultiPolygon:
+          'MULTIPOLYGON';
       }
       sql += if(f.nullable) ' NULL' else ' NOT NULL';
       if(autoIncrement) sql += ' AUTO_INCREMENT';
-      switch f.key {
-        case Some(Unique): sql += ' UNIQUE';
-        case Some(Primary): primary.push(f.name);
-        case None: // do nothing
+      
+      for(key in f.keys) switch key {
+        case Unique(name): 
+          if(!unique.exists(name)) unique.set(name, []);
+          unique.get(name).push(f.name);
+        case Primary:
+          primary.push(f.name);
       }
       sql;
     }].join(', ');
     
     if(primary.length > 0)
       sql += ', PRIMARY KEY (' + primary.map(s.ident).join(', ') + ')';
+      
+    for(key in unique.keys()) switch key {
+      case Some(name): sql += ', UNIQUE KEY ${s.ident(name)} (${unique.get(key).map(s.ident).join(', ')})';
+      case None: sql += ', UNIQUE KEY (${unique.get(key).map(s.ident).join(', ')})';
+    }
     
     sql += ')';
     return sql;

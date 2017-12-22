@@ -26,7 +26,7 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
   public function getName():String
     return name;
   
-  function new(cnx, name, fields) {
+  function new(cnx, name, alias, fields) {
     
     this.name = name;
     this.fields = fields;
@@ -34,7 +34,7 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
     super(
       fields, 
       cnx, 
-      TTable(name), 
+      TTable(name, alias), 
       function (f:Filter) return (cast f : Fields->Condition)(fields) //TODO: raise issue on Haxe tracker and remove the cast once resolved
     );
   }
@@ -58,6 +58,33 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
   public function delete(options:{ where: Filter, ?max:Int }) {
     return cnx.delete(this, toCondition(options.where), options.max);
   }
+
+  macro public function as(e:Expr, alias:String) {
+    return switch haxe.macro.Context.typeof(e) {
+      case TInst(_.get() => { superClass: _.params => [fields, _, row, _] }, _):
+        var fieldsType = fields.toComplex({direct: true});
+        var filterType = (macro function ($alias:$fieldsType):tink.sql.Expr.Condition return tink.sql.Expr.ExprData.EValue(true, tink.sql.Expr.ValueType.VBool)).typeof().sure();
+        var path: haxe.macro.TypePath = 
+        'tink.sql.Table.TableSource'.asTypePath(
+          [fields, filterType, row].map(function (type)
+            return TPType(type.toComplex({direct: true}))
+          ).concat([TPType(e.pos.makeBlankType())])
+        );
+        var aliasFields = [];
+        switch fields {
+          case TAnonymous(_.get().fields => originalFields):
+            for (field in originalFields) 
+              aliasFields.push({
+                field: field.name, 
+                expr: macro new tink.sql.Expr.Field($v{alias}, $v{field.name})
+              });
+          default: throw "assert";
+        }
+        var fieldObj = EObjectDecl(aliasFields).at(e.pos);
+        macro @:privateAccess new $path($e.cnx, $e.name, $v{alias}, $fieldObj);
+      default: e.reject();
+    }
+  }
   
   @:noCompletion 
   public function getFields():Array<Column>
@@ -74,7 +101,7 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
       var fval = Reflect.field(row, fname);
       if(fval == null) val(null);
       else switch f.type {
-        case DPoint:
+        case DPoint | DMultiPolygon:
           'ST_GeomFromGeoJSON(\'${haxe.Json.stringify(fval)}\')';
         default:
           val(fval);

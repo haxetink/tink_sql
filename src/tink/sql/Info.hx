@@ -18,7 +18,7 @@ interface TableInfo<Row:{}> {
 typedef Column = {
   > FieldType,
   name:String,
-  key:Option<KeyType>,
+  keys:Array<KeyType>,
 }
   
 typedef FieldType = {
@@ -28,7 +28,7 @@ typedef FieldType = {
 
 enum KeyType {
   Primary;
-  Unique;
+  Unique(indexName:Option<String>);
 }
 
 enum DataType {
@@ -39,6 +39,7 @@ enum DataType {
   DBlob(maxLength:Int);
   DDateTime;
   DPoint; // geojson
+  DMultiPolygon; // geojson
 }
 
 typedef Insert<Row> = Row;
