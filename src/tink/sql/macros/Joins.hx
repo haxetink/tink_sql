@@ -20,7 +20,7 @@ class Joins {
   static public function perform(type:JoinType, left:Expr, right:Expr) {
         
     var rowFields = new Array<Field>(),
-        fieldsObj #if (haxe_ver > 4) : Array<ObjectField> #end = [];
+        fieldsObj #if (haxe_ver >= 4) : Array<ObjectField> #end = [];
     
     function traverse(e:Expr, fieldsExpr:Expr, nullable:Bool) {
       
