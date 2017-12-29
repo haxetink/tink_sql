@@ -68,6 +68,7 @@ class TableBuilder {
                          TAbstract(_.get() => {pack: [], name: 'Null'}, [p]):
                       nullable = true;
                       resolveType(p);
+                      
                     case TType(_.get() => {module: 'tink.sql.types.Integer'}, p):
                       var maxLength = getInt(p[0], f.pos);
                       macro tink.sql.Info.DataType.DInt($v{maxLength}, false, $v{f.meta.has(':autoIncrement')});
@@ -110,7 +111,10 @@ class TableBuilder {
                         default:
                           resolveType(type);
                       }
-                      
+
+                    case TType(_.get().type => type, _):
+                      return resolveType(type);
+
                     case _.getID() => v:
                       if(v == null) v = Std.string(type);
                       f.pos.error('Unsupported type $v. Use types from the tink.sql.types package.');
