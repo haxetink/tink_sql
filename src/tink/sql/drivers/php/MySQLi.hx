@@ -52,111 +52,61 @@ class MySQLiConnection<Db:DatabaseInfo> implements Connection<Db> implements San
   public function ident(s:String):String
     return tink.sql.drivers.MySql.getSanitizer(null).ident(s);
   
-  function query<R, T>(query:String, process:R -> T):Promise<T> 
+  function query<T>(query:String):Promise<T> 
     return switch cnx.query(query) {
       case false: new Error(cnx.errno, cnx.error);
-      case v: process(cast v);
+      case v: (cast v: T);
     }
 
   inline function noise(_) return Noise; 
   
   public function dropTable<Row:{}>(table:TableInfo<Row>):Promise<Noise> 
-    return query(Format.dropTable(table, this), noise);
+    return query(Format.dropTable(table, this));
         
   public function createTable<Row:{}>(table:TableInfo<Row>):Promise<Noise> 
-    return query(Format.createTable(table, this), noise);
+    return query(Format.createTable(table, this));
   
   public function selectAll<A:{}>(t:Target<A, Db>, ?c:Condition, ?limit:Limit, ?orderBy:OrderBy<A>):RealStream<A>
     return Stream.promise(
-      query(Format.selectAll(t, c, this, limit, orderBy), function (result: ResultSet) {
-        return Stream.ofIterator(result.nestedIterator(switch t {
-          case TTable(_, _): false;
-          case TJoin(_, _, _, _): true;
-        }));
+      query(Format.selectAll(t, c, this, limit, orderBy)).next(function (result: ResultSet) {
+        return Stream.ofIterator(result.nestedIterator(!t.match(TTable(_, _))));
       })
     );
   
   public function countAll<A:{}>(t:Target<A, Db>, ?c:Condition):Promise<Int>
-    return query(Format.countAll(t, c, this), function (result: NativeResultSet) {
+    return query(Format.countAll(t, c, this)).next(function (result: NativeResultSet) {
       return Std.parseInt(result.fetch_row()[0]);
     });
   
   public function insert<Row:{}>(table:TableInfo<Row>, items:Array<Insert<Row>>):Promise<Id<Row>>
-    return query(Format.insert(table, items, this), function (_)
+    return query(Format.insert(table, items, this)).next(function (_)
       return new Id(cnx.insert_id)
     );
         
   public function update<Row:{}>(table:TableInfo<Row>, ?c:Condition, ?max:Int, update:Update<Row>):Promise<{rowsAffected:Int}>
-    return query(Format.update(table, c, max, update, this), function(_)
+    return query(Format.update(table, c, max, update, this)).next(function(_)
       return {rowsAffected: cnx.affected_rows}
     );
         
   public function delete<Row:{}>(table:TableInfo<Row>, ?c:Condition, ?max:Int):Promise<{rowsAffected:Int}>
-    return query(Format.delete(table, c, max, this), function(_)
+    return query(Format.delete(table, c, max, this)).next(function(_)
       return {rowsAffected: cnx.affected_rows}
     );
 
-  public function diffSchema<Row:{}>(table:TableInfo<Row>):Promise<Noise> {
+  public function diffSchema<Row:{}>(table:TableInfo<Row>):Promise<Array<SchemaChange>> {
     function iter(res: ResultSet) return res.iterator();
     return Promise.inParallel([
-      query(Format.columnInfo(table, this), iter),
-      query(Format.indexInfo(table, this), iter)
+      query(Format.columnInfo(table, this)).next(iter),
+      query(Format.indexInfo(table, this)).next(iter)
     ]).next(function (res) switch res {
       case [columns, indexes]:
-        trace(buildSchemaInfo(cast columns, cast indexes));
-        return Noise;
+        return Schema
+          .fromMysql(cast columns, cast indexes)
+          .diff(table.getFields());
       default: throw "assert";
     });
   }
 
-  function buildSchemaInfo(columns: Iterator<ColumnInfo>, indexes: Iterator<IndexInfo>) {
-    var schema = new Map<String, SchemaColumn>();
-    var indexData = groupIndexData(indexes);
-    for (col in columns)
-      schema[col.Field] = {
-        name: col.Field,
-        type: col.Type,
-        nullable: col.Null == 'YES',
-        byDefault: col.Default,
-        keys: []
-      }
-    for (name in indexData.keys()) 
-      switch indexData[name] {
-        case [index]:
-          var field = schema[index.Column_name];
-          if (name == 'PRIMARY') field.keys.push(Primary);
-          if (index.Non_unique == '0') field.keys.push(Unique(Some(name)));
-          // Todo: we might want to add index/fulltext/spatial
-        default: // Todo: indexes on multiple columns
-      }
-    return schema;
-  }
-
-  function groupIndexData(indexes: Iterator<IndexInfo>) {
-    var info = new Map<String, Array<IndexInfo>>();
-    for (index in indexes) {
-      var name = index.Key_name;
-      if (info.exists(index.Key_name)) info[name].push(index);
-      else info[name] = [index];
-    }
-    return info;
-  }
-
-}
-
-private typedef ColumnInfo = {
-  Field: String,
-  Type: String,
-  Null: String, // 'YES', 'NO'
-  Key: String, // 'PRI', 'UNI', 'MUL'
-  Default: Null<String>,
-  Extra: String
-}
-
-private typedef IndexInfo = {
-  Key_name: String,
-  Non_unique: String,
-  Column_name: String
 }
 
 private abstract ResultSet(NativeResultSet) from NativeResultSet {

@@ -25,7 +25,7 @@ class SchemaTest {
 		return db.Schema.drop().flatMap(function(_) return db.Schema.create());
 	}*/
 	
-	@:include
+	//@:include
   public function diff() {
 		return db.Schema.diffSchema().next(function(diff) return assert(true));
 	}

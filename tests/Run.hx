@@ -67,7 +67,7 @@ class Run {
   
   public function info() {
     asserts.assert(db.name == 'test');
-    asserts.assert(sorted(db.tablesnames()).join(',') == 'Geometry,Post,PostTags,Types,User,Schema');
+    asserts.assert(sorted(db.tablesnames()).join(',') == 'Geometry,Post,PostTags,Schema,Types,User');
     asserts.assert(sorted(db.tableinfo('Post').fieldnames()).join(',') == 'author,content,id,title');
     return asserts.done();
   }
