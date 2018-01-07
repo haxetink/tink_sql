@@ -68,20 +68,6 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
         
   public function createTable<Row:{}>(table:TableInfo<Row>):Promise<Noise>
     return query({sql: Format.createTable(table, this)});
-
-  public function diffSchema<Row:{}>(table:TableInfo<Row>):Promise<Array<SchemaChange>> {
-    var iter = rowIterator.bind(_, false);
-    return Promise.inParallel([
-      query({sql: Format.columnInfo(table, this)}).next(iter),
-      query({sql: Format.indexInfo(table, this)}).next(iter)
-    ]).next(function (res) switch res {
-      case [columns, indexes]:
-        return Schema
-          .fromMysql(cast columns, cast indexes)
-          .diff(table.getFields());
-      default: throw "assert";
-    });
-  }
   
   public function selectAll<A:{}>(t:Target<A, Db>, ?c:Condition, ?limit:Limit, ?orderBy:OrderBy<A>):RealStream<A> {
     var nest = !t.match(TTable(_, _));
@@ -113,6 +99,20 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
     return query({sql: Format.delete(table, c, max, this)}).next(function(res)
       return {rowsAffected: res.changedRows}
     );
+  
+  public function diffSchema<Row:{}>(table:TableInfo<Row>):Promise<Array<SchemaChange>> {
+    function iter(res) return rowIterator(res);
+    return Promise.inParallel([
+      query({sql: Format.columnInfo(table, this)}).next(iter),
+      query({sql: Format.indexInfo(table, this)}).next(iter)
+    ]).next(function (res) switch res {
+      case [columns, indexes]:
+        return Schema
+          .fromMysql(cast columns, cast indexes)
+          .diff(table.getFields());
+      default: throw "assert";
+    });
+  }
 
   function typeCast(field, next): Any {
     return switch field.type {
