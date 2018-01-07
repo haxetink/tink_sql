@@ -3,6 +3,7 @@ package tink.sql.drivers.php;
 import haxe.DynamicAccess;
 import haxe.io.Bytes;
 import haxe.io.BytesInput;
+import haxe.extern.EitherType;
 import tink.sql.Connection.Update;
 import tink.sql.Format.Sanitizer;
 import tink.sql.Limit;
@@ -11,6 +12,7 @@ import tink.sql.Info;
 import tink.sql.types.Id;
 import tink.streams.Stream;
 import tink.streams.RealStream;
+import tink.sql.Schema;
 using tink.CoreApi;
 
 class MySQLi implements Driver {
@@ -50,89 +52,29 @@ class MySQLiConnection<Db:DatabaseInfo> implements Connection<Db> implements San
   public function ident(s:String):String
     return tink.sql.drivers.MySql.getSanitizer(null).ident(s);
   
-  function query<R, T>(query: String, ?process: R -> T):Promise<T> {
-    var result = cnx.query(query);
-    if (process == null) process = function(_): T return cast Noise;
-    return Future.sync(
-      if (Std.is(result, Bool) && !result)
-        Failure(new Error(cnx.errno, cnx.error))
-      else
-        Success(process(cast result))
-    );
-  }
+  function query<R, T>(query:String, process:R -> T):Promise<T> 
+    return switch cnx.query(query) {
+      case false: new Error(cnx.errno, cnx.error);
+      case v: process(cast v);
+    }
+
+  inline function noise(_) return Noise; 
   
   public function dropTable<Row:{}>(table:TableInfo<Row>):Promise<Noise> 
-    return query(Format.dropTable(table, this));
+    return query(Format.dropTable(table, this), noise);
         
   public function createTable<Row:{}>(table:TableInfo<Row>):Promise<Noise> 
-    return query(Format.createTable(table, this));
+    return query(Format.createTable(table, this), noise);
   
-  public function selectAll<A:{}>(t:Target<A, Db>, ?c:Condition, ?limit:Limit, ?orderBy:OrderBy<A>):RealStream<A> {
+  public function selectAll<A:{}>(t:Target<A, Db>, ?c:Condition, ?limit:Limit, ?orderBy:OrderBy<A>):RealStream<A>
     return Stream.promise(
-      query(Format.selectAll(t, c, this, limit, orderBy), function (result: NativeResultSet) {
-        var current;
-        var nest = switch t {
+      query(Format.selectAll(t, c, this, limit, orderBy), function (result: ResultSet) {
+        return Stream.ofIterator(result.nestedIterator(switch t {
           case TTable(_, _): false;
           case TJoin(_, _, _, _): true;
-        }
-        #if php7
-        var fields = result.fetch_fields();
-        #else
-        var fields: Array<NativeFieldInfo> = cast php.Lib.toHaxeArray(result.fetch_fields());
-        #end
-        return Stream.ofIterator({
-          hasNext: function() {
-            return switch result.fetch_row() {
-              case null: false;
-              case v:
-                #if php7 current = v; #else current = php.Lib.toHaxeArray(v); #end
-                true;
-            }
-          },
-          next: function() {
-            var res: DynamicAccess<Any> = {};
-            var target = res;
-            var i = 0;
-            for (field in fields) {
-              if (nest) target = 
-                if (!res.exists(field.table)) res[field.table] = {}
-                else res[field.table];
-              var value = current[i++];
-              target[field.name] = processField(field, value);
-            }
-            return cast res;
-          }
-        });
+        }));
       })
     );
-  }
-
-  function processField(field: NativeFieldInfo, value: Any): Any {
-    if (value == null) return null;
-    return switch field.type {
-      case TINYINT:
-        value == '1';
-      case INTEGER:
-        Std.parseInt(value);
-      case DATETIME:
-        Date.fromString(value);
-      case BLOB:
-        Bytes.ofString(value);
-      case GEOMETRY:
-        parseGeo(new BytesInput(Bytes.ofString(value), 4));
-      default: value;
-    }
-  }
-  
-  function parseGeo(buffer: BytesInput): geojson.Point {
-    buffer.bigEndian = buffer.readByte() == 0;
-    return switch buffer.readInt32() {
-      case 1: 
-        var y = buffer.readDouble(), x = buffer.readDouble();
-        new geojson.Point(x, y);
-      case v: throw 'GeoJson type $v not supported';
-    }
-  }
   
   public function countAll<A:{}>(t:Target<A, Db>, ?c:Condition):Promise<Int>
     return query(Format.countAll(t, c, this), function (result: NativeResultSet) {
@@ -154,6 +96,137 @@ class MySQLiConnection<Db:DatabaseInfo> implements Connection<Db> implements San
       return {rowsAffected: cnx.affected_rows}
     );
 
+  public function diffSchema<Row:{}>(table:TableInfo<Row>):Promise<Noise> {
+    function iter(res: ResultSet) return res.iterator();
+    return Promise.inParallel([
+      query(Format.columnInfo(table, this), iter),
+      query(Format.indexInfo(table, this), iter)
+    ]).next(function (res) switch res {
+      case [columns, indexes]:
+        trace(buildSchemaInfo(cast columns, cast indexes));
+        return Noise;
+      default: throw "assert";
+    });
+  }
+
+  function buildSchemaInfo(columns: Iterator<ColumnInfo>, indexes: Iterator<IndexInfo>) {
+    var schema = new Map<String, SchemaColumn>();
+    var indexData = groupIndexData(indexes);
+    for (col in columns)
+      schema[col.Field] = {
+        name: col.Field,
+        type: col.Type,
+        nullable: col.Null == 'YES',
+        byDefault: col.Default,
+        keys: []
+      }
+    for (name in indexData.keys()) 
+      switch indexData[name] {
+        case [index]:
+          var field = schema[index.Column_name];
+          if (name == 'PRIMARY') field.keys.push(Primary);
+          if (index.Non_unique == '0') field.keys.push(Unique(Some(name)));
+          // Todo: we might want to add index/fulltext/spatial
+        default: // Todo: indexes on multiple columns
+      }
+    return schema;
+  }
+
+  function groupIndexData(indexes: Iterator<IndexInfo>) {
+    var info = new Map<String, Array<IndexInfo>>();
+    for (index in indexes) {
+      var name = index.Key_name;
+      if (info.exists(index.Key_name)) info[name].push(index);
+      else info[name] = [index];
+    }
+    return info;
+  }
+
+}
+
+private typedef ColumnInfo = {
+  Field: String,
+  Type: String,
+  Null: String, // 'YES', 'NO'
+  Key: String, // 'PRI', 'UNI', 'MUL'
+  Default: Null<String>,
+  Extra: String
+}
+
+private typedef IndexInfo = {
+  Key_name: String,
+  Non_unique: String,
+  Column_name: String
+}
+
+private abstract ResultSet(NativeResultSet) from NativeResultSet {
+  public function row(): Option<NativeRow>
+    return switch this.fetch_row() {
+      case null: None;
+      case v: Some(#if php7 v #else cast php.Lib.toHaxeArray(v) #end);
+    }
+
+  public function fields(): Iterable<NativeFieldInfo>
+    #if php7 return this.fetch_fields();
+    #else return (cast php.Lib.toHaxeArray(this.fetch_fields()): Array<NativeFieldInfo>); #end
+
+  public function iterator()
+    return nestedIterator();
+
+  public function nestedIterator(nest = false) {
+    var current;
+    var fields = fields();
+    return {
+      hasNext: function() {
+        return switch row() {
+          case None: false;
+          case Some(v): 
+            current = v;
+            true;
+        }
+      },
+      next: function() {
+        var res: DynamicAccess<Any> = {};
+        var target = res;
+        var i = 0;
+        for (field in fields) {
+          if (nest) target = 
+            if (!res.exists(field.table)) res[field.table] = {}
+            else res[field.table];
+          var value = current[i++];
+          target[field.name] = processField(field, value);
+        }
+        return cast res;
+      }
+    }
+  }
+  
+  function parseGeo(buffer: BytesInput): geojson.Point {
+    buffer.bigEndian = buffer.readByte() == 0;
+    return switch buffer.readInt32() {
+      case 1: 
+        var y = buffer.readDouble(), x = buffer.readDouble();
+        new geojson.Point(x, y);
+      case v: throw 'GeoJson type $v not supported';
+    }
+  }
+
+  function processField(field: NativeFieldInfo, value: Any): Any {
+    if (value == null) return null;
+    return switch field.type {
+      case TINYINT:
+        value == '1';
+      case INTEGER:
+        Std.parseInt(value);
+      case DATETIME:
+        Date.fromString(value);
+      case BLOB:
+        Bytes.ofString(value);
+      case GEOMETRY:
+        parseGeo(new BytesInput(Bytes.ofString(value), 4));
+      default: value;
+    }
+  }
 }
 
 @:native('mysqli')
@@ -169,10 +242,11 @@ private extern class NativeConnection {
   public var error: String;
 }
 
-private typedef NativeResult = haxe.extern.EitherType<Bool, NativeResultSet>;
+private typedef NativeResult = EitherType<Bool, NativeResultSet>;
+private typedef NativeRow = #if php7 php.NativeIndexedArray<Any> #else php.NativeArray #end;
 
 private extern class NativeResultSet {
-  public function fetch_row(): #if php7 php.NativeIndexedArray<Any> #else php.NativeArray #end;
+  public function fetch_row(): NativeRow;
   public function fetch_fields(): #if php7 php.NativeIndexedArray<NativeFieldInfo> #else php.NativeArray #end;
 }
 

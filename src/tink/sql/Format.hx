@@ -97,42 +97,12 @@ class Format {
     var unique = new Map();
     sql += [for(f in table.getFields()) {
       var sql = s.ident(f.name) + ' ';
-      var autoIncrement = false;
-      sql += switch f.type {
-        case DBool:
-          'TINYINT(1)';
-        
-        case DFloat(bits):
-          'FLOAT($bits)';
-        
-        case DInt(bits, signed, autoInc):
-          if(autoInc) autoIncrement = true;
-          'INT($bits)' + if(!signed) ' UNSIGNED' else '';
-        
-        case DString(maxLength):
-          if(maxLength < 65536)
-            'VARCHAR($maxLength)';
-          else
-            'TEXT';
-        
-        case DBlob(maxLength):
-          if(maxLength < 65536)
-            'VARBINARY($maxLength)';
-          else
-            'BLOB';
-        
-        case DDateTime:
-          'DATETIME';
-        
-        case DPoint:
-          'POINT';
-        
-        case DMultiPolygon:
-          'MULTIPOLYGON';
-      }
+      sql += sqlType(f.type);
       sql += if(f.nullable) ' NULL' else ' NOT NULL';
-      if(autoIncrement) sql += ' AUTO_INCREMENT';
-      
+      switch f.type {
+        case DInt(_, _, true): sql += ' AUTO_INCREMENT';
+        default:
+      }
       for(key in f.keys) switch key {
         case Unique(name): 
           if(!unique.exists(name)) unique.set(name, []);
@@ -155,6 +125,36 @@ class Format {
     return sql;
   }
   
+  static public function sqlType(type: DataType): String 
+    return switch type {
+      case DBool:
+        'TINYINT(1)';
+      case DFloat(bits):
+        'FLOAT($bits)';
+      case DInt(bits, signed, _):
+        'INT($bits)' + if(!signed) ' UNSIGNED' else '';
+      case DString(maxLength): // Todo: separate types
+        if(maxLength < 65536) 'VARCHAR($maxLength)';
+        else 'TEXT';
+      case DBlob(maxLength):
+        if(maxLength < 65536) 'VARBINARY($maxLength)';
+        else 'BLOB';
+      case DDateTime:
+        'DATETIME';
+      case DPoint:
+        'POINT';
+      case DMultiPolygon:
+        'MULTIPOLYGON';
+    }
+  
+  static public function columnInfo<Row:{}>(table:TableInfo<Row>, s:Sanitizer) {
+    return 'SHOW COLUMNS FROM ${s.ident(table.getName())}';
+  }
+
+  static public function indexInfo<Row:{}>(table:TableInfo<Row>, s:Sanitizer) {
+    return 'SHOW INDEX FROM ${s.ident(table.getName())}';
+  }
+
   static public function selectAll<A:{}, Db>(t:Target<A, Db>, ?c:Condition, s:Sanitizer, ?limit:Limit, ?orderBy:OrderBy<A>)         
     return select(t, '*', c, s, limit, orderBy);
 

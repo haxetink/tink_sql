@@ -68,6 +68,18 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
       );
     });
   }
+
+  public function diffSchema<Row:{}>(table:TableInfo<Row>):Promise<Noise> {
+    return Future.async(function(cb) {
+      cnx.query(
+        {sql: Format.tableInfo(table, this)},
+        function(err, res) {
+          trace(res);
+          cb(if(err == null) Success(Noise) else toError(err));
+        }
+      );
+    });
+  }
   
   public function selectAll<A:{}>(t:Target<A, Db>, ?c:Condition, ?limit:Limit, ?orderBy:OrderBy<A>):RealStream<A>
     return Stream.promise(Future.async(function (cb) {

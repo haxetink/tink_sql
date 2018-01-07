@@ -57,7 +57,15 @@ typedef Geometry = {
   public var point(default, null):Null<Point>;
 }
 
-@:tables(User, Post, PostTags, Types, Geometry)
+typedef Schema = {
+  @:autoIncrement @:primary public var id(default, null):Id<User>;
+  public var text(default, null): Text<200>;
+  public var number(default, null): Number<10>;
+  public var boolean(default, null): Boolean;
+  public var extra(default, null): Text<1>;
+}
+
+@:tables(User, Post, PostTags, Types, Geometry, Schema)
 class Db extends tink.sql.Database {}
 
 abstract AInt(Integer<1>) from Int to Int {}
