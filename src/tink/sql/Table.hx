@@ -4,6 +4,7 @@ import tink.core.Any;
 import tink.sql.Connection.Update;
 import tink.sql.Expr;
 import tink.sql.Info;
+import tink.sql.Schema;
 
 #if macro
 import haxe.macro.Expr;
@@ -47,6 +48,9 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
 
   public function diffSchema()
     return cnx.diffSchema(this);
+
+  public function updateSchema(changes: Array<SchemaChange>)
+    return cnx.updateSchema(this, changes);
   
   public function insertMany(rows:Array<Insert<Row>>)
     return cnx.insert(this, rows);

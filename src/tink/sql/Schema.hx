@@ -2,6 +2,7 @@ package tink.sql;
 
 import tink.sql.Info;
 import tink.sql.Format;
+using StringTools;
 
 typedef SchemaColumn = {
   name: String,
@@ -45,7 +46,7 @@ abstract Schema(SchemaInfo) from SchemaInfo to SchemaInfo {
         case [null, added]: AddColumn(added);
         case [removed, null]: RemoveColumn(removed);
         case [a, b]:
-          if (a.type.toLowerCase() == b.type.toLowerCase() && a.nullable == b.nullable)
+          if (normalizeType(a.type) == normalizeType(b.type) && a.nullable == b.nullable)
             continue;
           ChangeColumn(a, b);
       }
@@ -66,6 +67,14 @@ abstract Schema(SchemaInfo) from SchemaInfo to SchemaInfo {
     ];
   }
 
+  function normalizeType(type: String) {
+    type = type.toLowerCase();
+    // Mysql does not report float/double precision
+    if (type.startsWith('float')) return 'float';
+    if (type.startsWith('double')) return 'double';
+    return type;
+  }
+
   public function indexes() {
     var index = new Map<String, Index>();
     inline function add(name: String, col, key) {
@@ -75,7 +84,7 @@ abstract Schema(SchemaInfo) from SchemaInfo to SchemaInfo {
         index[name] = {name: name, type: type, fields: [col.name]}
       } else {
         var existing = index[name];
-        if (existing.type != type) 
+        if (existing.type != type)
           throw 'Different index types (${existing.type}, $type) under same name: `$name`';
         existing.fields.push(col.name);
       }
@@ -115,8 +124,10 @@ abstract Schema(SchemaInfo) from SchemaInfo to SchemaInfo {
     for (index in indexes) {
       var name = index.Key_name;
       var field = schema[index.Column_name];
-      if (name == 'PRIMARY') field.keys.push(Primary);
-      if (index.Non_unique == 0) field.keys.push(Unique(Some(name)));
+      if (name == 'PRIMARY')
+        field.keys.push(Primary);
+      else if (index.Non_unique == '0')
+        field.keys.push(Unique(Some(name)));
     }
     return schema;
   }
@@ -148,6 +159,6 @@ typedef MysqlColumnInfo = {
 
 typedef MysqlIndexInfo = {
   Key_name: String,
-  Non_unique: Int,
+  Non_unique: String,
   Column_name: String
 }

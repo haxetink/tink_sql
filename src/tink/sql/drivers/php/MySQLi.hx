@@ -107,6 +107,12 @@ class MySQLiConnection<Db:DatabaseInfo> implements Connection<Db> implements San
     });
   }
 
+  public function updateSchema<Row:{}>(table:TableInfo<Row>, changes:Array<SchemaChange>):Promise<Noise>
+    return Promise.inSequence([
+      for (change in changes)
+        query(Format.alterTable(table, this, change))
+    ]).next(noise);
+
 }
 
 private abstract ResultSet(NativeResultSet) from NativeResultSet {

@@ -113,6 +113,12 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
       default: throw "assert";
     });
   }
+  
+  public function updateSchema<Row:{}>(table:TableInfo<Row>, changes:Array<SchemaChange>):Promise<Noise>
+    return Promise.inSequence([
+      for (change in changes)
+        query({sql: Format.alterTable(table, this, change)})
+    ]);
 
   function typeCast(field, next): Any {
     return switch field.type {

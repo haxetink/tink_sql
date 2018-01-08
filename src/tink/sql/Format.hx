@@ -5,6 +5,7 @@ import tink.sql.Connection.Update;
 import tink.sql.Expr;
 import tink.sql.Info;
 import tink.sql.Limit;
+import tink.sql.Schema;
 
 class Format {
   
@@ -122,6 +123,37 @@ class Format {
     }
     
     sql += ')';
+    return sql;
+  }
+
+  static public function alterTable<Row:{}>(table:TableInfo<Row>, s:Sanitizer, change: SchemaChange) {
+    var sql = 'ALTER TABLE ' + s.ident(table.getName());
+    inline function definition(f) return f.type + if(f.nullable) ' NULL' else ' NOT NULL';
+    switch change {
+      case AddColumn(f): 
+        sql += 'ADD COLUMN ' + s.ident(f.name);
+        sql += definition(f);
+      case RemoveColumn(f):
+        sql += 'DROP COLUMN ' + s.ident(f.name);
+      case ChangeColumn(from, to):
+        sql += 'MODIFY COLUMN ' + s.ident(from.name);
+        sql += definition(to);
+      case AddIndex(index):
+        var type = switch index.type {
+          case IUnique: 'UNIQUE ' + s.ident(index.name);
+          case IIndex: 'INDEX ' + s.ident(index.name);
+          case IPrimary: 'PRIMARY KEY';
+        }
+        sql += 'ADD $type ';
+        sql += '(${index.fields.map(s.ident).join(', ')})';
+      case RemoveIndex(index):
+        sql += 'DROP ' + switch index.type {
+          case IUnique | IIndex: 'INDEX ' + s.ident(index.name);
+          case IPrimary: 'PRIMARY KEY';
+        }
+      case ChangeIndex(from, to):
+        throw 'todo';
+    }
     return sql;
   }
   
