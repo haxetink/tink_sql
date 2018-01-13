@@ -7,6 +7,7 @@ using StringTools;
 typedef SchemaColumn = {
   name: String,
   type: String,
+  autoIncrement: Bool,
   nullable: Bool,
   keys: Array<KeyType>,
   byDefault: Null<String>
@@ -46,7 +47,11 @@ abstract Schema(SchemaInfo) from SchemaInfo to SchemaInfo {
         case [null, added]: AddColumn(added);
         case [removed, null]: RemoveColumn(removed);
         case [a, b]:
-          if (normalizeType(a.type) == normalizeType(b.type) && a.nullable == b.nullable)
+          if (
+            normalizeType(a.type) == normalizeType(b.type) 
+            && a.nullable == b.nullable
+            && a.autoIncrement == b.autoIncrement
+          )
             continue;
           ChangeColumn(a, b);
       }
@@ -117,6 +122,7 @@ abstract Schema(SchemaInfo) from SchemaInfo to SchemaInfo {
       schema[col.Field] = {
         name: col.Field,
         type: col.Type,
+        autoIncrement: col.Extra == 'auto_increment',
         nullable: col.Null == 'YES',
         byDefault: col.Default,
         keys: []
@@ -135,6 +141,7 @@ abstract Schema(SchemaInfo) from SchemaInfo to SchemaInfo {
   @:from public static function fromFields(fields: Iterable<Column>): Schema
     return [for (field in fields) field.name => {
       name: field.name, type: Format.sqlType(field.type),
+      autoIncrement: field.type.match(DInt(_, _, true)),
       nullable: field.nullable, keys: field.keys, byDefault: null
     }];
 

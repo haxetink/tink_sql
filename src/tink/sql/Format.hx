@@ -126,35 +126,47 @@ class Format {
     return sql;
   }
 
-  static public function alterTable<Row:{}>(table:TableInfo<Row>, s:Sanitizer, change: SchemaChange) {
-    var sql = 'ALTER TABLE ' + s.ident(table.getName());
-    inline function definition(f) return f.type + if(f.nullable) ' NULL' else ' NOT NULL';
-    switch change {
+  static public function alterTable<Row:{}>(table:TableInfo<Row>, s:Sanitizer, changes: Array<SchemaChange>)
+    return [
+      for (change in changes) 
+        for (sql in schemaChange(table, s, change))
+          sql
+    ];
+
+  static public function schemaChange<Row:{}>(table:TableInfo<Row>, s:Sanitizer, change: SchemaChange) {
+    inline function alter(sql) 
+      return 'ALTER TABLE ${s.ident(table.getName())} ${sql.join(' ')}';
+    inline function definition(f) 
+      return f.type + 
+        if (f.nullable) ' NULL' else ' NOT NULL' +
+        if (f.autoIncrement) ' AUTO_INCREMENT' else '';
+    inline function joinFields(fields)
+      return fields.map(s.ident).join(', ');
+    inline function addIndex(index)
+      return alter(['ADD', switch index.type {
+        case IUnique: 'UNIQUE ' + s.ident(index.name);
+        case IIndex: 'INDEX ' + s.ident(index.name);
+        case IPrimary: 'PRIMARY KEY';
+      }, '(${joinFields(index.fields)})']);
+    inline function removeIndex(index)
+      return alter(['DROP', switch index.type {
+        case IUnique | IIndex: 'INDEX ' + s.ident(index.name);
+        case IPrimary: 'PRIMARY KEY';
+      }]);
+    return switch change {
       case AddColumn(f): 
-        sql += 'ADD COLUMN ' + s.ident(f.name);
-        sql += definition(f);
+        [alter(['ADD COLUMN', s.ident(f.name), definition(f)])];
       case RemoveColumn(f):
-        sql += 'DROP COLUMN ' + s.ident(f.name);
+        [alter(['DROP COLUMN', s.ident(f.name)])];
       case ChangeColumn(from, to):
-        sql += 'MODIFY COLUMN ' + s.ident(from.name);
-        sql += definition(to);
+        [alter(['MODIFY COLUMN', s.ident(from.name), definition(to)])];
       case AddIndex(index):
-        var type = switch index.type {
-          case IUnique: 'UNIQUE ' + s.ident(index.name);
-          case IIndex: 'INDEX ' + s.ident(index.name);
-          case IPrimary: 'PRIMARY KEY';
-        }
-        sql += 'ADD $type ';
-        sql += '(${index.fields.map(s.ident).join(', ')})';
+        [addIndex(index)];
       case RemoveIndex(index):
-        sql += 'DROP ' + switch index.type {
-          case IUnique | IIndex: 'INDEX ' + s.ident(index.name);
-          case IPrimary: 'PRIMARY KEY';
-        }
+        [removeIndex(index)];
       case ChangeIndex(from, to):
-        throw 'todo';
+        [removeIndex(from), addIndex(to)];
     }
-    return sql;
   }
   
   static public function sqlType(type: DataType): String 

@@ -64,6 +64,7 @@ typedef Schema = {
   @:unique
   public var number(default, null): Number<1>;
   public var boolean(default, null): Boolean;
+  @:unique
   public var extra(default, null): Text<1>;
 }
 

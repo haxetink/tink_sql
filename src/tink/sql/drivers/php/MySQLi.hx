@@ -57,8 +57,6 @@ class MySQLiConnection<Db:DatabaseInfo> implements Connection<Db> implements San
       case false: new Error(cnx.errno, cnx.error);
       case v: (cast v: T);
     }
-
-  inline function noise(_) return Noise; 
   
   public function dropTable<Row:{}>(table:TableInfo<Row>):Promise<Noise> 
     return query(Format.dropTable(table, this));
@@ -109,9 +107,9 @@ class MySQLiConnection<Db:DatabaseInfo> implements Connection<Db> implements San
 
   public function updateSchema<Row:{}>(table:TableInfo<Row>, changes:Array<SchemaChange>):Promise<Noise>
     return Promise.inSequence([
-      for (change in changes)
-        query(Format.alterTable(table, this, change))
-    ]).next(noise);
+      for (change in Format.alterTable(table, this, changes))
+        query(change)
+    ]);
 
 }
 
