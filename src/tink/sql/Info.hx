@@ -28,7 +28,7 @@ typedef FieldType = {
 
 enum KeyType {
   Primary;
-  //Index(indexName:Option<String>);
+  Index(indexName:Option<String>);
   Unique(indexName:Option<String>);
 }
 

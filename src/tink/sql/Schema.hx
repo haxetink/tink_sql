@@ -98,8 +98,8 @@ abstract Schema(SchemaInfo) from SchemaInfo to SchemaInfo {
       for (key in col.keys)
         add(switch key {
           case Primary: 'PRIMARY';
-          case Unique(None): col.name;
-          case Unique(Some(name)): name;
+          case Unique(None) | Index(None): col.name;
+          case Unique(Some(name)) | Index(Some(name)): name;
         }, col, key);
     return index;
   }
@@ -108,6 +108,7 @@ abstract Schema(SchemaInfo) from SchemaInfo to SchemaInfo {
     return switch key {
       case Primary: IPrimary;
       case Unique(_): IUnique;
+      case Index(_): IIndex;
     }
 
   static function mergeKeys<T>(a: Map<String, T>, b: Map<String, T>)
@@ -134,6 +135,8 @@ abstract Schema(SchemaInfo) from SchemaInfo to SchemaInfo {
         field.keys.push(Primary);
       else if (index.Non_unique == '0')
         field.keys.push(Unique(Some(name)));
+      else
+        field.keys.push(Index(Some(name)));
     }
     return schema;
   }

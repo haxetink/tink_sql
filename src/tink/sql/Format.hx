@@ -94,8 +94,6 @@ class Format {
     sql += s.ident(table.getName());
     sql += ' (';
     
-    var primary = [];
-    var unique = new Map();
     sql += [for(f in table.getFields()) {
       var sql = s.ident(f.name) + ' ';
       sql += sqlType(f.type);
@@ -104,24 +102,19 @@ class Format {
         case DInt(_, _, true): sql += ' AUTO_INCREMENT';
         default:
       }
-      for(key in f.keys) switch key {
-        case Unique(name): 
-          if(!unique.exists(name)) unique.set(name, []);
-          unique.get(name).push(f.name);
-        case Primary:
-          primary.push(f.name);
-      }
       sql;
     }].join(', ');
     
-    if(primary.length > 0)
-      sql += ', PRIMARY KEY (' + primary.map(s.ident).join(', ') + ')';
-      
-    for(key in unique.keys()) switch key {
-      case Some(name): sql += ', UNIQUE KEY ${s.ident(name)} (${unique.get(key).map(s.ident).join(', ')})';
-      case None: sql += ', UNIQUE KEY (${unique.get(key).map(s.ident).join(', ')})';
+    var schema: Schema = table.getFields();
+    for (index in schema.indexes()) switch index.type {
+      case IPrimary:
+        sql += ', PRIMARY KEY (' + index.fields.map(s.ident).join(', ') + ')';
+      case IUnique | IIndex:
+        var type = 
+          if (index.type.equals(IUnique)) 'UNIQUE KEY'
+          else 'INDEX';
+        sql += ', $type ${s.ident(index.name)} (${index.fields.map(s.ident).join(', ')})';
     }
-    
     sql += ')';
     return sql;
   }
