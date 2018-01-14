@@ -18,14 +18,14 @@ before_install:
   - mysql --version
       
 install:
-  - yarn && yarn global add travlix
+  - yarn && yarn global add switchx
 
 script:
-  - travlix run --haxe 3.4.4 --target node
+  - yarn travix node
   - sudo apt-get install php5.6-cli php5.6-mysql
-  - travlix run --haxe 3.4.4 --target php
-  - sudo apt-get install php7.1-cli php7.1-mysql
-  - travlix run --haxe db5a1e4 --target php
+  - yarn travix php
+  - sudo apt-get install php7.1-cli php7.1-mysql && switchx install db5a1e4
+  - yarn travix php
 
 cache:
   yarn: true
