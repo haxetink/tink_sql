@@ -70,7 +70,7 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
     return query({sql: Format.createTable(table, this)});
   
   public function selectAll<A:{}>(t:Target<A, Db>, ?c:Condition, ?limit:Limit, ?orderBy:OrderBy<A>):RealStream<A> {
-    var nest = !t.match(TTable(_, _));
+    var nest = t.match(TJoin(_, _, _, _));
     return Stream.promise(query({ 
       sql: Format.selectAll(t, c, this, limit, orderBy), 
       nestTables: nest,

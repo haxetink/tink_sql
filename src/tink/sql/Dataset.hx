@@ -32,14 +32,14 @@ class Dataset<Fields, Filter, Result:{}, Db> {
   function _where(filter:Filter):Dataset<Fields, Filter, Result, Db>
     return new Dataset(fields, cnx, target, toCondition, condition && toCondition(filter));
 
-  macro public function map(ethis, aggregation) {
-    var target = tink.sql.macros.Aggregations.makeMap(ethis, aggregation);
-    return macro @:pos(ethis.pos) @:privateAccess $ethis._map(
-      @:noPrivateAccess $target
+  macro public function select(ethis, select) {
+    select = tink.sql.macros.Selects.makeTarget(ethis, select, macro @:privateAccess $ethis.target);
+    return macro @:pos(ethis.pos) @:privateAccess $ethis._select(
+      @:noPrivateAccess $select($ethis.fields)
     );
   }
 
-  function _map<R: {}>(target: Target<R, Db>):Dataset<Fields, Filter, R, Db>
+  function _select<R: {}>(target: Target<R, Db>):Dataset<Fields, Filter, R, Db>
     return new Dataset(fields, cnx, target, toCondition, condition);
   
   public function stream(?limit:Limit, ?orderBy:Fields->OrderBy<Result>):RealStream<Result>

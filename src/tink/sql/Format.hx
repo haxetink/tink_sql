@@ -199,7 +199,18 @@ class Format {
     return select(t, 'COUNT(*) as count', c, s);
   
   static function select<A:{}, Db>(t:Target<A, Db>, what:String, ?c:Condition, s:Sanitizer, ?limit:Limit, ?orderBy:OrderBy<A>) {
-    var sql = 'SELECT $what FROM ' + target(t, s);
+    var select, from;
+    switch t {
+      case TSelect(fields, original):
+        select = [for (name in fields.keys())
+          expr(fields[name], s) + ' AS ' +s.ident(name)
+        ].join(', ');
+        from = target(original, s);
+      default:
+        select = what;
+        from = target(t, s);
+    }
+    var sql = 'SELECT $select FROM $from';
     
     if (c != null)
       sql += ' WHERE ' + expr(c, s);
@@ -209,7 +220,7 @@ class Format {
       
     if (limit != null) 
       sql += ' LIMIT ${limit.limit} OFFSET ${limit.offset}';
-      
+      trace(sql);
     return sql;    
   }
   
@@ -231,6 +242,7 @@ class Format {
   
   static public function target<A:{}, Db>(t:Target<A, Db>, s:Sanitizer)
     return switch t {
+      case TSelect(_): '*';
       case TTable(name, alias): 
         
         s.ident(name) + switch alias {

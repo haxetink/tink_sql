@@ -9,7 +9,7 @@ import tink.unit.Assert.assert;
 using tink.CoreApi;
 
 @:asserts
-class AggregationTest extends TestWithDb {
+class SelectTest extends TestWithDb {
 	
 	@:before
 	public function createTable() {
@@ -38,10 +38,16 @@ class AggregationTest extends TestWithDb {
 			nullDate: null,
 			nullBool: null,
 		})
-        .next(function(_) return db.Types.map({
-            int: db.Types.int
-        }).first())
+        .next(function(_) 
+			return db.Types.select({
+				int: Types.int,
+				float: Types.float,
+				text: Types.text,
+				big: Types.int > 1
+			}).first()
+		)
         .next(function(row) {
+			trace(row);
             return assert(row.int == 123);
         });
 	}
