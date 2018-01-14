@@ -20,7 +20,7 @@ os:
 
 before_install:
   - shopt -s expand_aliases
-  - alias php5.6=php
+  - alias php5.6='echo PHP 5.6'
   - mysql --version
       
 install:
