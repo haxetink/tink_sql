@@ -7,9 +7,6 @@ addons:
       - sourceline: 'ppa:ondrej/php'
     packages:
       - mysql-server
-      - php7.1
-      - php7.1-cli
-      - php7.1-mbstring
       - php7.1-mysql
 
 language: node_js
@@ -26,6 +23,7 @@ install:
 
 script:
   - travlix run --haxe 3.4.4 --target node
+  - travlix run --haxe db5a1e4 --target php
 
 cache:
   yarn: true
