@@ -6,7 +6,7 @@ addons:
       - mysql-5.7-trusty
     packages:
       - mysql-server
-      - php5-mysql
+      - php-mysqli
 
 language: node_js
 node_js: 6
@@ -28,3 +28,4 @@ cache:
   yarn: true
   directories:
     - node_modules
+    - $HOME/haxe
