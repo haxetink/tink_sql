@@ -19,7 +19,7 @@ class Run extends TestWithDb {
   static function main() {
     var driver = new MySql({user: 'root', password: ''});
 		var db = new Db('test', driver);
-    
+    loadFixture('init');
     Runner.run(TestBatch.make([
       new TypeTest(driver, db),
       #if nodejs new FormatTest(driver, db), #end
@@ -29,6 +29,10 @@ class Run extends TestWithDb {
       new SchemaTest(driver, db),
     ])).handle(Runner.exit);
   }
+
+  public static function loadFixture(file: String) {
+		Sys.command('node', ['tests/fixture', 'tests/fixture/$file.sql']);
+	}
   
   static function sorted<A>(i:Iterable<A>) {
     var ret = Lambda.array(i);

@@ -1,4 +1,3 @@
--cmd node tests/fixture tests/fixture/init.sql
 -lib jdbc.mysql
 -lib tink_unittest
 -lib tink_await
