@@ -5,6 +5,7 @@ import tink.sql.Connection.Update;
 import tink.sql.Expr;
 import tink.sql.Info;
 import tink.sql.Limit;
+import tink.sql.Schema;
 
 class Format {
   
@@ -93,68 +94,104 @@ class Format {
     sql += s.ident(table.getName());
     sql += ' (';
     
-    var primary = [];
-    var unique = new Map();
     sql += [for(f in table.getFields()) {
       var sql = s.ident(f.name) + ' ';
-      var autoIncrement = false;
-      sql += switch f.type {
-        case DBool:
-          'TINYINT(1)';
-        
-        case DFloat(bits):
-          'FLOAT($bits)';
-        
-        case DInt(bits, signed, autoInc):
-          if(autoInc) autoIncrement = true;
-          'INT($bits)' + if(!signed) ' UNSIGNED' else '';
-        
-        case DString(maxLength):
-          if(maxLength < 65536)
-            'VARCHAR($maxLength)';
-          else
-            'TEXT';
-        
-        case DBlob(maxLength):
-          if(maxLength < 65536)
-            'VARBINARY($maxLength)';
-          else
-            'BLOB';
-        
-        case DDateTime:
-          'DATETIME';
-        
-        case DPoint:
-          'POINT';
-        
-        case DMultiPolygon:
-          'MULTIPOLYGON';
-      }
+      sql += sqlType(f.type);
       sql += if(f.nullable) ' NULL' else ' NOT NULL';
-      if(autoIncrement) sql += ' AUTO_INCREMENT';
-      
-      for(key in f.keys) switch key {
-        case Unique(name): 
-          if(!unique.exists(name)) unique.set(name, []);
-          unique.get(name).push(f.name);
-        case Primary:
-          primary.push(f.name);
+      switch f.type {
+        case DInt(_, _, true): sql += ' AUTO_INCREMENT';
+        default:
       }
       sql;
     }].join(', ');
     
-    if(primary.length > 0)
-      sql += ', PRIMARY KEY (' + primary.map(s.ident).join(', ') + ')';
-      
-    for(key in unique.keys()) switch key {
-      case Some(name): sql += ', UNIQUE KEY ${s.ident(name)} (${unique.get(key).map(s.ident).join(', ')})';
-      case None: sql += ', UNIQUE KEY (${unique.get(key).map(s.ident).join(', ')})';
+    var schema: Schema = table.getFields();
+    for (index in schema.indexes()) switch index.type {
+      case IPrimary:
+        sql += ', PRIMARY KEY (' + index.fields.map(s.ident).join(', ') + ')';
+      case IUnique | IIndex:
+        var type = 
+          if (index.type.equals(IUnique)) 'UNIQUE KEY'
+          else 'INDEX';
+        sql += ', $type ${s.ident(index.name)} (${index.fields.map(s.ident).join(', ')})';
     }
-    
     sql += ')';
     return sql;
   }
+
+  static public function alterTable<Row:{}>(table:TableInfo<Row>, s:Sanitizer, changes: Array<SchemaChange>)
+    return [
+      for (change in changes) 
+        for (sql in schemaChange(table, s, change))
+          sql
+    ];
+
+  static public function schemaChange<Row:{}>(table:TableInfo<Row>, s:Sanitizer, change: SchemaChange) {
+    inline function alter(sql) 
+      return 'ALTER TABLE ${s.ident(table.getName())} ${sql.join(' ')}';
+    inline function definition(f) 
+      return f.type + 
+        if (f.nullable) ' NULL' else ' NOT NULL' +
+        if (f.autoIncrement) ' AUTO_INCREMENT' else '';
+    inline function joinFields(fields)
+      return fields.map(s.ident).join(', ');
+    inline function addIndex(index)
+      return alter(['ADD', switch index.type {
+        case IUnique: 'UNIQUE ' + s.ident(index.name);
+        case IIndex: 'INDEX ' + s.ident(index.name);
+        case IPrimary: 'PRIMARY KEY';
+      }, '(${joinFields(index.fields)})']);
+    inline function removeIndex(index)
+      return alter(['DROP', switch index.type {
+        case IUnique | IIndex: 'INDEX ' + s.ident(index.name);
+        case IPrimary: 'PRIMARY KEY';
+      }]);
+    return switch change {
+      case AddColumn(f): 
+        [alter(['ADD COLUMN', s.ident(f.name), definition(f)])];
+      case RemoveColumn(f):
+        [alter(['DROP COLUMN', s.ident(f.name)])];
+      case ChangeColumn(from, to):
+        [alter(['MODIFY COLUMN', s.ident(from.name), definition(to)])];
+      case AddIndex(index):
+        [addIndex(index)];
+      case RemoveIndex(index):
+        [removeIndex(index)];
+      case ChangeIndex(from, to):
+        [removeIndex(from), addIndex(to)];
+    }
+  }
   
+  static public function sqlType(type: DataType): String 
+    return switch type {
+      case DBool:
+        'TINYINT(1)';
+      case DFloat(bits):
+        'FLOAT($bits)';
+      case DInt(bits, signed, _):
+        'INT($bits)' + if(!signed) ' UNSIGNED' else '';
+      case DString(maxLength): // Todo: separate types
+        if(maxLength < 65536) 'VARCHAR($maxLength)';
+        else 'TEXT';
+      case DBlob(maxLength):
+        if(maxLength < 65536) 'VARBINARY($maxLength)';
+        else 'BLOB';
+      case DDateTime:
+        'DATETIME';
+      case DPoint:
+        'POINT';
+      case DMultiPolygon:
+        'MULTIPOLYGON';
+    }
+  
+  static public function columnInfo<Row:{}>(table:TableInfo<Row>, s:Sanitizer) {
+    return 'SHOW COLUMNS FROM ${s.ident(table.getName())}';
+  }
+
+  static public function indexInfo<Row:{}>(table:TableInfo<Row>, s:Sanitizer) {
+    return 'SHOW INDEX FROM ${s.ident(table.getName())}';
+  }
+
   static public function selectAll<A:{}, Db>(t:Target<A, Db>, ?c:Condition, s:Sanitizer, ?limit:Limit, ?orderBy:OrderBy<A>)         
     return select(t, '*', c, s, limit, orderBy);
 

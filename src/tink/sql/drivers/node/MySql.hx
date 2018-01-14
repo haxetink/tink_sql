@@ -8,6 +8,7 @@ import tink.sql.Format.Sanitizer;
 import tink.sql.Limit;
 import tink.sql.Expr;
 import tink.sql.Info;
+import tink.sql.Schema;
 import tink.sql.types.Id;
 import tink.streams.Stream;
 import tink.streams.RealStream;
@@ -50,162 +51,143 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
     this.db = db;
     this.cnx = cnx;
   }
-  
-  public function dropTable<Row:{}>(table:TableInfo<Row>):Promise<Noise> {
-    return Future.async(function(cb) {
-      cnx.query(
-        {sql: Format.dropTable(table, this)},
-        function(err, _) cb(if(err == null) Success(Noise) else toError(err))
-      );
+
+  function query<T>(options: QueryOptions):Promise<T> 
+    return Future.async(function (done) {
+      cnx.query(options, function (err, res) {
+        if (err != null) done(toError(err));
+        else done(Success(cast res));
+      });
     });
-  }
-        
-  public function createTable<Row:{}>(table:TableInfo<Row>):Promise<Noise> {
-    return Future.async(function(cb) {
-      cnx.query(
-        {sql: Format.createTable(table, this)},
-        function(err, _) cb(if(err == null) Success(Noise) else toError(err))
-      );
-    });
-  }
-  
-  public function selectAll<A:{}>(t:Target<A, Db>, ?c:Condition, ?limit:Limit, ?orderBy:OrderBy<A>):RealStream<A>
-    return Stream.promise(Future.async(function (cb) {
-      cnx.query( 
-        { 
-          sql: Format.selectAll(t, c, this, limit, orderBy), 
-          nestTables: !t.match(TTable(_, _)),
-          typeCast: function (field, next):Dynamic {
-            return switch field.type {
-              case 'BLOB':
-                switch (field.buffer():Buffer) {
-                  case null: null;
-                  case buf: buf.hxToBytes();
-                }
-              case 'TINY' if(field.length == 1):
-                switch field.string() {
-                  case null: null;
-                  case v: v != '0';
-                } 
-              case 'GEOMETRY':
-                var v:Dynamic = field.geometry();
-                // https://github.com/mysqljs/mysql/blob/310c6a7d1b2e14b63b572dbfbfa10128f20c6d52/lib/protocol/Parser.js#L342-L389
-                if(v == null) {
-                  null;
-                } else {
-                    if(Std.is(v, Array)) {
-                      if(Std.is(v[0], Array)) {
-                        if(Std.is(v[0][0], Array)) {
-                          new geojson.MultiPolygon(
-                            [for(polygon in (v:Array<Dynamic>))
-                              [for(line in (polygon:Array<Dynamic>))
-                                [for(point in (line:Array<Dynamic>))
-                                  new geojson.util.Coordinates(point.y, point.x)
-                                ]
-                              ]
-                            ]
-                          );
-                        } else {
-                          // Polygon
-                          throw 'Polygon parsing not implemented';
-                        }
-                      } else {
-                        // Line
-                        throw 'Line parsing not implemented';
-                      }
-                    } else {
-                      // Point
-                      new geojson.Point(v.y, v.x);
-                    }
-                }
-              default:
-                next();
-            }
-          }
-        }, 
-        function (error, result:Array<DynamicAccess<DynamicAccess<Any>>>) cb(switch [error, result] {
-          case [null, result]:
-            
-            var result:Array<A> =
-              if (t.match(TTable(_, _))) cast result
-              else [for (row in result) {
-                
-                var rowCopy = row; rowCopy = { };
-                
-                for (partName in row.keys()) {
-                  
-                  var part = row[partName],
-                      notNull = false;
-                      
-                  for (name in part.keys())
-                    if (part[name] != null) {
-                      notNull = true;
-                      break;
-                    }
-                    
-                  if (notNull)
-                    rowCopy[partName] = part;
-                }
-                
-                (cast rowCopy : A);
-              }];
-              
-            Success(Stream.ofIterator(result.iterator()));
-            
-          case [e, _]:
-            toError(e);
-        })
-      );
-    }));
-  
-  public function countAll<A:{}>(t:Target<A, Db>, ?c:Condition):Promise<Int> {
-    return Future.async(function (cb) {
-      cnx.query(
-        { sql: Format.countAll(t, c, this) },
-        function (error, result: Array<{count: Int}>) cb(switch [error, result] {
-          case [null, [{count: count}]]: Success(count);
-          case [e, _]: toError(e);
-        })
-      );
-    });
-  }
-  
+
   function toError<A>(error:js.Error):Outcome<A, Error>
-    return Failure(Error.withData(error.message, error));//TODO: give more information
+    return Failure(Error.withData(error.message, error));
+  
+  public function dropTable<Row:{}>(table:TableInfo<Row>):Promise<Noise>
+    return query({sql: Format.dropTable(table, this)});
+        
+  public function createTable<Row:{}>(table:TableInfo<Row>):Promise<Noise>
+    return query({sql: Format.createTable(table, this)});
+  
+  public function selectAll<A:{}>(t:Target<A, Db>, ?c:Condition, ?limit:Limit, ?orderBy:OrderBy<A>):RealStream<A> {
+    var nest = !t.match(TTable(_, _));
+    return Stream.promise(query({ 
+      sql: Format.selectAll(t, c, this, limit, orderBy), 
+      nestTables: nest,
+      typeCast: typeCast
+    }).next(function (res)
+      return Stream.ofIterator(rowIterator(res, nest))
+    ));
+  }
+  
+  public function countAll<A:{}>(t:Target<A, Db>, ?c:Condition):Promise<Int>
+    return query({sql: Format.countAll(t, c, this)}).next(function(res)
+      return (res[0].count: Int)
+    );
   
   public function insert<Row:{}>(table:TableInfo<Row>, items:Array<Insert<Row>>):Promise<Id<Row>> 
-    return Future.async(function (cb) {
-      cnx.query(
-        { sql: Format.insert(table, items, this) }, 
-        function (error, result: { insertId: Int }) cb(switch [error, result] {
-          case [null, { insertId: id }]: Success(new Id(id));
-          case [e, _]: toError(e);
-        })
-      );
-    });
-    
+    return query({sql: Format.insert(table, items, this)}).next(function(res)
+      return new Id(res.insertId)
+    );
         
   public function update<Row:{}>(table:TableInfo<Row>, ?c:Condition, ?max:Int, update:Update<Row>):Promise<{rowsAffected:Int}>
-    return Future.async(function (cb) {
-      cnx.query(
-        { sql: Format.update(table, c, max, update, this) },
-        function (error, result: { changedRows: Int } ) cb(switch [error, result] {
-          case [null, { changedRows: id }]: Success({ rowsAffected: id });
-          case [e, _]: toError(e);
-        })
-      );
-    });
+    return query({sql: Format.update(table, c, max, update, this)}).next(function(res)
+      return {rowsAffected: res.changedRows}
+    );
         
   public function delete<Row:{}>(table:TableInfo<Row>, ?c:Condition, ?max:Int):Promise<{rowsAffected:Int}>
-    return Future.async(function (cb) {
-      cnx.query(
-        { sql: Format.delete(table, c, max, this) },
-        function (error, result: { changedRows: Int } ) cb(switch [error, result] {
-          case [null, { changedRows: id }]: Success({ rowsAffected: id });
-          case [e, _]: toError(e);
-        })
-      );
+    return query({sql: Format.delete(table, c, max, this)}).next(function(res)
+      return {rowsAffected: res.changedRows}
+    );
+  
+  public function diffSchema<Row:{}>(table:TableInfo<Row>):Promise<Array<SchemaChange>> {
+    function iter(res) return rowIterator(res);
+    return Promise.inParallel([
+      query({sql: Format.columnInfo(table, this)}).next(iter),
+      query({sql: Format.indexInfo(table, this)}).next(iter)
+    ]).next(function (res) switch res {
+      case [columns, indexes]:
+        return Schema
+          .fromMysql(cast columns, cast indexes)
+          .diff(table.getFields());
+      default: throw "assert";
     });
+  }
+  
+  public function updateSchema<Row:{}>(table:TableInfo<Row>, changes:Array<SchemaChange>):Promise<Noise>
+    return Promise.inSequence([
+      for (change in Format.alterTable(table, this, changes))
+        query({sql: change})
+    ]);
+
+  function typeCast(field, next): Any {
+    return switch field.type {
+      case 'BLOB':
+        switch (field.buffer():Buffer) {
+          case null: null;
+          case buf: buf.hxToBytes();
+        }
+      case 'TINY' if(field.length == 1):
+        switch field.string() {
+          case null: null;
+          case v: v != '0';
+        } 
+      case 'GEOMETRY':
+        var v:Dynamic = field.geometry();
+        // https://github.com/mysqljs/mysql/blob/310c6a7d1b2e14b63b572dbfbfa10128f20c6d52/lib/protocol/Parser.js#L342-L389
+        if(v == null) {
+          null;
+        } else {
+            if(Std.is(v, Array)) {
+              if(Std.is(v[0], Array)) {
+                if(Std.is(v[0][0], Array)) {
+                  new geojson.MultiPolygon(
+                    [for(polygon in (v:Array<Dynamic>))
+                      [for(line in (polygon:Array<Dynamic>))
+                        [for(point in (line:Array<Dynamic>))
+                          new geojson.util.Coordinates(point.y, point.x)
+                        ]
+                      ]
+                    ]
+                  );
+                } else {
+                  // Polygon
+                  throw 'Polygon parsing not implemented';
+                }
+              } else {
+                // Line
+                throw 'Line parsing not implemented';
+              }
+            } else {
+              // Point
+              new geojson.Point(v.y, v.x);
+            }
+        }
+      default:
+        next();
+    }
+  }
+
+  function rowIterator<A>(result:Array<DynamicAccess<DynamicAccess<Any>>>, nest = false) {
+    var result:Array<A> =
+      if (!nest) cast result
+      else [for (row in result) {
+        var rowCopy: DynamicAccess<DynamicAccess<Any>> = {};
+        for (partName in row.keys()) {
+          var part = row[partName],
+              notNull = false;
+          for (name in part.keys())
+            if (part[name] != null) {
+              notNull = true;
+              break;
+            }
+          if (notNull)
+            rowCopy[partName] = part;
+        }
+        (cast rowCopy : A);
+      }];
+    return result.iterator();
+  }
 }
 
 @:jsRequire("mysql")
@@ -220,7 +202,13 @@ private typedef Config = {>MySqlSettings,
   @:optional public var connectionLimit(default, null):Int;
 }
 
+private typedef QueryOptions = {
+  sql:String,
+  ?nestTables:Bool, 
+  ?typeCast:Dynamic->(Void->Dynamic)->Dynamic
+}
+
 private typedef NativeConnection = {
-  function query(q: { sql:String, ?nestTables:Bool, ?typeCast:Dynamic->(Void->Dynamic)->Dynamic }, cb:js.Error->Dynamic->Void):Void;
+  function query(q: QueryOptions, cb:js.Error->Dynamic->Void):Void;
   //function release():Void; -- doesn't seem to work
 }

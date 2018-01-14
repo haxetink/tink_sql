@@ -124,13 +124,16 @@ class TableBuilder {
                 var type = resolveType(f.type);
                 var keys = [];
                 if(f.meta.has(':primary')) keys.push(macro tink.sql.Info.KeyType.Primary);
-                for(m in f.meta.extract(':unique')) keys.push(macro tink.sql.Info.KeyType.Unique(${
-                  switch m.params {
-                    case []: macro None;
-                    case [_.getString() => Success(s)]: macro Some($v{s});
-                    case _: macro None; // TODO: should show a warning
-                  }
-                }));
+                function index(meta, type)
+                  for(m in f.meta.extract(meta)) keys.push(macro $type(${
+                    switch m.params {
+                      case []: macro None;
+                      case [_.getString() => Success(s)]: macro Some($v{s});
+                      case _: macro None; // TODO: should show a warning
+                    }
+                  }));
+                index(':unique', macro tink.sql.Info.KeyType.Unique);
+                index(':index', macro tink.sql.Info.KeyType.Index);
                 
                 macro @:pos(f.pos) {
                   name: $name,

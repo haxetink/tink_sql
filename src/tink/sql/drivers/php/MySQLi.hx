@@ -3,6 +3,7 @@ package tink.sql.drivers.php;
 import haxe.DynamicAccess;
 import haxe.io.Bytes;
 import haxe.io.BytesInput;
+import haxe.extern.EitherType;
 import tink.sql.Connection.Update;
 import tink.sql.Format.Sanitizer;
 import tink.sql.Limit;
@@ -11,6 +12,7 @@ import tink.sql.Info;
 import tink.sql.types.Id;
 import tink.streams.Stream;
 import tink.streams.RealStream;
+import tink.sql.Schema;
 using tink.CoreApi;
 
 class MySQLi implements Driver {
@@ -50,16 +52,11 @@ class MySQLiConnection<Db:DatabaseInfo> implements Connection<Db> implements San
   public function ident(s:String):String
     return tink.sql.drivers.MySql.getSanitizer(null).ident(s);
   
-  function query<R, T>(query: String, ?process: R -> T):Promise<T> {
-    var result = cnx.query(query);
-    if (process == null) process = function(_): T return cast Noise;
-    return Future.sync(
-      if (Std.is(result, Bool) && !result)
-        Failure(new Error(cnx.errno, cnx.error))
-      else
-        Success(process(cast result))
-    );
-  }
+  function query<T>(query:String):Promise<T> 
+    return switch cnx.query(query) {
+      case false: new Error(cnx.errno, cnx.error);
+      case v: (cast v: T);
+    }
   
   public function dropTable<Row:{}>(table:TableInfo<Row>):Promise<Noise> 
     return query(Format.dropTable(table, this));
@@ -67,44 +64,105 @@ class MySQLiConnection<Db:DatabaseInfo> implements Connection<Db> implements San
   public function createTable<Row:{}>(table:TableInfo<Row>):Promise<Noise> 
     return query(Format.createTable(table, this));
   
-  public function selectAll<A:{}>(t:Target<A, Db>, ?c:Condition, ?limit:Limit, ?orderBy:OrderBy<A>):RealStream<A> {
+  public function selectAll<A:{}>(t:Target<A, Db>, ?c:Condition, ?limit:Limit, ?orderBy:OrderBy<A>):RealStream<A>
     return Stream.promise(
-      query(Format.selectAll(t, c, this, limit, orderBy), function (result: NativeResultSet) {
-        var current;
-        var nest = switch t {
-          case TTable(_, _): false;
-          case TJoin(_, _, _, _): true;
-        }
-        #if php7
-        var fields = result.fetch_fields();
-        #else
-        var fields: Array<NativeFieldInfo> = cast php.Lib.toHaxeArray(result.fetch_fields());
-        #end
-        return Stream.ofIterator({
-          hasNext: function() {
-            return switch result.fetch_row() {
-              case null: false;
-              case v:
-                #if php7 current = v; #else current = php.Lib.toHaxeArray(v); #end
-                true;
-            }
-          },
-          next: function() {
-            var res: DynamicAccess<Any> = {};
-            var target = res;
-            var i = 0;
-            for (field in fields) {
-              if (nest) target = 
-                if (!res.exists(field.table)) res[field.table] = {}
-                else res[field.table];
-              var value = current[i++];
-              target[field.name] = processField(field, value);
-            }
-            return cast res;
-          }
-        });
+      query(Format.selectAll(t, c, this, limit, orderBy)).next(function (result: ResultSet) {
+        return Stream.ofIterator(result.nestedIterator(!t.match(TTable(_, _))));
       })
     );
+  
+  public function countAll<A:{}>(t:Target<A, Db>, ?c:Condition):Promise<Int>
+    return query(Format.countAll(t, c, this)).next(function (result: NativeResultSet) {
+      return Std.parseInt(result.fetch_row()[0]);
+    });
+  
+  public function insert<Row:{}>(table:TableInfo<Row>, items:Array<Insert<Row>>):Promise<Id<Row>>
+    return query(Format.insert(table, items, this)).next(function (_)
+      return new Id(cnx.insert_id)
+    );
+        
+  public function update<Row:{}>(table:TableInfo<Row>, ?c:Condition, ?max:Int, update:Update<Row>):Promise<{rowsAffected:Int}>
+    return query(Format.update(table, c, max, update, this)).next(function(_)
+      return {rowsAffected: cnx.affected_rows}
+    );
+        
+  public function delete<Row:{}>(table:TableInfo<Row>, ?c:Condition, ?max:Int):Promise<{rowsAffected:Int}>
+    return query(Format.delete(table, c, max, this)).next(function(_)
+      return {rowsAffected: cnx.affected_rows}
+    );
+
+  public function diffSchema<Row:{}>(table:TableInfo<Row>):Promise<Array<SchemaChange>> {
+    function iter(res: ResultSet) return res.iterator();
+    return Promise.inParallel([
+      query(Format.columnInfo(table, this)).next(iter),
+      query(Format.indexInfo(table, this)).next(iter)
+    ]).next(function (res) switch res {
+      case [columns, indexes]:
+        return Schema
+          .fromMysql(cast columns, cast indexes)
+          .diff(table.getFields());
+      default: throw "assert";
+    });
+  }
+
+  public function updateSchema<Row:{}>(table:TableInfo<Row>, changes:Array<SchemaChange>):Promise<Noise>
+    return Promise.inSequence([
+      for (change in Format.alterTable(table, this, changes))
+        query(change)
+    ]);
+
+}
+
+private abstract ResultSet(NativeResultSet) from NativeResultSet {
+  public function row(): Option<NativeRow>
+    return switch this.fetch_row() {
+      case null: None;
+      case v: Some(#if php7 v #else cast php.Lib.toHaxeArray(v) #end);
+    }
+
+  public function fields(): Iterable<NativeFieldInfo>
+    #if php7 return this.fetch_fields();
+    #else return (cast php.Lib.toHaxeArray(this.fetch_fields()): Array<NativeFieldInfo>); #end
+
+  public function iterator()
+    return nestedIterator();
+
+  public function nestedIterator(nest = false) {
+    var current;
+    var fields = fields();
+    return {
+      hasNext: function() {
+        return switch row() {
+          case None: false;
+          case Some(v): 
+            current = v;
+            true;
+        }
+      },
+      next: function() {
+        var res: DynamicAccess<Any> = {};
+        var target = res;
+        var i = 0;
+        for (field in fields) {
+          if (nest) target = 
+            if (!res.exists(field.table)) res[field.table] = {}
+            else res[field.table];
+          var value = current[i++];
+          target[field.name] = processField(field, value);
+        }
+        return cast res;
+      }
+    }
+  }
+  
+  function parseGeo(buffer: BytesInput): geojson.Point {
+    buffer.bigEndian = buffer.readByte() == 0;
+    return switch buffer.readInt32() {
+      case 1: 
+        var y = buffer.readDouble(), x = buffer.readDouble();
+        new geojson.Point(x, y);
+      case v: throw 'GeoJson type $v not supported';
+    }
   }
 
   function processField(field: NativeFieldInfo, value: Any): Any {
@@ -123,37 +181,6 @@ class MySQLiConnection<Db:DatabaseInfo> implements Connection<Db> implements San
       default: value;
     }
   }
-  
-  function parseGeo(buffer: BytesInput): geojson.Point {
-    buffer.bigEndian = buffer.readByte() == 0;
-    return switch buffer.readInt32() {
-      case 1: 
-        var y = buffer.readDouble(), x = buffer.readDouble();
-        new geojson.Point(x, y);
-      case v: throw 'GeoJson type $v not supported';
-    }
-  }
-  
-  public function countAll<A:{}>(t:Target<A, Db>, ?c:Condition):Promise<Int>
-    return query(Format.countAll(t, c, this), function (result: NativeResultSet) {
-      return Std.parseInt(result.fetch_row()[0]);
-    });
-  
-  public function insert<Row:{}>(table:TableInfo<Row>, items:Array<Insert<Row>>):Promise<Id<Row>>
-    return query(Format.insert(table, items, this), function (_)
-      return new Id(cnx.insert_id)
-    );
-        
-  public function update<Row:{}>(table:TableInfo<Row>, ?c:Condition, ?max:Int, update:Update<Row>):Promise<{rowsAffected:Int}>
-    return query(Format.update(table, c, max, update, this), function(_)
-      return {rowsAffected: cnx.affected_rows}
-    );
-        
-  public function delete<Row:{}>(table:TableInfo<Row>, ?c:Condition, ?max:Int):Promise<{rowsAffected:Int}>
-    return query(Format.delete(table, c, max, this), function(_)
-      return {rowsAffected: cnx.affected_rows}
-    );
-
 }
 
 @:native('mysqli')
@@ -169,10 +196,11 @@ private extern class NativeConnection {
   public var error: String;
 }
 
-private typedef NativeResult = haxe.extern.EitherType<Bool, NativeResultSet>;
+private typedef NativeResult = EitherType<Bool, NativeResultSet>;
+private typedef NativeRow = #if php7 php.NativeIndexedArray<Any> #else php.NativeArray #end;
 
 private extern class NativeResultSet {
-  public function fetch_row(): #if php7 php.NativeIndexedArray<Any> #else php.NativeArray #end;
+  public function fetch_row(): NativeRow;
   public function fetch_fields(): #if php7 php.NativeIndexedArray<NativeFieldInfo> #else php.NativeArray #end;
 }
 
