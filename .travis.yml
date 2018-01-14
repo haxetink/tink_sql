@@ -19,16 +19,13 @@ os:
   - linux
 
 before_install:
-  - shopt -s expand_aliases
-  - alias php5.6='echo PHP 5.6'
   - mysql --version
       
 install:
-  - yarn
+  - yarn && yarn global add travlix
 
 script:
-  - yarn travix node
-  - yarn travix php
+  - travlix run --haxe 3.4.4 --target node
 
 cache:
   yarn: true
