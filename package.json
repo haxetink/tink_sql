@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "haxeshim": "^0.9.0",
-    "lix.pm": "^0.10.2"
+    "lix.pm": "^0.10.2",
+    "mysql": "^2.15.0"
   }
 }

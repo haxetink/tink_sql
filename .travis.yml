@@ -3,31 +3,29 @@ dist: trusty
 addons:
   apt:
     packages:
-    # - mysql-server-5.6
-    # - mysql-client-core-5.6
-    # - mysql-client-5.6
     - php5-mysql
-    
-
-services:
-  - mysql
 
 language: node_js
 node_js: 6
 
 os:
   - linux
-  
+
+services:
+  - docker 
+
 before_install:
-  - bash travis_mysql_5.7.sh
-  - bash mysql-reset-root-password.sh
+  - sudo docker run -d -p 3306:3306 mysql:5.7
   - mysql --version
       
 install:
-  - npm install
+  - yarn
 
 script:
-  # - npm run travix neko .
-  - npm run travix node .
-  - npm run travix php .
-  # - npm run travix java .
+  - yarn travix node
+  - yarn travix php
+
+cache:
+  yarn: true
+  directories:
+    - node_modules
