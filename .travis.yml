@@ -6,7 +6,12 @@ addons:
       - mysql-5.7-trusty
     packages:
       - mysql-server
-      - php-mysqli
+      - php5.6
+      - php5.6-cli
+      - php5.6-mbstring
+      - php5.6-mcrypt
+      - php5.6-xml
+      - php5.6-mysql
 
 language: node_js
 node_js: 6
