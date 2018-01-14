@@ -58,14 +58,29 @@ typedef Geometry = {
 }
 
 typedef Schema = {
-  @:autoIncrement @:primary public var id(default, null):Id<User>;
-  public var text(default, null): Text<200>;
-  public var integer(default, null): Integer<11>;
-  @:unique
-  public var number(default, null): Number<1>;
-  public var boolean(default, null): Boolean;
-  @:index
-  public var extra(default, null): Text<1>;
+  @:autoIncrement @:primary public var id(default, null):Id<Schema>;
+
+  public var toBoolean(default, null): Boolean;
+  public var toInt(default, null): Integer<11>;
+  public var toFloat(default, null): Number<11>;
+  public var toText(default, null): Text<1>;
+  public var toLongText(default, null): Text<999999>;
+  public var toDate(default, null): DateTime;
+
+  public var toAdd(default, null): Boolean;
+
+  @:index public var indexed(default, null): Boolean;
+  @:unique public var unique(default, null): Boolean;
+
+  @:index('ab') public var a(default, null): Boolean;
+  @:index('ab') public var b(default, null): Boolean;
+  @:index('cd') public var c(default, null): Boolean;
+  @:index('cd') public var d(default, null): Boolean;
+
+  @:unique('ef') public var e(default, null): Boolean;
+  @:unique('ef') public var f(default, null): Boolean;
+  @:unique('gh') public var g(default, null): Boolean;
+  @:unique('gh') public var h(default, null): Boolean;
 }
 
 @:tables(User, Post, PostTags, Types, Geometry, Schema)
