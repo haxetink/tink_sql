@@ -22,10 +22,10 @@ install:
 
 script:
   - travlix run --haxe 3.4.4 --target node
-  - sudo apt-get install php5.6-mysql
-  - sudo travlix run --haxe 3.4.4 --target php
-  - sudo apt-get install php7.1-mysql
-  - sudo travlix run --haxe db5a1e4 --target php
+  - sudo apt-get install php5.6-cli php5.6-mysql
+  - travlix run --haxe 3.4.4 --target php
+  - sudo apt-get install php7.1-cli php7.1-mysql
+  - travlix run --haxe db5a1e4 --target php
 
 cache:
   yarn: true
