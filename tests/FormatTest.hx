@@ -2,23 +2,19 @@ package;
 
 import tink.sql.Format;
 import tink.sql.Info;
-import tink.sql.drivers.MySql;
 import tink.sql.types.*;
 import tink.unit.Assert.assert;
 
 using tink.CoreApi;
 
 @:allow(tink.unit)
-class FormatTest {
+class FormatTest extends TestWithDb {
 	
-	var db:Db;
 	var uniqueDb:UniqueDb;
-	var driver:MySql;
 	var sanitizer:Sanitizer;
 	
-	public function new() {
-		driver = new MySql({user: 'root', password: ''});
-		db = new Db('test', driver);
+	public function new(driver, db) {
+		super(driver, db);
 		uniqueDb = new UniqueDb('test', driver);
 		sanitizer = new tink.sql.drivers.node.MySql.MySqlConnection(null, null);
 	}
