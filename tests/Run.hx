@@ -22,6 +22,7 @@ class Run extends TestWithDb {
     loadFixture('init');
     Runner.run(TestBatch.make([
       new TypeTest(driver, db),
+      new AggregationTest(driver, db),
       #if nodejs new FormatTest(driver, db), #end
       new GeometryTest(driver, db),
       new ExprTest(driver, db),
