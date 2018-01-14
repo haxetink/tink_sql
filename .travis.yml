@@ -4,12 +4,13 @@ addons:
   apt:
     sources:
       - mysql-5.7-trusty
+      - sourceline: 'ppa:ondrej/php'
     packages:
       - mysql-server
-      - php7.0
-      - php7.0-cli
-      - php7.0-mbstring
-      - php7.0-mysql
+      - php7.1
+      - php7.1-cli
+      - php7.1-mbstring
+      - php7.1-mysql
 
 language: node_js
 node_js: 6
