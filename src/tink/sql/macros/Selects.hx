@@ -5,45 +5,57 @@ import haxe.macro.Expr;
 using tink.MacroApi;
 
 class Selects {
- 
-  static public function makeTarget(dataset:Expr, select:Null<Expr>, target: Expr) {
-    var arguments = [for (a in Filters.getArgs(dataset)) { name: a.name, type: a.t.toComplex({ direct: true }) }];
-    var args = [for (a in arguments) macro $i{a.name}];
-    select = switch select {
-      case macro null: select;
-      case { expr: EFunction(_, _) } : select;
-      default:
-        select.func(arguments).asExpr();
-    }
-    var result = [];
-    var exprs = [];
-    switch Context.typeof(select) {
-      case TFun(_, TAnonymous(_.get().fields => fields)):
-        for (field in fields) {
-          // Get the underlying data type
-          var type = switch Context.followWithAbstracts(field.type) {
-            case TEnum(_, [p]): // Todo: check for 'tink.sql.ExprData'
-              Context.followWithAbstracts(p);
-            default: throw 'todo';
-          }
-          var complex = type.toComplex();
-          result.push({
-            field: field.name,
-            expr: macro (null: $complex)
-          });
-          var expr = (macro res).field(field.name);
-          exprs.push(macro $v{field.name} => (cast $expr: tink.sql.Expr<tink.Any>));
+    
+  // This takes an expression of either an object holding tink.sql.Expr
+  // values or a function returning one. We use the type of that expression 
+  // to modify the Result type of a new Dataset.
+  static public function makeSelection(dataset:Expr, select:Null<Expr>) {
+    var arguments = switch Context.typeof(macro @:privateAccess $dataset.toCondition) {
+      case TFun([{t: TFun(args, _)}], _): [
+        for (a in args) {
+          name: a.name, 
+          type: a.t.toComplex({direct: true})
         }
+      ];
+      default: throw "assert";
+    }
+    switch select {
+      case {expr: EObjectDecl(_)}: select = select.func(arguments).asExpr();
       default:
     }
-    var resultType = Context.typeof(EObjectDecl(result).at(select.pos)).toComplex();
-    var decl = EArrayDecl(exprs).at(select.pos);
-    var blank = select.pos.makeBlankType();
-    var body = macro {
-      var res = $select($a{args});
-      return (tink.sql.Target.TSelect($decl, $target): tink.sql.Target<$resultType, $blank>);
-    } 
-    return body.func(arguments).asExpr();
+    var fields = macro $dataset.fields;
+    var input = if (arguments.length > 1) [
+      for (arg in arguments)
+        fields.field(arg.name)
+    ] else [
+      fields
+    ];
+    var call = macro $select($a{input});
+    var resultFields = [];
+    switch Context.typeof(call) {
+      case TAnonymous(_.get().fields => fields):
+        // For each of the fields in the anonymous object we need
+        // a result type, which can be found as T in ExprData<T>
+        for (field in fields) {
+          var type = typeOfExpr(field.type);
+          resultFields.push({
+            name: field.name,
+            pos: select.pos,
+            kind: FProp('default', 'null', type.toComplex())
+          });
+        }
+      case v: trace(v);
+    }
+    var resultType = TAnonymous(resultFields);
+    return macro @:pos(select.pos) (cast $call: tink.sql.Selection<$resultType>);
+  }
+
+  static function typeOfExpr(type) {
+    return switch Context.followWithAbstracts(type) {
+      case TEnum(_, [p]): // Todo: check for 'tink.sql.ExprData'
+        Context.followWithAbstracts(p);
+      default: throw "Expected tink.sql.Expr<T>";
+    }
   }
       
 }

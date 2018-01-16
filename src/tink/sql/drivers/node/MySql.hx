@@ -69,10 +69,10 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
   public function createTable<Row:{}>(table:TableInfo<Row>):Promise<Noise>
     return query({sql: Format.createTable(table, this)});
   
-  public function selectAll<A:{}>(t:Target<A, Db>, ?c:Condition, ?limit:Limit, ?orderBy:OrderBy<A>):RealStream<A> {
-    var nest = t.match(TJoin(_, _, _, _));
+  public function selectAll<A:{}>(t:Target<A, Db>, ?selection: Selection<A>, ?c:Condition, ?limit:Limit, ?orderBy:OrderBy<A>):RealStream<A> {
+    var nest = selection == null && t.match(TJoin(_, _, _, _));
     return Stream.promise(query({ 
-      sql: Format.selectAll(t, c, this, limit, orderBy), 
+      sql: Format.selectAll(t, selection, c, this, limit, orderBy), 
       nestTables: nest,
       typeCast: typeCast
     }).next(function (res)

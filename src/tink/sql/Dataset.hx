@@ -14,13 +14,15 @@ class Dataset<Fields, Filter, Result:{}, Db> {
   var cnx:Connection<Db>;
   var target:Target<Result, Db>;
   var toCondition:Filter->Condition;
+  var selection:Null<Selection<Result>>;
   var condition:Null<Condition>;
   
-  function new(fields, cnx, target, toCondition, ?condition) { 
+  function new(fields, cnx, target, toCondition, ?condition, ?selection) { 
     this.fields = fields;
     this.cnx = cnx;
     this.target = target;
     this.toCondition = toCondition;
+    this.selection = selection;
     this.condition = condition;
   }
   
@@ -30,20 +32,20 @@ class Dataset<Fields, Filter, Result:{}, Db> {
   }
   
   function _where(filter:Filter):Dataset<Fields, Filter, Result, Db>
-    return new Dataset(fields, cnx, target, toCondition, condition && toCondition(filter));
+    return new Dataset(fields, cnx, target, toCondition, condition && toCondition(filter), selection);
 
   macro public function select(ethis, select) {
-    select = tink.sql.macros.Selects.makeTarget(ethis, select, macro @:privateAccess $ethis.target);
+    var selection = tink.sql.macros.Selects.makeSelection(ethis, select);
     return macro @:pos(ethis.pos) @:privateAccess $ethis._select(
-      @:noPrivateAccess $select($ethis.fields)
+      @:noPrivateAccess $selection
     );
   }
 
-  function _select<R: {}>(target: Target<R, Db>):Dataset<Fields, Filter, R, Db>
-    return new Dataset(fields, cnx, target, toCondition, condition);
+  function _select<R: {}>(selection: Selection<R>):Dataset<Fields, Filter, R, Db>
+    return new Dataset(fields, cnx, cast target, toCondition, condition, selection);
   
   public function stream(?limit:Limit, ?orderBy:Fields->OrderBy<Result>):RealStream<Result>
-    return cnx.selectAll(target, condition, limit, orderBy == null ? null : orderBy(fields));
+    return cnx.selectAll(target, selection, condition, limit, orderBy == null ? null : orderBy(fields));
     
   //TODO: add order
   public function first(?orderBy:Fields->OrderBy<Result>):Promise<Result> 

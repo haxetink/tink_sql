@@ -1,10 +1,7 @@
 package;
 
-import Db;
-import tink.sql.Format;
-import tink.sql.Info;
-import tink.sql.drivers.MySql;
 import tink.unit.Assert.assert;
+import Db;
 
 using tink.CoreApi;
 
@@ -13,42 +10,41 @@ class SelectTest extends TestWithDb {
 	
 	@:before
 	public function createTable() {
-		return db.Types.create();
+		return Promise.inParallel([
+			db.Post.create(),
+			db.User.create()
+		]);
 	}
 	
 	@:after
 	public function dropTable() {
-		return db.Types.drop();
+		return Promise.inParallel([
+			db.Post.drop(),
+			db.User.drop()
+		]);
 	}
 	
-    @:include
-	public function map() {
-		return db.Types.insertOne({
-			int: 123,
-			float: 1.23,
-			text: 'mytext',
-			blob: haxe.io.Bytes.ofString('myblob'),
-			date: Date.now(),
-			boolTrue: true,
-			boolFalse: false,
-			
-			nullInt: null,
-			nullText: null,
-			nullBlob: null,
-			nullDate: null,
-			nullBool: null,
+	public function select() {
+		return db.User.insertOne({
+			id: cast null,
+			name: 'Test', email: 'test'
 		})
+		.next(function (id) return db.Post.insertOne({
+			id: cast null,
+			author: id,
+			title: 'hello',
+			content: 'body'
+		}))
         .next(function(_) 
-			return db.Types.select({
-				int: Types.int,
-				float: Types.float,
-				text: Types.text,
-				big: Types.int > 1
-			}).first()
+			return db.Post
+			.join(db.User).on(Post.author == User.id)
+			.select({
+				title: Post.title,
+				name: User.name
+			}).where(User.name == 'Test').first()
 		)
         .next(function(row) {
-			trace(row);
-            return assert(row.int == 123);
+            return assert(row.title == 'hello');
         });
 	}
 }
