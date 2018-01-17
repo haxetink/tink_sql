@@ -2,32 +2,33 @@ sudo: required
 dist: trusty
 addons:
   apt:
+    sources:
+      - mysql-5.7-trusty
+      - sourceline: 'ppa:ondrej/php'
     packages:
-    # - mysql-server-5.6
-    # - mysql-client-core-5.6
-    # - mysql-client-5.6
-    - php5-mysql
-    
-
-services:
-  - mysql
+      - mysql-server
 
 language: node_js
 node_js: 6
 
 os:
   - linux
-  
+
 before_install:
-  - bash travis_mysql_5.7.sh
-  - bash mysql-reset-root-password.sh
   - mysql --version
       
 install:
-  - npm install
+  - yarn && yarn global add switchx
 
 script:
-  # - npm run travix neko .
-  - npm run travix node .
-  - npm run travix php .
-  # - npm run travix java .
+  - yarn travix node
+  - sudo apt-get install php5.6-cli php5.6-mysql
+  - yarn travix php
+  - sudo apt-get install php7.1-cli php7.1-mysql && switchx install db5a1e4
+  - yarn travix php
+
+cache:
+  yarn: true
+  directories:
+    - node_modules
+    - $HOME/haxe

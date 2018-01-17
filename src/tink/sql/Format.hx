@@ -121,12 +121,12 @@ class Format {
 
   static public function alterTable<Row:{}>(table:TableInfo<Row>, s:Sanitizer, changes: Array<SchemaChange>)
     return [
-      for (change in changes) 
+      for (change in changes)
         for (sql in schemaChange(table, s, change))
           sql
     ];
 
-  static public function schemaChange<Row:{}>(table:TableInfo<Row>, s:Sanitizer, change: SchemaChange) {
+  static function schemaChange<Row:{}>(table:TableInfo<Row>, s:Sanitizer, change: SchemaChange) {
     inline function alter(sql) 
       return 'ALTER TABLE ${s.ident(table.getName())} ${sql.join(' ')}';
     inline function definition(f) 
