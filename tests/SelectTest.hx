@@ -1,6 +1,7 @@
 package;
 
 import tink.unit.Assert.assert;
+import tink.sql.OrderBy;
 import Db;
 
 using tink.CoreApi;
@@ -8,43 +9,63 @@ using tink.CoreApi;
 @:asserts
 class SelectTest extends TestWithDb {
 	
-	@:before
-	public function createTable() {
+	@:setup @:access(Run)
+	public function setup() {
+		var run = new Run(driver, db);
 		return Promise.inParallel([
 			db.Post.create(),
-			db.User.create()
-		]);
+			db.User.create(),
+			db.PostTags.create()
+		])
+		.next(function (_) return run.insertUsers())
+		.next(function(_) return Promise.inSequence([
+			run.insertPost('test', 'Alice', ['test', 'off-topic']),
+			run.insertPost('test2', 'Alice', ['test']),
+			run.insertPost('Some ramblings', 'Alice', ['off-topic']),
+			run.insertPost('Just checking', 'Bob', ['test']),
+    ]));
 	}
 	
-	@:after
-	public function dropTable() {
+	@:teardown
+	public function teardown() {
 		return Promise.inParallel([
 			db.Post.drop(),
 			db.User.drop()
 		]);
 	}
+
+	public function selectExpr()
+		return db.Post
+			.select({id: Post.id + 5})
+			.where(Post.id == 1).first()
+			.next(function(row) {
+				return assert(row.id == 6);
+			});
 	
-	public function select() {
-		return db.User.insertOne({
-			id: cast null,
-			name: 'Test', email: 'test'
-		})
-		.next(function (id) return db.Post.insertOne({
-			id: cast null,
-			author: id,
-			title: 'hello',
-			content: 'body'
-		}))
-        .next(function(_) 
-			return db.Post
+	public function selectJoin()
+		return db.Post
 			.join(db.User).on(Post.author == User.id)
 			.select({
 				title: Post.title,
 				name: User.name
-			}).where(User.name == 'Test').first()
-		)
-        .next(function(row) {
-            return assert(row.title == 'hello');
-        });
+			})
+			.where(Post.title == 'test')
+			.first()
+			.next(function(row) {
+				return assert(row.title == 'test' && row.name == 'Alice');
+			});
+
+	public function selectWithFunction() {
+		function getTag(p, u, t)
+			return {tag: t.tag}
+		return db.Post
+			.join(db.User).on(Post.author == User.id)
+			.join(db.PostTags).on(PostTags.post == Post.id)
+			.select(getTag)
+			.where(User.name == 'Alice' && Post.title == 'test2')
+			.all()
+			.next(function(rows) {
+				return assert(rows.length == 1 && rows[0].tag == 'test');
+			});
 	}
 }

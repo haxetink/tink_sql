@@ -5,6 +5,7 @@ import tink.sql.Connection.Update;
 import tink.sql.Expr;
 import tink.sql.Info;
 import tink.sql.Schema;
+import tink.sql.Dataset;
 
 #if macro
 import haxe.macro.Expr;
@@ -17,7 +18,7 @@ class Table<T> {
 #end
 
 class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db> 
-    extends Dataset<Fields, Filter, Row, Db> 
+    extends Selectable<Fields, Filter, Row, Db> 
     implements TableInfo<Row> 
 {
   

@@ -131,6 +131,10 @@ private abstract ResultSet(NativeResultSet) from NativeResultSet {
   public function nestedIterator(nest = false) {
     var current;
     var fields = fields();
+    for (field in fields) {
+      trace(field.name);
+      trace(field.type);
+    }
     return {
       hasNext: function() {
         return switch row() {
@@ -171,8 +175,10 @@ private abstract ResultSet(NativeResultSet) from NativeResultSet {
     return switch field.type {
       case TINYINT:
         value == '1';
-      case INTEGER:
+      case INTEGER | SMALLINT | BIGINT | MEDIUMINT:
         Std.parseInt(value);
+      case FLOAT:
+        Std.parseFloat(value);
       case DATETIME:
         Date.fromString(value);
       case BLOB:
