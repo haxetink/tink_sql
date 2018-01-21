@@ -131,10 +131,6 @@ private abstract ResultSet(NativeResultSet) from NativeResultSet {
   public function nestedIterator(nest = false) {
     var current;
     var fields = fields();
-    for (field in fields) {
-      trace(field.name);
-      trace(field.type);
-    }
     return {
       hasNext: function() {
         return switch row() {
