@@ -6,6 +6,8 @@ import tink.sql.Expr;
 import tink.sql.Info;
 import tink.sql.Schema;
 
+using tink.CoreApi;
+
 #if macro
 import haxe.macro.Expr;
 using haxe.macro.Tools;
@@ -53,13 +55,18 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
     return cnx.updateSchema(this, changes);
   
   public function insertMany(rows:Array<Insert<Row>>)
-    return cnx.insert(this, rows);
+    return rows.length == 0 ? Promise.NULL : cnx.insert(this, rows);
     
   public function insertOne(row:Insert<Row>)
     return insertMany([row]);
     
   public function update(f:Fields->Update<Row>, options:{ where: Filter, ?max:Int }) {
-    return cnx.update(this, toCondition(options.where), options.max, f(this.fields));
+    return switch f(this.fields) {
+      case []:
+        Promise.lift({rowsAffected: 0});
+      case patch:
+        cnx.update(this, toCondition(options.where), options.max, patch);
+    }
   }
   
   public function delete(options:{ where: Filter, ?max:Int }) {
