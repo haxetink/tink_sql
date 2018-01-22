@@ -28,25 +28,25 @@ typedef Types = {
   public var date(default, null):DateTime;
   public var boolTrue(default, null):Bool;
   public var boolFalse(default, null):Bool;
-  
+
   @:optional public var optionalInt(default, null):Integer<21>;
   @:optional public var optionalText(default, null):Text<40>;
   @:optional public var optionalBlob(default, null):Blob<1000000>;
   @:optional public var optionalDate(default, null):DateTime;
   @:optional public var optionalBool(default, null):Bool;
-  
+
   public var nullInt(default, null):Null<Integer<21>>;
   public var nullText(default, null):Null<Text<40>>;
   public var nullBlob(default, null):Null<Blob<1000000>>;
   public var nullDate(default, null):Null<DateTime>;
   public var nullBool(default, null):Null<Bool>;
-  
+
   @:optional public var abstractInt(default, null):AInt;
   @:optional public var abstractFloat(default, null):AFloat;
   @:optional public var abstractString(default, null):AString;
   @:optional public var abstractBool(default, null):ABool;
   @:optional public var abstractDate(default, null):ADate;
-  
+
   @:optional public var enumAbstractInt(default, null):EInt;
   @:optional public var enumAbstractFloat(default, null):EFloat;
   @:optional public var enumAbstractString(default, null):EString;
@@ -83,7 +83,19 @@ typedef Schema = {
   @:unique('gh') public var h(default, null): Boolean;
 }
 
-@:tables(User, Post, PostTags, Types, Geometry, Schema)
+typedef StringTypes = {
+  @:autoIncrement @:primary public var id(default, null):Id<User>;
+  public var text10(default, null): Text<20>;
+  public var text255(default, null): Text<255>;
+  public var text999(default, null): Text<999>;
+  public var text65536(default, null): Text<65536>;
+  public var textTiny(default, null): Text.TinyText;
+  public var textDefault(default, null): Text.DefaultText;
+  public var textMedium(default, null): Text.MediumText;
+  public var textLong(default, null): Text.LongText;
+}
+
+@:tables(User, Post, PostTags, Types, Geometry, Schema, StringTypes)
 class Db extends tink.sql.Database {}
 
 abstract AInt(Integer<1>) from Int to Int {}
