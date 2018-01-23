@@ -13,6 +13,7 @@ class SchemaTest extends TestWithDb {
 		loadFixture('schema_$version');
 		return db.Schema.diffSchema()
 			.next(function (changes) {
+				trace(changes);
 				inspect(changes);
 				return changes;
 			})
@@ -24,7 +25,7 @@ class SchemaTest extends TestWithDb {
 				return asserts.done();
 			});
 	}
-
+	
 	public function diffIdentical()
 		return check(asserts, 'identical', function(changes) {
 			asserts.assert(changes.length == 0);
