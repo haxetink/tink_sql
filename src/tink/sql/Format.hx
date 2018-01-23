@@ -226,7 +226,7 @@ class Format {
   static public function insert<Row:{}>(table:TableInfo<Row>, rows:Array<Insert<Row>>, s:Sanitizer, options:InsertOptions) {
     var ignore = options != null && options.ignore;
     return
-      'INSERT ${ignore ? 'IGNORE' : ''} INTO ${s.ident(table.getName())} (${[for (f in table.fieldnames()) s.ident(f)].join(", ")}) VALUES ' +
+      'INSERT ${ignore ? 'IGNORE ' : ''}INTO ${s.ident(table.getName())} (${[for (f in table.fieldnames()) s.ident(f)].join(", ")}) VALUES ' +
          [for (row in rows) '(' + table.sqlizeRow(row, s.value).join(', ') + ')'].join(', ');
   }
   
