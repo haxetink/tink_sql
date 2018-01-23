@@ -1,4 +1,4 @@
-package ;
+package;
 
 import Db;
 import haxe.PosInfos;
@@ -7,38 +7,38 @@ import tink.unit.Assert.*;
 import tink.unit.AssertionBuffer;
 import tink.unit.*;
 import tink.testrunner.*;
+import tink.sql.drivers.MySql;
 
 using tink.CoreApi;
 
 @:asserts
 @:await
 @:allow(tink.unit)
-class Run {  
+class Run extends TestWithDb {  
   
   static function main() {
-    
+    var driver = new MySql({user: 'root', password: ''});
+		var db = new Db('test', driver);
+    loadFixture('init');
     Runner.run(TestBatch.make([
-      new TypeTest(),
-      #if nodejs new FormatTest(), #end
-      new GeometryTest(),
-      new ExprTest(),
-      new Run(),
-      new SchemaTest(),
+      new TypeTest(driver, db),
+      #if nodejs new FormatTest(driver, db), #end
+      new GeometryTest(driver, db),
+      new ExprTest(driver, db),
+      new Run(driver, db),
+      new SchemaTest(driver, db),
     ])).handle(Runner.exit);
-    
   }
+
+  public static function loadFixture(file: String) {
+		Sys.command('node', ['tests/fixture', 'tests/fixture/$file.sql']);
+	}
   
   static function sorted<A>(i:Iterable<A>) {
     var ret = Lambda.array(i);
     ret.sort(Reflect.compare);
     return ret;
   }
-  
-  function new() {
-    db = new Db('test', new tink.sql.drivers.MySql( { user:'root', password: '' } ));
-  }
-  
-  var db:Db;
   
   @:before
   public function createTables() {
@@ -72,9 +72,9 @@ class Run {
     return asserts.done();
   }
   
-  @:variant(target.db.User.all(), 0)
-  @:variant(target.db.Post.all(), 0)
-  @:variant(target.db.PostTags.all(), 0)
+  @:variant(this.db.User.all(), 0)
+  @:variant(this.db.Post.all(), 0)
+  @:variant(this.db.PostTags.all(), 0)
   public function count<T>(query:Promise<Array<T>>, expected:Int) {
     return query.next(function(a:Array<T>) return assert(a.length == expected));
   }
@@ -82,17 +82,17 @@ class Run {
   public function insert()
     return insertUsers().next(function(insert:Int) return assert(insert > 0));
   
-  @:variant(target.db.User.all.bind(), 5)
-  @:variant(target.db.User.where(User.name == 'Evan').all.bind(), 0)
-  @:variant(target.db.User.where(User.name == 'Alice').all.bind(), 1)
-  @:variant(target.db.User.where(User.name == 'Dave').all.bind(), 2)
+  @:variant(this.db.User.all.bind(), 5)
+  @:variant(this.db.User.where(User.name == 'Evan').all.bind(), 0)
+  @:variant(this.db.User.where(User.name == 'Alice').all.bind(), 1)
+  @:variant(this.db.User.where(User.name == 'Dave').all.bind(), 2)
   public function insertedCount<T>(query:Lazy<Promise<Array<T>>>, expected:Int)
     return insertUsers().next(function(_) return count(query.get(), expected, asserts));
 
-  @:variant(target.db.User.count.bind(), 5)
-  @:variant(target.db.User.where(User.name == 'Evan').count.bind(), 0)
-  @:variant(target.db.User.where(User.name == 'Alice').count.bind(), 1)
-  @:variant(target.db.User.where(User.name == 'Dave').count.bind(), 2)
+  @:variant(this.db.User.count.bind(), 5)
+  @:variant(this.db.User.where(User.name == 'Evan').count.bind(), 0)
+  @:variant(this.db.User.where(User.name == 'Alice').count.bind(), 1)
+  @:variant(this.db.User.where(User.name == 'Dave').count.bind(), 2)
   public function insertedCountAll<T>(count:Lazy<Promise<Int>>, expected:Int)
     return insertUsers().next(function(_) return count.get())
       .next(function(total) return assert(total == expected));

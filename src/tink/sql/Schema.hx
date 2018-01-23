@@ -42,7 +42,7 @@ abstract Schema(SchemaInfo) from SchemaInfo to SchemaInfo {
   public function new() this = new Map();
 
   public function diff(that: Schema)
-    return [for (key in mergeKeys(this, that))
+    return postProcess([for (key in mergeKeys(this, that))
       switch [this[key], that[key]] {
         case [null, added]: AddColumn(added);
         case [removed, null]: RemoveColumn(removed);
@@ -55,7 +55,7 @@ abstract Schema(SchemaInfo) from SchemaInfo to SchemaInfo {
             continue;
           ChangeColumn(a, b);
       }
-    ].concat(diffIndex(that));
+    ].concat(diffIndex(that)));
 
   function diffIndex(that: Schema) {
     var indexA = indexes();
@@ -63,13 +63,42 @@ abstract Schema(SchemaInfo) from SchemaInfo to SchemaInfo {
     return [for (name in mergeKeys(indexA, indexB))
       switch [indexA[name], indexB[name]] {
         case [null, added]: AddIndex(added);
-        case [removed, null]: RemoveIndex(removed);
+        case [removed, null]:
+          if (!that.exists(name))
+            continue;
+          RemoveIndex(removed);
         case [a, b]:
           if (a.type.equals(b.type) && a.fields.join(',') == b.fields.join(','))
             continue;
           ChangeIndex(a, b);
       }
     ];
+  }
+
+  function postProcess(changes: Array<SchemaChange>) {
+    // Add columns first, otherwise we risk removing all columns which results in an error
+    haxe.ds.ArraySort.sort(changes, function (a, b) {
+      return switch [a, b] {
+        case [AddColumn(_), RemoveColumn(_)]: -1;
+        case [RemoveColumn(_), AddColumn(_)]: 1;
+        default: 0;
+      }
+    });
+    
+    // The column must exist and have an index before auto_increment can be set
+    for (change in changes)
+      switch change {
+        case AddColumn(c) | ChangeColumn(_, c) if (c.autoIncrement):
+          c.autoIncrement = false;
+          changes.push(ChangeColumn(c, {
+            name: c.name, nullable: c.nullable,
+            type: c.type, byDefault: c.byDefault,
+            keys: c.keys, autoIncrement: true
+          }));
+          break;
+        default:
+      }
+    return changes;
   }
 
   function normalizeType(type: String) {
