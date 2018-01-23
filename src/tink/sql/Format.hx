@@ -1,7 +1,7 @@
 package tink.sql;
 
 import tink.core.Any;
-import tink.sql.Connection.Update;
+import tink.sql.Connection;
 import tink.sql.Expr;
 import tink.sql.Info;
 import tink.sql.Limit;
@@ -223,9 +223,10 @@ class Format {
       ) + s.value(part.name)      
     ].join(', '), c, s, limit);
     
-  static public function insert<Row:{}>(table:TableInfo<Row>, rows:Array<Insert<Row>>, s:Sanitizer) {
+  static public function insert<Row:{}>(table:TableInfo<Row>, rows:Array<Insert<Row>>, s:Sanitizer, options:InsertOptions) {
+    var ignore = options != null && options.ignore;
     return
-      'INSERT INTO ${s.ident(table.getName())} (${[for (f in table.fieldnames()) s.ident(f)].join(", ")}) VALUES ' +
+      'INSERT ${ignore ? 'IGNORE ' : ''}INTO ${s.ident(table.getName())} (${[for (f in table.fieldnames()) s.ident(f)].join(", ")}) VALUES ' +
          [for (row in rows) '(' + table.sqlizeRow(row, s.value).join(', ') + ')'].join(', ');
   }
   

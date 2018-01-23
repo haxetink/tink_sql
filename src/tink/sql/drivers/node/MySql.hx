@@ -85,8 +85,8 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
       return (res[0].count: Int)
     );
   
-  public function insert<Row:{}>(table:TableInfo<Row>, items:Array<Insert<Row>>):Promise<Id<Row>> 
-    return query({sql: Format.insert(table, items, this)}).next(function(res)
+  public function insert<Row:{}>(table:TableInfo<Row>, items:Array<Insert<Row>>, ?options):Promise<Id<Row>> 
+    return query({sql: Format.insert(table, items, this, options)}).next(function(res)
       return new Id(res.insertId)
     );
         
