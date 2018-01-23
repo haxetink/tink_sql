@@ -76,7 +76,7 @@ class MySQLiConnection<Db:DatabaseInfo> implements Connection<Db> implements San
       return Std.parseInt(result.fetch_row()[0]);
     });
   
-  public function insert<Row:{}>(table:TableInfo<Row>, items:Array<Insert<Row>>, options):Promise<Id<Row>>
+  public function insert<Row:{}>(table:TableInfo<Row>, items:Array<Insert<Row>>, ?options):Promise<Id<Row>>
     return query(Format.insert(table, items, this, options)).next(function (_)
       return new Id(cnx.insert_id)
     );
