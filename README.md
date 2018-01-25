@@ -18,26 +18,26 @@ Tink SQL has been built to embrace using SQL for your database interactions, but
 Define a database like so:
 
 ```haxe
-import tink.sql.types.*;
+import tink.sql.Types;
 
 typedef User = {
   id:Id<User>,
-  name:Text<255>,
-  @:unique email:Text<255>,
-  password:Text<255>,
+  name:VarChar<255>,
+  @:unique email:VarChar<255>,
+  password:VarChar<255>,
 }
 
 typedef Post = {
   id:Id<Post>,
   author:Id<User>,
-  title:Text.LongText,
-  url:Text<255>,
+  title:LongText,
+  url:VarChar<255>,
 }
 
 typedef Tag = {
   id:Id<Tag>,
-  name:Text<20>,
-  desc:Null<Text.DefaultText>,
+  name:VarChar<20>,
+  desc:Null<DefaultText>,
 }
 
 typedef PostTags = {

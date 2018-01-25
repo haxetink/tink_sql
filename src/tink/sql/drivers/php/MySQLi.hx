@@ -9,31 +9,31 @@ import tink.sql.Format.Sanitizer;
 import tink.sql.Limit;
 import tink.sql.Expr;
 import tink.sql.Info;
-import tink.sql.types.Id;
+import tink.sql.Types;
 import tink.streams.Stream;
 import tink.streams.RealStream;
 import tink.sql.Schema;
 using tink.CoreApi;
 
 class MySQLi implements Driver {
-  
+
   var settings:MySqlSettings;
-  
+
   public function new(settings) {
     this.settings = settings;
   }
-  
+
   public function open<Db:DatabaseInfo>(name:String, info:Db):Connection<Db> {
     var cnx = new NativeConnection(
-        settings.host, settings.user, 
+        settings.host, settings.user,
         settings.password, name, settings.port
     );
     return new MySQLiConnection(info, cnx);
-  }  
+  }
 }
 
 class MySQLiConnection<Db:DatabaseInfo> implements Connection<Db> implements Sanitizer {
-  
+
   var cnx:NativeConnection;
   var db:Db;
 
@@ -48,44 +48,44 @@ class MySQLiConnection<Db:DatabaseInfo> implements Connection<Db> implements San
     if (Std.is(v, Bytes)) v = (cast v: Bytes).toString();
     return "'"+cnx.real_escape_string('$v')+"'";
   }
-    
+
   public function ident(s:String):String
     return tink.sql.drivers.MySql.getSanitizer(null).ident(s);
-  
-  function query<T>(query:String):Promise<T> 
+
+  function query<T>(query:String):Promise<T>
     return switch cnx.query(query) {
       case false: new Error(cnx.errno, cnx.error);
       case v: (cast v: T);
     }
-  
-  public function dropTable<Row:{}>(table:TableInfo<Row>):Promise<Noise> 
+
+  public function dropTable<Row:{}>(table:TableInfo<Row>):Promise<Noise>
     return query(Format.dropTable(table, this));
-        
-  public function createTable<Row:{}>(table:TableInfo<Row>):Promise<Noise> 
+
+  public function createTable<Row:{}>(table:TableInfo<Row>):Promise<Noise>
     return query(Format.createTable(table, this));
-  
+
   public function selectAll<A:{}>(t:Target<A, Db>, ?c:Condition, ?limit:Limit, ?orderBy:OrderBy<A>):RealStream<A>
     return Stream.promise(
       query(Format.selectAll(t, c, this, limit, orderBy)).next(function (result: ResultSet) {
         return Stream.ofIterator(result.nestedIterator(!t.match(TTable(_, _))));
       })
     );
-  
+
   public function countAll<A:{}>(t:Target<A, Db>, ?c:Condition):Promise<Int>
     return query(Format.countAll(t, c, this)).next(function (result: NativeResultSet) {
       return Std.parseInt(result.fetch_row()[0]);
     });
-  
+
   public function insert<Row:{}>(table:TableInfo<Row>, items:Array<Insert<Row>>):Promise<Id<Row>>
     return query(Format.insert(table, items, this)).next(function (_)
       return new Id(cnx.insert_id)
     );
-        
+
   public function update<Row:{}>(table:TableInfo<Row>, ?c:Condition, ?max:Int, update:Update<Row>):Promise<{rowsAffected:Int}>
     return query(Format.update(table, c, max, update, this)).next(function(_)
       return {rowsAffected: cnx.affected_rows}
     );
-        
+
   public function delete<Row:{}>(table:TableInfo<Row>, ?c:Condition, ?max:Int):Promise<{rowsAffected:Int}>
     return query(Format.delete(table, c, max, this)).next(function(_)
       return {rowsAffected: cnx.affected_rows}
@@ -134,7 +134,7 @@ private abstract ResultSet(NativeResultSet) from NativeResultSet {
       hasNext: function() {
         return switch row() {
           case None: false;
-          case Some(v): 
+          case Some(v):
             current = v;
             true;
         }
@@ -144,7 +144,7 @@ private abstract ResultSet(NativeResultSet) from NativeResultSet {
         var target = res;
         var i = 0;
         for (field in fields) {
-          if (nest) target = 
+          if (nest) target =
             if (!res.exists(field.table)) res[field.table] = {}
             else res[field.table];
           var value = current[i++];
@@ -154,11 +154,11 @@ private abstract ResultSet(NativeResultSet) from NativeResultSet {
       }
     }
   }
-  
+
   function parseGeo(buffer: BytesInput): geojson.Point {
     buffer.bigEndian = buffer.readByte() == 0;
     return switch buffer.readInt32() {
-      case 1: 
+      case 1:
         var y = buffer.readDouble(), x = buffer.readDouble();
         new geojson.Point(x, y);
       case v: throw 'GeoJson type $v not supported';

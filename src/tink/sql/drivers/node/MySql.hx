@@ -9,7 +9,7 @@ import tink.sql.Limit;
 import tink.sql.Expr;
 import tink.sql.Info;
 import tink.sql.Schema;
-import tink.sql.types.Id;
+import tink.sql.Types;
 import tink.streams.Stream;
 import tink.streams.RealStream;
 using tink.CoreApi;

@@ -32,7 +32,7 @@ class StringTest extends TestWithDb {
       text10: generateString(10),
       text255: generateString(255),
       text999: generateString(999),
-      // Note: even though the type is Text<65536> it is a Text column, so max length 65535
+      // Note: even though the type is VarChar<65536> it is a Text column, so max length 65535
       text65536: generateString(65535),
       textTiny: generateString(255),
       textDefault: generateString(65535),

@@ -64,73 +64,73 @@ class TableBuilder {
 
                 function resolveType(type:haxe.macro.Type) {
                   return switch type {
-                    case TType(_.get() => {pack: [], name: 'Null'}, [p]),
-                         TAbstract(_.get() => {pack: [], name: 'Null'}, [p]):
+                    case TAbstract(_.get() => {pack: [], name: 'Null'}, [p]):
                       nullable = true;
                       resolveType(p);
 
-                    case TType(_.get() => {module: 'tink.sql.types.Integer'}, p):
-                      var maxLength = getInt(p[0], f.pos);
+                    case TAbstract(_.get() => {module: 'tink.sql.Types', name: 'Id'}, [p]):
+                      var maxLength = 12; // TODO: make these configurable
                       macro tink.sql.Info.DataType.DInt($v{maxLength}, false, $v{f.meta.has(':autoIncrement')});
 
-                    case TType(_.get() => {module: 'tink.sql.types.Number'}, p):
-                      var maxLength = getInt(p[0], f.pos);
-                      macro tink.sql.Info.DataType.DFloat($v{maxLength});
-
-                    case TType(_.get() => {module: 'tink.sql.types.Text', name: name}, p):
-                      switch name {
-                        case 'Text':
-                          var maxLength = getInt(p[0], f.pos);
-                          macro tink.sql.Info.DataType.DString($v{maxLength});
-                        case 'TinyText':
-                          macro tink.sql.Info.DataType.DText(tink.sql.Info.TextSize.Tiny);
-                        case 'DefaultText':
+                    case TType(_.get() => tdef, params):
+                      switch tdef {
+                        case {module: 'StdTypes', name: 'Null'}:
+                          nullable = true;
+                          resolveType(params[0]);
+                        case {module: 'tink.sql.Types', name: 'Blob'}:
+                          var maxLength = getInt(params[0], f.pos);
+                          macro tink.sql.Info.DataType.DBlob($v{maxLength});
+                        case {module: 'tink.sql.Types', name: 'DateTime'}:
+                          macro tink.sql.Info.DataType.DDateTime;
+                        case {module: 'tink.sql.Types', name: 'DefaultText'}:
                           macro tink.sql.Info.DataType.DText(tink.sql.Info.TextSize.Default);
-                        case 'MediumText':
-                          macro tink.sql.Info.DataType.DText(tink.sql.Info.TextSize.Medium);
-                        case 'LongText':
+                        case {module: 'tink.sql.Types', name: 'Integer'}:
+                          var maxLength = getInt(params[0], f.pos);
+                          macro tink.sql.Info.DataType.DInt($v{maxLength}, false, $v{f.meta.has(':autoIncrement')});
+                        case {module: 'tink.sql.Types', name: 'LongText'}:
                           macro tink.sql.Info.DataType.DText(tink.sql.Info.TextSize.Long);
+                        case {module: 'tink.sql.Types', name: 'MediumText'}:
+                          macro tink.sql.Info.DataType.DText(tink.sql.Info.TextSize.Medium);
+                        case {module: 'tink.sql.Types', name: 'MultiPolygon'}:
+                          macro tink.sql.Info.DataType.DMultiPolygon;
+                        case {module: 'tink.sql.Types', name: 'Number'}:
+                          var maxLength = getInt(params[0], f.pos);
+                          macro tink.sql.Info.DataType.DFloat($v{maxLength});
+                        case {module: 'tink.sql.Types', name: 'Point'}:
+                          macro tink.sql.Info.DataType.DPoint;
+                        case {module: 'tink.sql.Types', name: 'TinyText'}:
+                          macro tink.sql.Info.DataType.DText(tink.sql.Info.TextSize.Tiny);
+                        case {module: 'tink.sql.Types', name: 'VarChar'}:
+                          var maxLength = getInt(params[0], f.pos);
+                          macro tink.sql.Info.DataType.DString($v{maxLength});
                         default:
-                          throw 'Assert';
+                          resolveType(tdef.type);
                       }
 
-                    case TType(_.get() => {module: 'tink.sql.types.Blob'}, p):
-                      var maxLength = getInt(p[0], f.pos);
-                      macro tink.sql.Info.DataType.DBlob($v{maxLength});
-
-                    case TType(_.get() => {module: 'tink.sql.types.DateTime'}, _):
+                    case _.getID() => 'Date':
                       macro tink.sql.Info.DataType.DDateTime;
-
-                    case _.getID() => 'Date': // should merge with the prev case: https://github.com/HaxeFoundation/haxe/issues/6327
-                      macro tink.sql.Info.DataType.DDateTime;
-
-                    case TType(_.get() => {module: 'tink.sql.types.Point'}, p):
-                      macro tink.sql.Info.DataType.DPoint;
-
-                    case TType(_.get() => {module: 'tink.sql.types.MultiPolygon'}, p):
-                      macro tink.sql.Info.DataType.DMultiPolygon;
 
                     case _.getID() => 'Bool':
                       macro tink.sql.Info.DataType.DBool;
 
-                    case _.getID() => 'tink.sql.types.Id':
-                      var maxLength = 12; // TODO: make these configurable
-                      macro tink.sql.Info.DataType.DInt($v{maxLength}, false, $v{f.meta.has(':autoIncrement')});
-
                     case TAbstract(_.get() => {name: name, type: type}, _):
                       switch type {
                         case TAbstract(_.get() => {name: core, meta: meta}, _) if(meta.has(':coreType')):
-                          f.pos.error('$core as underlying type for the abstract $name is unsupported. Use types from the tink.sql.types package.');
+                          f.pos.error('$core as underlying type for the abstract $name is unsupported. Use types from the tink.sql.Types module.');
                         default:
                           resolveType(type);
                       }
 
-                    case TType(_.get().type => type, _):
-                      resolveType(type);
+                    default:
+                      var typeName = type.getID(false);
+                      if(typeName == null)
+                        typeName = Std.string(type);
 
-                    case _.getID() => v:
-                      if(v == null) v = Std.string(type);
-                      f.pos.error('Unsupported type $v. Use types from the tink.sql.types package.');
+                      var resolvedName = type.getID();
+                      if(resolvedName == null)
+                        resolvedName = Std.string(type);
+
+                      f.pos.error('Unsupported type $typeName (resolved as $resolvedName). Use types from the tink.sql.Types module.');
                   }
                 }
 
