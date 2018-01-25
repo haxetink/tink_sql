@@ -28,6 +28,12 @@ class FormatTest extends TestWithDb {
 		return assert(Format.createTable(table, sanitizer) == sql);
 	}
 
+	@:variant(true, 'INSERT IGNORE INTO `PostTags` (`post`, `tag`) VALUES (1, \'haxe\')')
+	@:variant(false, 'INSERT INTO `PostTags` (`post`, `tag`) VALUES (1, \'haxe\')')
+	public function insertIgnore(ignore, result) {
+		return assert(Format.insert(db.PostTags, [{post: 1, tag: 'haxe'}], sanitizer, {ignore: ignore}) == result);
+	}
+
 	public function like() {
 		var dataset = db.Types.where(Types.text.like('mystring'));
 		return assert(Format.selectAll(@:privateAccess dataset.target, @:privateAccess dataset.condition, sanitizer) == 'SELECT * FROM `Types` WHERE (`Types`.`text` LIKE \'mystring\')');

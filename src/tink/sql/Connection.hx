@@ -20,7 +20,7 @@ interface Connection<Db> {
   function updateSchema<Row:{}>(table:TableInfo<Row>, changes:Array<SchemaChange>):Promise<Noise>;
   function selectAll<A:{}>(t:Target<A, Db>, ?c:Condition, ?limit:Limit, ?orderBy:OrderBy<A>):RealStream<A>;
   function countAll<A:{}>(t:Target<A, Db>, ?c:Condition):Promise<Int>;
-  function insert<Row:{}>(table:TableInfo<Row>, items:Array<Insert<Row>>):Promise<Id<Row>>;
+  function insert<Row:{}>(table:TableInfo<Row>, items:Array<Insert<Row>>, ?options:InsertOptions):Promise<Id<Row>>;
   function update<Row:{}>(table:TableInfo<Row>, ?c:Condition, ?max:Int, update:Update<Row>):Promise<{ rowsAffected: Int }>;
   function delete<Row:{}>(table:TableInfo<Row>, ?c:Condition, ?max:Int):Promise<{ rowsAffected: Int }>;
 }
@@ -36,4 +36,8 @@ class FieldUpdate<Row> {
     this.field = field;
     this.expr = expr;
   }
+}
+
+typedef InsertOptions = {
+  ?ignore:Bool,
 }

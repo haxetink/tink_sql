@@ -54,11 +54,11 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
   public function updateSchema(changes: Array<SchemaChange>)
     return cnx.updateSchema(this, changes);
   
-  public function insertMany(rows:Array<Insert<Row>>)
-    return rows.length == 0 ? Promise.NULL : cnx.insert(this, rows);
+  public function insertMany(rows:Array<Insert<Row>>, ?options)
+    return rows.length == 0 ? Promise.NULL : cnx.insert(this, rows, options);
     
-  public function insertOne(row:Insert<Row>)
-    return insertMany([row]);
+  public function insertOne(row:Insert<Row>, ?options)
+    return insertMany([row], options);
     
   public function update(f:Fields->Update<Row>, options:{ where: Filter, ?max:Int }) {
     return switch f(this.fields) {
