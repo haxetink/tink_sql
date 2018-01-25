@@ -9,19 +9,19 @@ import tink.sql.Limit;
 import tink.sql.Expr;
 import tink.sql.Info;
 import tink.sql.Schema;
-import tink.sql.types.Id;
+import tink.sql.Types;
 import tink.streams.Stream;
 import tink.streams.RealStream;
 using tink.CoreApi;
 
 class MySql implements Driver {
-  
+
   var settings:MySqlSettings;
-  
+
   public function new(settings) {
     this.settings = settings;
   }
-  
+
   public function open<Db:DatabaseInfo>(name:String, info:Db):Connection<Db> {
     var cnx = NativeDriver.createPool({
       user: settings.user,
@@ -31,28 +31,28 @@ class MySql implements Driver {
       database: name,
       connectionLimit: 3,
     });
-    
+
     return new MySqlConnection(info, cnx);
-  }  
+  }
 }
 
 class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sanitizer {
-  
+
   var cnx:NativeConnection;
   var db:Db;
-  
+
   public function value(v:Any):String
     return NativeDriver.escape(if(Std.is(v, Bytes)) Buffer.hxFromBytes(v) else v);
-    
-  public function ident(s:String):String 
+
+  public function ident(s:String):String
     return NativeDriver.escapeId(s);
-  
+
   public function new(db, cnx) {
     this.db = db;
     this.cnx = cnx;
   }
 
-  function query<T>(options: QueryOptions):Promise<T> 
+  function query<T>(options: QueryOptions):Promise<T>
     return Future.async(function (done) {
       cnx.query(options, function (err, res) {
         if (err != null) done(toError(err));
@@ -62,44 +62,44 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
 
   function toError<A>(error:js.Error):Outcome<A, Error>
     return Failure(Error.withData(error.message, error));
-  
+
   public function dropTable<Row:{}>(table:TableInfo<Row>):Promise<Noise>
     return query({sql: Format.dropTable(table, this)});
-        
+
   public function createTable<Row:{}>(table:TableInfo<Row>):Promise<Noise>
     return query({sql: Format.createTable(table, this)});
-  
+
   public function selectAll<A:{}>(t:Target<A, Db>, ?c:Condition, ?limit:Limit, ?orderBy:OrderBy<A>):RealStream<A> {
     var nest = !t.match(TTable(_, _));
-    return Stream.promise(query({ 
-      sql: Format.selectAll(t, c, this, limit, orderBy), 
+    return Stream.promise(query({
+      sql: Format.selectAll(t, c, this, limit, orderBy),
       nestTables: nest,
       typeCast: typeCast
     }).next(function (res)
       return Stream.ofIterator(rowIterator(res, nest))
     ));
   }
-  
+
   public function countAll<A:{}>(t:Target<A, Db>, ?c:Condition):Promise<Int>
     return query({sql: Format.countAll(t, c, this)}).next(function(res)
       return (res[0].count: Int)
     );
-  
-  public function insert<Row:{}>(table:TableInfo<Row>, items:Array<Insert<Row>>, ?options):Promise<Id<Row>> 
+
+  public function insert<Row:{}>(table:TableInfo<Row>, items:Array<Insert<Row>>, ?options):Promise<Id<Row>>
     return query({sql: Format.insert(table, items, this, options)}).next(function(res)
       return new Id(res.insertId)
     );
-        
+
   public function update<Row:{}>(table:TableInfo<Row>, ?c:Condition, ?max:Int, update:Update<Row>):Promise<{rowsAffected:Int}>
     return query({sql: Format.update(table, c, max, update, this)}).next(function(res)
       return {rowsAffected: res.changedRows}
     );
-        
+
   public function delete<Row:{}>(table:TableInfo<Row>, ?c:Condition, ?max:Int):Promise<{rowsAffected:Int}>
     return query({sql: Format.delete(table, c, max, this)}).next(function(res)
       return {rowsAffected: res.changedRows}
     );
-  
+
   public function diffSchema<Row:{}>(table:TableInfo<Row>):Promise<Array<SchemaChange>> {
     function iter(res) return rowIterator(res);
     return Promise.inParallel([
@@ -113,7 +113,7 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
       default: throw "assert";
     });
   }
-  
+
   public function updateSchema<Row:{}>(table:TableInfo<Row>, changes:Array<SchemaChange>):Promise<Noise>
     return Promise.inSequence([
       for (change in Format.alterTable(table, this, changes))
@@ -125,13 +125,25 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
       case 'BLOB':
         switch (field.buffer():Buffer) {
           case null: null;
-          case buf: buf.hxToBytes();
+          case buf:
+            // MySQL.js sometimes returns TEXT fields as BLOB, see https://github.com/mysqljs/mysql#string
+            var columns = [for (f in db.tableinfo(field.table).getFields()) f];
+            var column = columns.filter(function (f) return f.name == field.name)[0];
+            if (column == null) {
+              throw 'Failed to find type of ${field.table}.${field.name}';
+            }
+            switch column.type {
+              case DText(_), DString(_):
+                buf.toString();
+              case _:
+                buf.hxToBytes();
+            }
         }
       case 'TINY' if(field.length == 1):
         switch field.string() {
           case null: null;
           case v: v != '0';
-        } 
+        }
       case 'GEOMETRY':
         var v:Dynamic = field.geometry();
         // https://github.com/mysqljs/mysql/blob/310c6a7d1b2e14b63b572dbfbfa10128f20c6d52/lib/protocol/Parser.js#L342-L389
@@ -204,7 +216,7 @@ private typedef Config = {>MySqlSettings,
 
 private typedef QueryOptions = {
   sql:String,
-  ?nestTables:Bool, 
+  ?nestTables:Bool,
   ?typeCast:Dynamic->(Void->Dynamic)->Dynamic
 }
 
