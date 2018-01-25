@@ -37,7 +37,7 @@ typedef Post = {
 typedef Tag = {
   id:Id<Tag>,
   name:VarChar<20>,
-  desc:Null<DefaultText>,
+  desc:Null<Text>,
 }
 
 typedef PostTags = {

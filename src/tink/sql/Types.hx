@@ -57,8 +57,7 @@ typedef Number<@:const L> = Float;
 typedef Point = geojson.Point;
 #end
 
-// TODO: rename to Text
-typedef DefaultText = String;
+typedef Text = String;
 
 typedef TinyText = String;
 

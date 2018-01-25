@@ -90,7 +90,7 @@ typedef StringTypes = {
   public var text999(default, null): VarChar<999>;
   public var text65536(default, null): VarChar<65536>;
   public var textTiny(default, null): TinyText;
-  public var textDefault(default, null): DefaultText;
+  public var textDefault(default, null): Text;
   public var textMedium(default, null): MediumText;
   public var textLong(default, null): LongText;
 }

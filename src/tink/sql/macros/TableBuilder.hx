@@ -82,7 +82,7 @@ class TableBuilder {
                           macro tink.sql.Info.DataType.DBlob($v{maxLength});
                         case {module: 'tink.sql.Types', name: 'DateTime'}:
                           macro tink.sql.Info.DataType.DDateTime;
-                        case {module: 'tink.sql.Types', name: 'DefaultText'}:
+                        case {module: 'tink.sql.Types', name: 'Text'}:
                           macro tink.sql.Info.DataType.DText(tink.sql.Info.TextSize.Default);
                         case {module: 'tink.sql.Types', name: 'Integer'}:
                           var maxLength = getInt(params[0], f.pos);
