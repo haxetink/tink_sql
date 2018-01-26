@@ -162,7 +162,7 @@ abstract Schema(SchemaInfo) from SchemaInfo to SchemaInfo {
       var field = schema[index.Column_name];
       if (name == 'PRIMARY')
         field.keys.push(Primary);
-      else if (index.Non_unique == '0')
+      else if (index.Non_unique == 0)
         field.keys.push(Unique(Some(name)));
       else
         field.keys.push(Index(Some(name)));
@@ -198,6 +198,6 @@ typedef MysqlColumnInfo = {
 
 typedef MysqlIndexInfo = {
   Key_name: String,
-  Non_unique: String,
+  Non_unique: Int,
   Column_name: String
 }

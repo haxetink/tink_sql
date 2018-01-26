@@ -63,12 +63,13 @@ class MySQLiConnection<Db:DatabaseInfo> implements Connection<Db> implements San
 
   public function createTable<Row:{}>(table:TableInfo<Row>):Promise<Noise>
     return query(Format.createTable(table, this));
-
-  public function selectAll<A:{}>(t:Target<A, Db>, ?c:Condition, ?limit:Limit, ?orderBy:OrderBy<A>):RealStream<A>
+  
+  public function selectAll<A:{}>(t:Target<A, Db>, ?s:Selection<A>, ?c:Condition, ?limit:Limit, ?orderBy:OrderBy<A>):RealStream<A>
     return Stream.promise(
-      query(Format.selectAll(t, c, this, limit, orderBy)).next(function (result: ResultSet) {
-        return Stream.ofIterator(result.nestedIterator(!t.match(TTable(_, _))));
-      })
+      query(Format.selectAll(t, s, c, this, limit, orderBy)).next(function (result: ResultSet)
+        return Stream.ofIterator(result.nestedIterator(
+          s == null && t.match(TJoin(_, _, _, _)))
+        ))
     );
 
   public function countAll<A:{}>(t:Target<A, Db>, ?c:Condition):Promise<Int>
@@ -170,8 +171,10 @@ private abstract ResultSet(NativeResultSet) from NativeResultSet {
     return switch field.type {
       case TINYINT:
         value == '1';
-      case INTEGER:
+      case INTEGER | SMALLINT | BIGINT | MEDIUMINT:
         Std.parseInt(value);
+      case FLOAT:
+        Std.parseFloat(value);
       case DATETIME:
         Date.fromString(value);
       case BLOB:
