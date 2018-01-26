@@ -75,7 +75,7 @@ class SchemaTest extends TestWithDb {
 		return check(asserts, 'indexes', function(changes) {	
 			#if !php
 			asserts.assert(changes[0].match(ChangeIndex(
-				{name: 'ab', type: IIndex, fields: ['a']}, 
+				{name: 'ab', type: IIndex, fields: ['a']},
 				{name: 'ab', type: IIndex, fields: ['a', 'b']}
 			)));
 			asserts.assert(changes[1].match(ChangeIndex(

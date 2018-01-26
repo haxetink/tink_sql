@@ -1,9 +1,9 @@
 package tink.sql;
 
 import tink.sql.Expr;
-import tink.streams.Stream;
-
 import tink.sql.Table;
+
+using tink.CoreApi;
 
 @:enum abstract JoinType(String) {
   var Inner = null;

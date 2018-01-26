@@ -7,6 +7,29 @@ import tink.sql.Table;
 
 using tink.CoreApi;
 
+class Selectable<Fields, Filter, Result: {}, Db> extends Dataset<Fields, Filter, Result, Db> {
+  
+  macro public function select(ethis, select) {
+    var selection = tink.sql.macros.Selects.makeSelection(ethis, select);
+    return macro @:pos(ethis.pos) @:privateAccess $ethis._select(
+      @:noPrivateAccess $selection
+    );
+  }
+
+  function _select<R: {}>(selection: Selection<R>):Dataset<Fields, Filter, R, Db>
+    return new Dataset(fields, cnx, cast target, toCondition, condition, selection);
+    
+  macro public function leftJoin(ethis, ethat)
+    return tink.sql.macros.Joins.perform(Left, ethis, ethat);
+    
+  macro public function join(ethis, ethat)
+    return tink.sql.macros.Joins.perform(Inner, ethis, ethat);
+
+  macro public function rightJoin(ethis, ethat)
+    return tink.sql.macros.Joins.perform(Right, ethis, ethat);
+
+}
+
 class Dataset<Fields, Filter, Result:{}, Db> { 
   
   public var fields(default, null):Fields;
@@ -14,14 +37,16 @@ class Dataset<Fields, Filter, Result:{}, Db> {
   var cnx:Connection<Db>;
   var target:Target<Result, Db>;
   var toCondition:Filter->Condition;
+  var selection:Null<Selection<Result>>;
   var condition:Null<Condition>;
   
-  function new(fields, cnx, target, toCondition, ?condition) { 
+  function new(fields, cnx, target, toCondition, ?condition, ?selection) { 
     this.fields = fields;
     this.cnx = cnx;
     this.target = target;
     this.toCondition = toCondition;
     this.condition = condition;
+    this.selection = selection;
   }
   
   macro public function where(ethis, filter) {
@@ -30,12 +55,11 @@ class Dataset<Fields, Filter, Result:{}, Db> {
   }
   
   function _where(filter:Filter):Dataset<Fields, Filter, Result, Db>
-    return new Dataset(fields, cnx, target, toCondition, condition && toCondition(filter));
+    return new Dataset(fields, cnx, target, toCondition, condition && toCondition(filter), selection);
   
   public function stream(?limit:Limit, ?orderBy:Fields->OrderBy<Result>):RealStream<Result>
-    return cnx.selectAll(target, condition, limit, orderBy == null ? null : orderBy(fields));
-    
-  //TODO: add order
+    return cnx.selectAll(target, selection, condition, limit, orderBy == null ? null : orderBy(fields));
+
   public function first(?orderBy:Fields->OrderBy<Result>):Promise<Result> 
     return all({limit:1, offset:0}, orderBy)
       .next(function (r:Array<Result>) return switch r {
@@ -48,20 +72,11 @@ class Dataset<Fields, Filter, Result:{}, Db> {
 
   public function count():Promise<Int>
     return cnx.countAll(target, condition);
-  
+
   @:noCompletion 
   static public function get<Fields, Filter, Result:{}, Db>(v:Dataset<Fields, Filter, Result, Db>) {
     return v;
   }
-    
-  macro public function leftJoin(ethis, ethat)
-    return tink.sql.macros.Joins.perform(Left, ethis, ethat);
-    
-  macro public function join(ethis, ethat)
-    return tink.sql.macros.Joins.perform(Inner, ethis, ethat);
-
-  macro public function rightJoin(ethis, ethat)
-    return tink.sql.macros.Joins.perform(Right, ethis, ethat);
     
 }
 
