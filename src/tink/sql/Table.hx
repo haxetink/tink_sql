@@ -5,6 +5,7 @@ import tink.sql.Connection.Update;
 import tink.sql.Expr;
 import tink.sql.Info;
 import tink.sql.Schema;
+import tink.sql.Dataset;
 
 using tink.CoreApi;
 
@@ -19,7 +20,7 @@ class Table<T> {
 #end
 
 class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db> 
-    extends Dataset<Fields, Filter, Row, Db> 
+    extends Selectable<Fields, Filter, Row, Db> 
     implements TableInfo<Row> 
 {
   
@@ -35,9 +36,9 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
     this.fields = fields;
     
     super(
-      fields, 
-      cnx, 
-      TTable(name, alias), 
+      fields,
+      cnx,
+      TTable(name, alias),
       function (f:Filter) return (cast f : Fields->Condition)(fields) //TODO: raise issue on Haxe tracker and remove the cast once resolved
     );
   }

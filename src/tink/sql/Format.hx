@@ -199,37 +199,30 @@ class Format {
     return 'SHOW INDEX FROM ${s.ident(table.getName())}';
   }
 
-  static public function selectAll<A:{}, Db>(t:Target<A, Db>, ?c:Condition, s:Sanitizer, ?limit:Limit, ?orderBy:OrderBy<A>)
-    return select(t, '*', c, s, limit, orderBy);
+  static public function selectAll<A:{}, Db>(t:Target<A, Db>, ?selection:Selection<A>, ?c:Condition, s:Sanitizer, ?limit:Limit, ?orderBy:OrderBy<A>)         
+    return select(t, switch selection {
+      case null: '*';
+      case fields:
+        [for (name in fields.keys())
+          expr(fields[name], s) + ' AS ' +s.ident(name)
+        ].join(', ');
+    }, c, s, limit, orderBy);
 
-  static public function countAll<A:{}, Db>(t:Target<A, Db>, ?c:Condition, s:Sanitizer)
+  static public function countAll<A:{}, Db>(t:Target<A, Db>, ?c:Condition, s:Sanitizer): String {
     return select(t, 'COUNT(*) as count', c, s);
-
-  static function select<A:{}, Db>(t:Target<A, Db>, what:String, ?c:Condition, s:Sanitizer, ?limit:Limit, ?orderBy:OrderBy<A>) {
-    var sql = 'SELECT $what FROM ' + target(t, s);
-
-    if (c != null)
+  }
+    
+  static function select<A:{}, Db>(t:Target<A, Db>, select: String, ?c:Condition, s:Sanitizer, ?limit:Limit, ?orderBy:OrderBy<A>) {
+    var sql = 'SELECT $select FROM ' + target(t, s);
+    if (c != null) 
       sql += ' WHERE ' + expr(c, s);
-
     if (orderBy != null)
       sql += ' ORDER BY ' + [for(o in orderBy) s.ident(o.field.table) + '.' + s.ident(o.field.name) + ' ' + o.order.getName().toUpperCase()].join(', ');
-
-    if (limit != null)
+    if (limit != null) 
       sql += ' LIMIT ${limit.limit} OFFSET ${limit.offset}';
-
-    return sql;
+    return sql;    
   }
-
-  static public function selectProjection<A:{}, Db, Ret>(t:Target<A, Db>, ?c:Condition, s:Sanitizer, p:Projection<A, Ret>, ?limit)
-    return select(t, (if (p.distinct) 'DISTINCT ' else '') + [
-      for (part in p) (
-        switch part.expr.data {
-          case null: '';
-          case v: expr(v, s) + ' AS ';
-        }
-      ) + s.value(part.name)
-    ].join(', '), c, s, limit);
-
+    
   static public function insert<Row:{}>(table:TableInfo<Row>, rows:Array<Insert<Row>>, s:Sanitizer, options:InsertOptions) {
     var ignore = options != null && options.ignore;
     return
