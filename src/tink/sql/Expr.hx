@@ -164,6 +164,10 @@ enum ValueType<T> {
 
     @:op(a <= b) static function lteDateConst(a:Expr<Date>, b:Date):Condition
       return lteDate(a, EValue(b, VDate));
+
+    @:commutative
+    @:op(a == b) static function eqBytes<T:Bytes>(a:Expr<T>, b:T):Condition
+      return eq(a, EValue(b, cast VBytes));
   //} endregion
 
   //{ region logic
@@ -418,6 +422,9 @@ abstract Field<Data, Owner>(Expr<Data>) to Expr<Data> {
     @:op(a <= b) static function lteDateConst<S>(a:Field<Date, S>, b:Date):Condition
       return (a:Expr<Date>) <= EValue(b, VDate);
 
+    @:commutative
+    @:op(a == b) static function eqBytes<T:Bytes, S>(a:Field<T, S>, b:T):Condition
+      return (a:Expr<T>) == EValue(b, cast VBytes);
   //} endregion
 
   //{ region logic
