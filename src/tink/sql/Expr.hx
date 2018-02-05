@@ -229,6 +229,8 @@ enum ValueType<T> {
   @:from static function ofPoint(p:Point):Expr<Point>
     return EValue(p, VGeometry(Point));
 
+  @:from static function ofBytes(b:Bytes):Expr<Bytes>
+    return EValue(b, VBytes);
 }
 
 class Functions {
