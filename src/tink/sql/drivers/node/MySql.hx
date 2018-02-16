@@ -97,7 +97,7 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
 
   public function delete<Row:{}>(table:TableInfo<Row>, ?c:Condition, ?max:Int):Promise<{rowsAffected:Int}>
     return query({sql: Format.delete(table, c, max, this)}).next(function(res)
-      return {rowsAffected: res.changedRows}
+      return {rowsAffected: res.affectedRows}
     );
 
   public function diffSchema<Row:{}>(table:TableInfo<Row>):Promise<Array<SchemaChange>> {
