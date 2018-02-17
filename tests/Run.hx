@@ -28,8 +28,8 @@ class Run extends TestWithDb {
       new SelectTest(driver, db),
       #if nodejs
       new FormatTest(driver, db),
-      new StringTest(driver, db),
       #end
+      new StringTest(driver, db),
       new GeometryTest(driver, db),
       new ExprTest(driver, db),
       new Run(driver, db),

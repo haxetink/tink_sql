@@ -177,8 +177,9 @@ private abstract ResultSet(NativeResultSet) from NativeResultSet {
         Std.parseFloat(value);
       case DATETIME:
         Date.fromString(value);
-      case BLOB:
-        Bytes.ofString(value);
+      case BLOB | TINYBLOB | MEDIUMBLOB | LONGBLOB | BLOB | VARCHAR | CHAR:
+        if (field.flags & 128 > 0) Bytes.ofString(value);
+        else value;
       case GEOMETRY:
         parseGeo(new BytesInput(Bytes.ofString(value), 4));
       default: value;
