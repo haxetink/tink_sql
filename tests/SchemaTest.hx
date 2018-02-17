@@ -71,7 +71,6 @@ class SchemaTest extends TestWithDb {
 			asserts.assert(changes.length == 23);
 		});
 
-	@:include
 	public function diffIndexes()
 		return check(asserts, 'indexes', function(changes) {
 			#if !php
