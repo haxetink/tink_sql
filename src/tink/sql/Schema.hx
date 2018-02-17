@@ -77,6 +77,7 @@ abstract Schema(SchemaInfo) from SchemaInfo to SchemaInfo {
 
   function postProcess(changes: Array<SchemaChange>) {
     // Add columns first, otherwise we risk removing all columns which results in an error
+    // Todo: set this order when creating the diff
     haxe.ds.ArraySort.sort(changes, function (a, b) {
       return switch [a, b] {
         case [AddColumn(_), RemoveColumn(_)]: -1;
@@ -86,6 +87,7 @@ abstract Schema(SchemaInfo) from SchemaInfo to SchemaInfo {
     });
     
     // The column must exist and have an index before auto_increment can be set
+    // Todo: make changing autoincrement a seperate schema change, which makes this easier
     for (change in changes)
       switch change {
         case AddColumn(c) | ChangeColumn(_, c) if (c.autoIncrement):
@@ -147,9 +149,9 @@ abstract Schema(SchemaInfo) from SchemaInfo to SchemaInfo {
     ]);
 
   public static function fromMysql(columns: Iterator<MysqlColumnInfo>, indexes: Iterator<MysqlIndexInfo>): Schema {
-    var schema = new Schema();
+    var cols = new Schema();
     for (col in columns)
-      schema[col.Field] = {
+      cols[col.Field] = {
         name: col.Field,
         type: col.Type,
         autoIncrement: col.Extra == 'auto_increment',
@@ -157,16 +159,23 @@ abstract Schema(SchemaInfo) from SchemaInfo to SchemaInfo {
         byDefault: col.Default,
         keys: []
       }
+    var schema = new Schema();
+    inline function addField(field)
+      if (!schema.exists(field.name)) 
+        schema[field.name] = field;
+    // Todo: store index info separately from columns, see #47 and #57
     for (index in indexes) {
       var name = index.Key_name;
-      var field = schema[index.Column_name];
+      var field = cols[index.Column_name];
       if (name == 'PRIMARY')
         field.keys.push(Primary);
       else if (index.Non_unique == 0)
         field.keys.push(Unique(Some(name)));
       else
         field.keys.push(Index(Some(name)));
+      addField(field);
     }
+    for (field in cols) addField(field);
     return schema;
   }
 

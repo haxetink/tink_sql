@@ -41,7 +41,7 @@ class SchemaTest extends TestWithDb {
 		});
 	
 	public function diffModify()
-		return check(asserts, 'modify', function(changes) {			
+		return check(asserts, 'modify', function(changes) {
 			#if !php // Match doesn't seem to work reliably on php
 			asserts.assert(changes[0].match(ChangeColumn(
 				{type: 'float'}, 
@@ -71,25 +71,26 @@ class SchemaTest extends TestWithDb {
 			asserts.assert(changes.length == 23);
 		});
 
+	@:include
 	public function diffIndexes()
-		return check(asserts, 'indexes', function(changes) {	
+		return check(asserts, 'indexes', function(changes) {
 			#if !php
-			asserts.assert(changes[0].match(ChangeIndex(
+			asserts.assert(changes[4].match(ChangeIndex(
 				{name: 'ab', type: IIndex, fields: ['a']},
 				{name: 'ab', type: IIndex, fields: ['a', 'b']}
 			)));
-			asserts.assert(changes[1].match(ChangeIndex(
+			asserts.assert(changes[2].match(ChangeIndex(
 				{name: 'unique', fields: ['b']}, 
 				{name: 'unique', fields: ['unique']}
 			)));
-			asserts.assert(changes[2].match(ChangeIndex(
+			asserts.assert(changes[0].match(ChangeIndex(
 				{name: 'ef', type: IUnique, fields: ['f']}, 
 				{name: 'ef', type: IUnique, fields: ['e', 'f']}
 			)));
-			asserts.assert(changes[3].match(RemoveIndex(
+			asserts.assert(changes[1].match(RemoveIndex(
 				{name: 'h', type: IUnique, fields: ['h']}
 			)));
-			asserts.assert(changes[4].match(ChangeIndex(
+			asserts.assert(changes[3].match(ChangeIndex(
 				{name: 'indexed', type: IUnique}, 
 				{name: 'indexed', type: IIndex}
 			)));
