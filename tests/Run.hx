@@ -21,7 +21,7 @@ class Run extends TestWithDb {
       user: env('DB_USERNAME', 'root'),
       password: env('DB_PASSWORD', '')
     });
-		var db = new Db('test', driver);
+    var db = new Db('test', driver);
     loadFixture('init');
     Runner.run(TestBatch.make([
       new TypeTest(driver, db),
@@ -44,8 +44,8 @@ class Run extends TestWithDb {
     }
 
   public static function loadFixture(file: String) {
-		Sys.command('node', ['tests/fixture', 'tests/fixture/$file.sql']);
-	}
+    Sys.command('node', ['tests/fixture', 'tests/fixture/$file.sql']);
+  }
 
   static function sorted<A>(i:Iterable<A>) {
     var ret = Lambda.array(i);
