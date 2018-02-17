@@ -27,6 +27,8 @@ class StringTest extends TestWithDb {
     function generateString(length) {
       return StringTools.lpad("", ".", length);
     }
+    function desc(length: Int)
+      return 'compare strings of length $length';
     var future = db.StringTypes.insertOne({
       id: null,
       text10: generateString(10),
@@ -41,14 +43,14 @@ class StringTest extends TestWithDb {
     })
       .next(function(id:Int) return db.StringTypes.first())
       .next(function(row:StringTypes) {
-        asserts.assert(row.text10 == generateString(10));
-        asserts.assert(row.text255 == generateString(255));
-        asserts.assert(row.text999 == generateString(999));
-        asserts.assert(row.text65536 == generateString(65535));
-        asserts.assert(row.textTiny == generateString(255));
-        asserts.assert(row.textDefault == generateString(65535));
-        asserts.assert(row.textMedium == generateString(70000));
-        asserts.assert(row.textLong == generateString(80000));
+        asserts.assert(row.text10 == generateString(10), desc(10));
+        asserts.assert(row.text255 == generateString(255), desc(255));
+        asserts.assert(row.text999 == generateString(999), desc(999));
+        asserts.assert(row.text65536 == generateString(65535), desc(65535));
+        asserts.assert(row.textTiny == generateString(255), desc(255));
+        asserts.assert(row.textDefault == generateString(65535), desc(65535));
+        asserts.assert(row.textMedium == generateString(70000), desc(70000));
+        asserts.assert(row.textLong == generateString(80000), desc(80000));
 
         return Noise;
       });
