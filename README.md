@@ -72,6 +72,8 @@ var db = new Db('db_name', driver);
     - `db.User.all(limit, orderBy): Promise<Array<User>>;`
     - `db.User.first(orderBy): Promise<User>;`
     - `db.User.where(filter)`
+    - `db.User.select(f:Fields->Selection<Row>)`
+      - Example, select name of user: `db.User.select({name: User.name}).where(User.id == 1).first()`
  - Writing
     - `db.User.insertOne(row: User): Promise<Id<User>>;`
     - `db.User.insertMany(rows: Array<User>): Promise<Id<User>>;`
