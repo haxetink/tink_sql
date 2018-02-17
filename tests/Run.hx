@@ -17,7 +17,10 @@ using tink.CoreApi;
 class Run extends TestWithDb {
 
   static function main() {
-    var driver = new MySql({user: 'root', password: ''});
+    var driver = new MySql({
+      user: env('DB_USERNAME', 'root'),
+      password: env('DB_PASSWORD', '')
+    });
 		var db = new Db('test', driver);
     loadFixture('init');
     Runner.run(TestBatch.make([
@@ -33,6 +36,12 @@ class Run extends TestWithDb {
       new SchemaTest(driver, db),
     ])).handle(Runner.exit);
   }
+  
+  static function env(key, byDefault)
+    return switch Sys.getEnv(key) {
+      case null: byDefault; 
+      case v: v;
+    }
 
   public static function loadFixture(file: String) {
 		Sys.command('node', ['tests/fixture', 'tests/fixture/$file.sql']);

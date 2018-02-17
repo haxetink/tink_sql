@@ -1,7 +1,11 @@
 const mysql = require('mysql')
 const fs = require('fs')
+function env(key, byDefault) {
+  return process.env[key] || byDefault
+}
 const connection = mysql.createConnection({
-  user: 'root',
+  user: env('DB_USERNAME', 'root'),
+  password: env('DB_PASSWORD', ''),
   multipleStatements: true
 })
 connection.query(fs.readFileSync(process.argv[2], 'utf8'), function (err) {
