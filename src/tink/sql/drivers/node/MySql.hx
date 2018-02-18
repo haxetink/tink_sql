@@ -14,9 +14,14 @@ import tink.streams.Stream;
 import tink.streams.RealStream;
 using tink.CoreApi;
 
+typedef NodeSettings = {
+  > MySqlSettings,
+  ?connectionLimit:Int,
+}
+
 class MySql implements Driver {
 
-  var settings:MySqlSettings;
+  var settings:NodeSettings;
 
   public function new(settings) {
     this.settings = settings;
@@ -29,7 +34,7 @@ class MySql implements Driver {
       host: settings.host,
       port: settings.port,
       database: name,
-      connectionLimit: 3,
+      connectionLimit: settings.connectionLimit,
     });
 
     return new MySqlConnection(info, cnx);
