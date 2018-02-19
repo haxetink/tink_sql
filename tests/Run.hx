@@ -27,13 +27,13 @@ class Run extends TestWithDb {
       new TypeTest(driver, db),
       new SelectTest(driver, db),
       #if nodejs
-      new FormatTest(driver, db),
+      //new FormatTest(driver, db),
       #end
       new StringTest(driver, db),
       new GeometryTest(driver, db),
       new ExprTest(driver, db),
       new Run(driver, db),
-      new SchemaTest(driver, db),
+      //new SchemaTest(driver, db),
     ])).handle(Runner.exit);
   }
   
@@ -80,8 +80,8 @@ class Run extends TestWithDb {
 
   public function info() {
     asserts.assert(db.name == 'test');
-    asserts.assert(sorted(db.tablesnames()).join(',') == 'Geometry,Post,PostTags,Schema,StringTypes,Types,User');
-    asserts.assert(sorted(db.tableinfo('Post').fieldnames()).join(',') == 'author,content,id,title');
+    asserts.assert(sorted(db.tableNames()).join(',') == 'Geometry,Post,PostTags,Schema,StringTypes,Types,User');
+    asserts.assert(sorted(db.tableInfo('Post').fieldNames()).join(',') == 'author,content,id,title');
     return asserts.done();
   }
 

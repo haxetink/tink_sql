@@ -1,11 +1,11 @@
 package tink.sql;
 
 import tink.core.Any;
-import tink.sql.Connection.Update;
 import tink.sql.Expr;
 import tink.sql.Info;
 import tink.sql.Schema;
 import tink.sql.Dataset;
+import tink.sql.Query;
 
 using tink.CoreApi;
 
@@ -44,35 +44,47 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
   }
   
   public function create()
-    return cnx.createTable(this);
+    return cnx.execute(CreateTable(this));
   
   public function drop()
-    return cnx.dropTable(this);
+    return cnx.execute(DropTable(this));
 
-  public function diffSchema()
+  /*public function diffSchema()
     return cnx.diffSchema(this);
 
   public function updateSchema(changes: Array<SchemaChange>)
-    return cnx.updateSchema(this, changes);
+    return cnx.updateSchema(this, changes);*/
   
   public function insertMany(rows:Array<Insert<Row>>, ?options)
-    return rows.length == 0 ? Promise.NULL : cnx.insert(this, rows, options);
+    return if (rows.length == 0) Promise.NULL
+      else cnx.execute(Insert({
+        table: this, 
+        rows: rows, 
+        ignore: if (options == null) null else options.ignore
+      }));
     
   public function insertOne(row:Insert<Row>, ?options)
     return insertMany([row], options);
     
-  public function update(f:Fields->Update<Row>, options:{ where: Filter, ?max:Int }) {
+  public function update(f:Fields->Update<Row>, options:{ where: Filter, ?max:Int })
     return switch f(this.fields) {
       case []:
         Promise.lift({rowsAffected: 0});
       case patch:
-        cnx.update(this, toCondition(options.where), options.max, patch);
+        cnx.execute(Update({
+          table: this,
+          set: patch,
+          where: toCondition(options.where),
+          max: options.max
+        }));
     }
-  }
   
-  public function delete(options:{ where: Filter, ?max:Int }) {
-    return cnx.delete(this, toCondition(options.where), options.max);
-  }
+  public function delete(options:{ where: Filter, ?max:Int })
+    return cnx.execute(Delete({
+      table: this, 
+      where: toCondition(options.where),
+      max: options.max
+    }));
 
   macro public function as(e:Expr, alias:String) {
     return switch haxe.macro.Context.typeof(e) {
@@ -106,10 +118,10 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
     throw 'not implemented';
   
   @:noCompletion 
-  public function fieldnames():Array<String>
+  public function fieldNames():Array<String>
     return getFields().map(function(f) return f.name);
   
-  @:noCompletion 
+  /*@:noCompletion 
   public function sqlizeRow(row:Insert<Row>, val:Any->String):Array<String> 
     return [for (f in getFields()) {
       var fname = f.name;
@@ -121,7 +133,7 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
         default:
           val(fval);
       }
-    }];
+    }];*/
     
   @:noCompletion
   macro public function init(e:Expr, rest:Array<Expr>) {

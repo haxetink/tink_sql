@@ -3,7 +3,7 @@ package tink.sql;
 import haxe.io.Bytes;
 import geojson.*;
 import tink.sql.Types;
-import tink.sql.Connection.FieldUpdate;
+import tink.sql.Query.FieldUpdate;
 
 typedef Condition = Expr<Bool>;
 

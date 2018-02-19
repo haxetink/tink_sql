@@ -4,21 +4,20 @@ import haxe.ds.Option;
 import tink.core.Any;
 
 interface DatabaseInfo {
-  function tablesnames():Iterable<String>;
-  function tableinfo<Row:{}>(name:String):TableInfo<Row>;
+  function tableNames():Iterable<String>;
+  function tableInfo<Row:{}>(name:String):TableInfo<Row>;
 }
 
 interface TableInfo<Row:{}> {
   function getName():String;
   function getFields():Iterable<Column>;
-  function fieldnames():Iterable<String>;
-  function sqlizeRow(row:Insert<Row>, val:Any->String):Array<String>;
+  function fieldNames():Iterable<String>;
+  //function sqlizeRow(row:Insert<Row>, val:Any->String):Array<String>;
 }
 
 typedef Column = {
   > FieldType,
-  name:String,
-  keys:Array<KeyType>,
+  name:String
 }
 
 typedef FieldType = {
@@ -26,10 +25,16 @@ typedef FieldType = {
   type:DataType,
 }
 
-enum KeyType {
-  Primary;
-  Index(indexName:Option<String>);
-  Unique(indexName:Option<String>);
+typedef Index = {
+  name:String,
+  type:IndexType,
+  fields:Array<String>
+}
+
+enum IndexType {
+  IPrimary;
+  IUnique;
+  IIndex;
 }
 
 enum DataType {
@@ -42,6 +47,7 @@ enum DataType {
   DDateTime;
   DPoint; // geojson
   DMultiPolygon; // geojson
+  DOther(type:String);
 }
 
 enum TextSize {
@@ -50,5 +56,3 @@ enum TextSize {
   Medium;
   Long;
 }
-
-typedef Insert<Row> = Row;

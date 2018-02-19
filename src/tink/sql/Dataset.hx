@@ -58,7 +58,13 @@ class Dataset<Fields, Filter, Result:{}, Db> {
     return new Dataset(fields, cnx, target, toCondition, condition && toCondition(filter), selection);
   
   public function stream(?limit:Limit, ?orderBy:Fields->OrderBy<Result>):RealStream<Result>
-    return cnx.selectAll(target, selection, condition, limit, orderBy == null ? null : orderBy(fields));
+    return cnx.execute(Select({
+      from: target,
+      selection: selection,
+      where: condition,
+      limit: limit,
+      orderBy: if (orderBy == null) null else orderBy(fields)
+    }));
 
   public function first(?orderBy:Fields->OrderBy<Result>):Promise<Result> 
     return all({limit:1, offset:0}, orderBy)
@@ -71,7 +77,7 @@ class Dataset<Fields, Filter, Result:{}, Db> {
     return stream(limit, orderBy).collect();
 
   public function count():Promise<Int>
-    return cnx.countAll(target, condition);
+    return null;//cnx.countAll(target, condition);
 
   @:noCompletion 
   static public function get<Fields, Filter, Result:{}, Db>(v:Dataset<Fields, Filter, Result, Db>) {

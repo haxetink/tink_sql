@@ -1,7 +1,7 @@
 package tink.sql.drivers;
 
+import tink.sql.format.Sanitizer;
 import tink.core.Any;
-import tink.sql.Format;
 
 using StringTools;
 

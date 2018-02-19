@@ -135,7 +135,8 @@ class TableBuilder {
                 }
 
                 var type = resolveType(f.type);
-                var keys = [];
+                // Todo: indexes
+                /*var keys = [];
                 if(f.meta.has(':primary')) keys.push(macro tink.sql.Info.KeyType.Primary);
                 function index(meta, type)
                   for(m in f.meta.extract(meta)) keys.push(macro $type(${
@@ -146,13 +147,12 @@ class TableBuilder {
                     }
                   }));
                 index(':unique', macro tink.sql.Info.KeyType.Unique);
-                index(':index', macro tink.sql.Info.KeyType.Index);
+                index(':index', macro tink.sql.Info.KeyType.Index);*/
 
                 macro @:pos(f.pos) {
                   name: $name,
                   nullable: $v{nullable},
-                  type: ${type},
-                  keys: $a{keys},
+                  type: ${type}
                 }
               });
             }
@@ -169,7 +169,7 @@ class TableBuilder {
               static var FIELDS = $a{fieldsValues};
               @:noCompletion override public function getFields()
                 return FIELDS;
-              @:noCompletion override public function fieldnames():Array<String>
+              @:noCompletion override public function fieldNames():Array<String>
                 return FIELD_NAMES;
 
                 //TODO: override sqlizeRow

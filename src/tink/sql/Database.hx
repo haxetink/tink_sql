@@ -17,12 +17,12 @@ class Database implements DatabaseInfo {
     this.tables = tables;
   }
   
-  public function tablesnames():Iterable<String> 
+  public function tableNames():Iterable<String> 
     return {
       iterator: function () return tables.keys()
     };
   
-  public function tableinfo<Row:{}>(name:String):TableInfo<Row> 
+  public function tableInfo<Row:{}>(name:String):TableInfo<Row> 
     return switch tables[name] {
       case null: throw new Error(NotFound, 'Table `${this.name}.$name` not found');
       case v: cast v;

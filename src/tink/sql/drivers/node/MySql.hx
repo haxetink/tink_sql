@@ -3,13 +3,13 @@ package tink.sql.drivers.node;
 import js.node.Buffer;
 import haxe.DynamicAccess;
 import haxe.io.Bytes;
-import tink.sql.Connection.Update;
-import tink.sql.Format.Sanitizer;
+import tink.sql.Query;
 import tink.sql.Limit;
 import tink.sql.Expr;
 import tink.sql.Info;
 import tink.sql.Schema;
 import tink.sql.Types;
+import tink.sql.format.Sanitizer;
 import tink.streams.Stream;
 import tink.streams.RealStream;
 using tink.CoreApi;
@@ -41,6 +41,30 @@ class MySql implements Driver {
   }
 }
 
+
+class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sanitizer {
+
+  var cnx:NativeConnection;
+  var db:Db;
+
+  public function new(db, cnx) {
+    this.db = db;
+    this.cnx = cnx;
+  }
+
+  public function value(v:Any):String
+    return NativeDriver.escape(if(Std.is(v, Bytes)) Buffer.hxFromBytes(v) else v);
+
+  public function ident(s:String):String
+    return NativeDriver.escapeId(s);
+
+  public function execute<Result>(query:Query<Db,Result>):Result {
+    return null;
+  }
+
+}
+
+/*
 class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sanitizer {
 
   var cnx:NativeConnection;
@@ -205,7 +229,7 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
       }];
     return result.iterator();
   }
-}
+}*/
 
 @:jsRequire("mysql")
 private extern class NativeDriver {

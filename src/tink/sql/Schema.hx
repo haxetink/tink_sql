@@ -1,40 +1,21 @@
 package tink.sql;
 
 import tink.sql.Info;
-import tink.sql.Format;
+import tink.sql.Query;
+
 using StringTools;
 
-typedef SchemaColumn = {
-  name: String,
-  type: String,
-  autoIncrement: Bool,
-  nullable: Bool,
-  keys: Array<KeyType>,
-  byDefault: Null<String>
-}
+class Schema {
+  var columns:Array<Column>;
+  var indexes:Array<Index>;
 
-typedef Index = {
-  name: String,
-  type: IndexType,
-  fields: Array<String>
+  public function new(columns, indexes) {
+    this.columns = columns;
+    this.indexes = indexes;
+  }
 }
-
-enum IndexType {
-  IPrimary;
-  IUnique;
-  IIndex;
-}
-
-enum SchemaChange {
-  AddColumn(col: SchemaColumn);
-  RemoveColumn(col: SchemaColumn);
-  ChangeColumn(from: SchemaColumn, to: SchemaColumn);
-  AddIndex(index: Index);
-  RemoveIndex(index: Index);
-  ChangeIndex(from: Index, to: Index);
-}
-
-typedef SchemaInfo = Map<String, SchemaColumn>;
+/*
+typedef SchemaInfo = Map<String, Column>;
 
 @:forward
 abstract Schema(SchemaInfo) from SchemaInfo to SchemaInfo {
@@ -191,7 +172,7 @@ abstract Schema(SchemaInfo) from SchemaInfo to SchemaInfo {
     return this.get(key);
   
   @:arrayAccess
-  public inline function arrayWrite(k: String, v: SchemaColumn)
+  public inline function arrayWrite(k: String, v: Column)
     return this.set(k, v);
 
 }
@@ -209,4 +190,4 @@ typedef MysqlIndexInfo = {
   Key_name: String,
   Non_unique: Int,
   Column_name: String
-}
+}*/
