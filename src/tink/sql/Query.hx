@@ -10,7 +10,7 @@ using tink.CoreApi;
 
 enum Query<Db, Result> {
   Union<Row:{}>(a:Query<Db, RealStream<Row>>, b:Query<Db, RealStream<Row>>, distinct:Bool):Query<Db, RealStream<Row>>;
-  Select<Row:{}, Condition>(select:SelectOperation<Db, Row, Condition>):Query<Db, RealStream<Row>>;
+  Select<Row:{}>(select:SelectOperation<Db, Row>):Query<Db, RealStream<Row>>;
   Insert<Row:{}>(insert:InsertOperation<Row>):Query<Db, Promise<Id<Row>>>;
   Update<Row:{}, Condition>(update:UpdateOperation<Row, Condition>):Query<Db, Promise<{rowsAffected:Int}>>;
   Delete<Row:{}, Condition>(delete:DeleteOperation<Row, Condition>):Query<Db, Promise<{rowsAffected:Int}>>;
@@ -21,7 +21,7 @@ enum Query<Db, Result> {
   ShowIndex<Row:{}, Info>(from:TableInfo):Query<Db, Promise<Info>>;
 }
 
-typedef SelectOperation<Db, Row:{}, Condition> = {
+typedef SelectOperation<Db, Row:{}> = {
   from:Target<Row, Db>,
   ?selection:Selection<Row>,
   ?where:Condition,
