@@ -79,6 +79,8 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
         ));
       case CreateTable(_, _) | DropTable(_) | AlterTable(_, _):
         run({sql: sql}).next(function(_) return Noise);
+      case Insert(_):
+        run({sql: sql}).next(function(res) return new Id(res.insertId));
       default: null;// run({sql: sql});
     }
   }
