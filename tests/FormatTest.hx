@@ -96,9 +96,6 @@ class FakeTable implements TableInfo<{}> {
 
 	public function fieldnames():Iterable<String>
 		return [for(f in getFields()) f.name];
-
-	public function sqlizeRow(row:Insert<{}>, val:Any->String):Array<String>
-		return null;
 }
 
 @:tables(UniqueTable)

@@ -1,53 +1,42 @@
 package tink.sql;
 
-import haxe.ds.Option;
-import tink.core.Any;
+using tink.CoreApi;
 
 interface DatabaseInfo {
   function tableNames():Iterable<String>;
-  function tableInfo<Row:{}>(name:String):TableInfo<Row>;
+  function tableInfo(name:String):TableInfo;
 }
 
-interface TableInfo<Row:{}> {
+interface TableInfo {
   function getName():String;
-  function getFields():Iterable<Column>;
-  function fieldNames():Iterable<String>;
-  //function sqlizeRow(row:Insert<Row>, val:Any->String):Array<String>;
+  function getColumns():Iterable<Column>;
+  function columnNames():Iterable<String>;
+  function getIndexes():Iterable<Index>;
 }
 
 typedef Column = {
-  > FieldType,
-  name:String
-}
-
-typedef FieldType = {
-  nullable:Bool,
-  type:DataType,
-}
-
-typedef Index = {
   name:String,
-  type:IndexType,
-  fields:Array<String>
+  nullable:Bool,
+  type:DataType
 }
 
-enum IndexType {
-  IPrimary;
-  IUnique;
-  IIndex;
+enum Index {
+  IPrimary(fields:Array<String>);
+  IUnique(name:String, fields:Array<String>);
+  IIndex(name:String, fields:Array<String>);
 }
 
 enum DataType {
-  DBool;
-  DInt(bits:Int, signed:Bool, autoIncrement:Bool);
-  DFloat(bits:Int);
-  DString(maxLength:Int);
-  DText(size:TextSize);
-  DBlob(maxLength:Int);
-  DDateTime;
-  DPoint; // geojson
-  DMultiPolygon; // geojson
-  DOther(type:String);
+  DBool(?byDefault:Bool);
+  DInt(bits:Int, signed:Bool, autoIncrement:Bool, ?byDefault:Int);
+  DFloat(bits:Int, ?byDefault:Float);
+  DString(maxLength:Int, ?byDefault:String);
+  DText(size:TextSize, ?byDefault:String);
+  DBlob(maxLength:Int, ?byDefault:haxe.io.Bytes);
+  DDateTime(?byDefault:Date);
+  DPoint(?byDefault:geojson.Point);
+  DMultiPolygon(?byDefault:geojson.MultiPolygon);
+  DUnknown(type:String, ?byDefault:Any);
 }
 
 enum TextSize {

@@ -60,7 +60,7 @@ typedef Geometry = {
 typedef Schema = {
   @:autoIncrement @:primary public var id(default, null):Id<Schema>;
 
-  public var toBoolean(default, null): Boolean;
+  @:byDefault(true) public var toBoolean(default, null): Boolean;
   public var toInt(default, null): Integer<11>;
   public var toFloat(default, null): Number<11>;
   public var toText(default, null): VarChar<1>;

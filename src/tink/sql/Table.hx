@@ -20,18 +20,13 @@ class Table<T> {
 #end
 
 class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db> 
-    extends Selectable<Fields, Filter, Row, Db> 
-    implements TableInfo<Row> 
+    extends Selectable<Fields, Filter, Row, Db>
+    implements TableInfo
 {
   
   public var name(default, null):TableName<Row>;
-
-  @:noCompletion 
-  public function getName():String
-    return name;
   
   function new(cnx, name, alias, fields) {
-    
     this.name = name;
     this.fields = fields;
     
@@ -42,9 +37,11 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
       function (f:Filter) return (cast f : Fields->Condition)(fields) //TODO: raise issue on Haxe tracker and remove the cast once resolved
     );
   }
+
+  // Query
   
-  public function create()
-    return cnx.execute(CreateTable(this));
+  public function create(ifNotExists = false)
+    return cnx.execute(CreateTable(this, ifNotExists));
   
   public function drop()
     return cnx.execute(DropTable(this));
@@ -86,6 +83,27 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
       max: options.max
     }));
 
+
+  // TableInfo
+
+  @:noCompletion 
+  public function getName():String 
+    return name;
+
+  @:noCompletion 
+  public function getColumns():Array<Column> 
+    throw 'not implemented';
+  
+  @:noCompletion 
+  public function columnNames():Array<String>
+    return getColumns().map(function(f) return f.name);
+
+  @:noCompletion 
+  public function getIndexes():Array<Index> 
+    throw 'not implemented';
+
+  // Alias
+
   macro public function as(e:Expr, alias:String) {
     return switch haxe.macro.Context.typeof(e) {
       case TInst(_.get() => { superClass: _.params => [fields, _, row, _] }, _):
@@ -112,14 +130,6 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
       default: e.reject();
     }
   }
-  
-  @:noCompletion 
-  public function getFields():Array<Column>
-    throw 'not implemented';
-  
-  @:noCompletion 
-  public function fieldNames():Array<String>
-    return getFields().map(function(f) return f.name);
   
   /*@:noCompletion 
   public function sqlizeRow(row:Insert<Row>, val:Any->String):Array<String> 

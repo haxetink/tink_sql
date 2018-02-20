@@ -81,7 +81,7 @@ class Run extends TestWithDb {
   public function info() {
     asserts.assert(db.name == 'test');
     asserts.assert(sorted(db.tableNames()).join(',') == 'Geometry,Post,PostTags,Schema,StringTypes,Types,User');
-    asserts.assert(sorted(db.tableInfo('Post').fieldNames()).join(',') == 'author,content,id,title');
+    asserts.assert(sorted(db.tableInfo('Post').columnNames()).join(',') == 'author,content,id,title');
     return asserts.done();
   }
 

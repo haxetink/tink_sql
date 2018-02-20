@@ -3,16 +3,7 @@ package tink.sql;
 import tink.sql.Info;
 import tink.sql.Query;
 
-using StringTools;
-
-class Schema {
-  var columns:Array<Column>;
-  var indexes:Array<Index>;
-
-  public function new(columns, indexes) {
-    this.columns = columns;
-    this.indexes = indexes;
-  }
+abstract Schema(TableInfo) {
 }
 /*
 typedef SchemaInfo = Map<String, Column>;

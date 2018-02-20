@@ -1,6 +1,5 @@
 package tink.sql;
 
-import tink.sql.Connection;
 import tink.sql.Expr;
 import tink.sql.Info;
 import tink.sql.Limit;
@@ -15,11 +14,11 @@ enum Query<Db, Result> {
   Insert<Row:{}>(insert:InsertOperation<Row>):Query<Db, Promise<Id<Row>>>;
   Update<Row:{}, Condition>(update:UpdateOperation<Row, Condition>):Query<Db, Promise<{rowsAffected:Int}>>;
   Delete<Row:{}, Condition>(delete:DeleteOperation<Row, Condition>):Query<Db, Promise<{rowsAffected:Int}>>;
-  CreateTable<Row:{}>(table:TableInfo<Row>):Query<Db, Promise<Noise>>;
-  DropTable<Row:{}>(table:TableInfo<Row>):Query<Db, Promise<Noise>>;
-  AlterTable<Row:{}>(table:TableInfo<Row>, change:AlterTableOperation):Query<Db, Promise<Noise>>;
-  ShowColumns<Row:{}, Info>(from:TableInfo<Row>):Query<Db, Promise<Info>>;
-  ShowIndex<Row:{}, Info>(from:TableInfo<Row>):Query<Db, Promise<Info>>;
+  CreateTable<Row:{}>(table:TableInfo, ?ifNotExists:Bool):Query<Db, Promise<Noise>>;
+  DropTable<Row:{}>(table:TableInfo):Query<Db, Promise<Noise>>;
+  AlterTable<Row:{}>(table:TableInfo, change:AlterTableOperation):Query<Db, Promise<Noise>>;
+  ShowColumns<Row:{}, Info>(from:TableInfo):Query<Db, Promise<Info>>;
+  ShowIndex<Row:{}, Info>(from:TableInfo):Query<Db, Promise<Info>>;
 }
 
 typedef SelectOperation<Db, Row:{}, Condition> = {
@@ -32,7 +31,7 @@ typedef SelectOperation<Db, Row:{}, Condition> = {
 }
 
 typedef UpdateOperation<Row:{}, Condition> = {
-  table:TableInfo<Row>,
+  table:TableInfo,
   set:Update<Row>,
   ?where:Condition,
   ?max:Int
@@ -52,13 +51,13 @@ class FieldUpdate<Row> {
 }
 
 typedef DeleteOperation<Row:{}, Condition> = {
-  table:TableInfo<Row>,
+  table:TableInfo,
   ?where:Condition,
   ?max:Int
 }
 
 typedef InsertOperation<Row:{}> = {
-  table:TableInfo<Row>,
+  table:TableInfo,
   rows:Array<Insert<Row>>,
   ?ignore:Bool
 }

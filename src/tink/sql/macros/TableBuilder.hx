@@ -28,11 +28,6 @@ class TableBuilder {
             for (f in fields) {
               var fType = f.type.reduce().toComplex(),
                   fName = f.name;
-              //var fStruct = TAnonymous([{
-                //name: fName,
-                //kind: FVar(fType),
-                //pos: f.pos,
-              //}]);
 
               rowTypeFields.push({
                 pos: f.pos,
@@ -61,6 +56,12 @@ class TableBuilder {
               fieldsValues.push({
                 var name = macro $v{fName};
                 var nullable = f.meta.has(':optional');
+                var meta = f.meta.get().toMap();
+                var defaultValue = switch meta.get(':byDefault') {
+                  case null: macro null;
+                  case [[value]]: value;
+                  case more: f.pos.error('Multiple defaults');
+                }
 
                 function resolveType(type:haxe.macro.Type) {
                   return switch type {
@@ -70,7 +71,7 @@ class TableBuilder {
 
                     case TAbstract(_.get() => {module: 'tink.sql.Types', name: 'Id'}, [p]):
                       var maxLength = 12; // TODO: make these configurable
-                      macro tink.sql.Info.DataType.DInt($v{maxLength}, false, $v{f.meta.has(':autoIncrement')});
+                      macro tink.sql.Info.DataType.DInt($v{maxLength}, false, $v{f.meta.has(':autoIncrement')}, $defaultValue);
 
                     case TType(_.get() => tdef, params):
                       switch tdef {
@@ -79,39 +80,39 @@ class TableBuilder {
                           resolveType(params[0]);
                         case {module: 'tink.sql.Types', name: 'Blob'}:
                           var maxLength = getInt(params[0], f.pos);
-                          macro tink.sql.Info.DataType.DBlob($v{maxLength});
+                          macro tink.sql.Info.DataType.DBlob($v{maxLength}, $defaultValue);
                         case {module: 'tink.sql.Types', name: 'DateTime'}:
-                          macro tink.sql.Info.DataType.DDateTime;
+                          macro tink.sql.Info.DataType.DDateTime($defaultValue);
                         case {module: 'tink.sql.Types', name: 'Text'}:
-                          macro tink.sql.Info.DataType.DText(tink.sql.Info.TextSize.Default);
+                          macro tink.sql.Info.DataType.DText(tink.sql.Info.TextSize.Default, $defaultValue);
                         case {module: 'tink.sql.Types', name: 'Integer'}:
                           var maxLength = getInt(params[0], f.pos);
-                          macro tink.sql.Info.DataType.DInt($v{maxLength}, false, $v{f.meta.has(':autoIncrement')});
+                          macro tink.sql.Info.DataType.DInt($v{maxLength}, false, $v{f.meta.has(':autoIncrement')}, $defaultValue);
                         case {module: 'tink.sql.Types', name: 'LongText'}:
-                          macro tink.sql.Info.DataType.DText(tink.sql.Info.TextSize.Long);
+                          macro tink.sql.Info.DataType.DText(tink.sql.Info.TextSize.Long, $defaultValue);
                         case {module: 'tink.sql.Types', name: 'MediumText'}:
-                          macro tink.sql.Info.DataType.DText(tink.sql.Info.TextSize.Medium);
+                          macro tink.sql.Info.DataType.DText(tink.sql.Info.TextSize.Medium, $defaultValue);
                         case {module: 'tink.sql.Types', name: 'MultiPolygon'}:
-                          macro tink.sql.Info.DataType.DMultiPolygon;
+                          macro tink.sql.Info.DataType.DMultiPolygon($defaultValue);
                         case {module: 'tink.sql.Types', name: 'Number'}:
                           var maxLength = getInt(params[0], f.pos);
-                          macro tink.sql.Info.DataType.DFloat($v{maxLength});
+                          macro tink.sql.Info.DataType.DFloat($v{maxLength}, $defaultValue);
                         case {module: 'tink.sql.Types', name: 'Point'}:
-                          macro tink.sql.Info.DataType.DPoint;
+                          macro tink.sql.Info.DataType.DPoint($defaultValue);
                         case {module: 'tink.sql.Types', name: 'TinyText'}:
-                          macro tink.sql.Info.DataType.DText(tink.sql.Info.TextSize.Tiny);
+                          macro tink.sql.Info.DataType.DText(tink.sql.Info.TextSize.Tiny, $defaultValue);
                         case {module: 'tink.sql.Types', name: 'VarChar'}:
                           var maxLength = getInt(params[0], f.pos);
-                          macro tink.sql.Info.DataType.DString($v{maxLength});
+                          macro tink.sql.Info.DataType.DString($v{maxLength}, $defaultValue);
                         default:
                           resolveType(tdef.type);
                       }
 
                     case _.getID() => 'Date':
-                      macro tink.sql.Info.DataType.DDateTime;
+                      macro tink.sql.Info.DataType.DDateTime($defaultValue);
 
                     case _.getID() => 'Bool':
-                      macro tink.sql.Info.DataType.DBool;
+                      macro tink.sql.Info.DataType.DBool($defaultValue);
 
                     case TAbstract(_.get() => {name: name, type: type}, _):
                       switch type {
@@ -165,14 +166,15 @@ class TableBuilder {
                 super(cnx, new tink.sql.Table.TableName(tableName), alias, ${EObjectDecl(fieldsExprFields).at(ctx.pos)});
               }
 
-              static var FIELD_NAMES = $v{names};
-              static var FIELDS = $a{fieldsValues};
-              @:noCompletion override public function getFields()
-                return FIELDS;
-              @:noCompletion override public function fieldNames():Array<String>
-                return FIELD_NAMES;
-
-                //TODO: override sqlizeRow
+              static var COLUMN_NAMES = $v{names};
+              static var COLUMNS = $a{fieldsValues};
+              static var INDEXES = [];
+              @:noCompletion override public function getColumns()
+                return COLUMNS;
+              @:noCompletion override public function columnNames()
+                return COLUMN_NAMES;
+              @:noCompletion override public function getIndexes()
+                return INDEXES;
             }
 
           default:
