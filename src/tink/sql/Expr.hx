@@ -241,6 +241,9 @@ class Functions {
   public static function iif<T>(cond:Expr<Bool>, ifTrue:Expr<T>, ifFalse:Expr<T>):Expr<T>
     return ECall('IF', [cast cond, cast ifTrue, cast ifFalse]);
 
+  public static function count<D,O>(?e:Field<D,O>):Expr<Int> // Todo: count can also take an Expr<Bool>
+    return ECall('COUNT', if (e == null) cast [EValue(true, VBool)] else cast [e]);
+
   public static function stContains<T>(g1:Expr<Geometry>, g2:Expr<Geometry>):Expr<Bool>
     return ECall('ST_Contains', cast [g1, g2]);
 

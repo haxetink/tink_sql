@@ -66,22 +66,27 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
     return Failure(Error.withData(error.message, error));
 
   public function execute<Result>(query:Query<Db,Result>):Result {
-    var sql = formatter.format(query);
-    var nest = formatter.isNested(query);
+    inline function fetch<T>(): Promise<T> return run(queryOptions(query));
     return switch query {
       case Select(_) | Union(_, _, _): 
-        Stream.promise(run({
-          sql: sql,
-          typeCast: typeCast,
-          nestTables: nest
-        }).next(function (res)
-          return Stream.ofIterator(rowIterator(res, nest))
+        Stream.promise(fetch().next(function (res)
+          return Stream.ofIterator(rowIterator(res, formatter.isNested(query)))
         ));
       case CreateTable(_, _) | DropTable(_) | AlterTable(_, _):
-        run({sql: sql}).next(function(_) return Noise);
+        fetch().next(function(_) return Noise);
       case Insert(_):
-        run({sql: sql}).next(function(res) return new Id(res.insertId));
+        fetch().next(function(res) return new Id(res.insertId));
       default: null;// run({sql: sql});
+    }
+  }
+
+  function queryOptions<Result>(query:Query<Db,Result>): QueryOptions {
+    var sql = formatter.format(query);
+    return switch query {
+      case Select(_) | Union(_, _, _):
+        {sql: sql, typeCast: typeCast, nestTables: formatter.isNested(query)}
+      default:
+        {sql: sql}
     }
   }
 

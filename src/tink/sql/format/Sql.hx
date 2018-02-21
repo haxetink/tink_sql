@@ -21,8 +21,10 @@ class Sql {
   public function format<Db, Result>(query:Query<Db, Result>):String
     return switch query {
       case CreateTable(table, ifNotExists): createTable(table, ifNotExists);
+      case DropTable(table): dropTable(table);
       case Insert(op): insert(op);
       case Select(op): select(op);
+      //case Update(op): update(op);
       default: throw 'todo $query';
     }
 
@@ -94,20 +96,20 @@ class Sql {
       autoIncrement(addIncrement && column.type.match(DInt(_, _, true)))
     ]);
 
-  function indexFields(index:Index)
-    return switch index {
-      case IPrimary(fields) 
-        | IUnique(_, fields) 
-        | IIndex(_, fields): fields;
+  function keyFields(key:Key)
+    return switch key {
+      case Primary(fields)
+        | Unique(_, fields)
+        | Index(_, fields): fields;
     }
 
-  function defineIndex(index:Index)
-    return join([switch index {
-      case IUnique(name, _): 'UNIQUE ' + ident(name);
-      case IIndex(name, _): 'INDEX ' + ident(name);
-      case IPrimary(_): 'PRIMARY KEY';
+  function defineKey(key:Key)
+    return join([switch key {
+      case Primary(_): 'PRIMARY KEY';
+      case Unique(name, _): 'UNIQUE ' + ident(name);
+      case Index(name, _): 'INDEX ' + ident(name);
     }, parenthesis(
-      indexFields(index).map(ident).join(separate)
+      keyFields(key).map(ident).join(separate)
     )]);
 
   function createTable(table:TableInfo, ifNotExists:Bool)
@@ -118,10 +120,13 @@ class Sql {
       parenthesis(
         table.getColumns()
           .map(defineColumn.bind(_, true))
-          .concat(table.getIndexes().map(defineIndex))
+          .concat(table.getKeys().map(defineKey))
           .join(separate)
       )
     ]);
+
+  function dropTable(table:TableInfo)
+    return 'DROP TABLE ' + ident(table.getName());
 
   function insertRow(columns:Iterable<Column>, row:DynamicAccess<Any>)
     return parenthesis(

@@ -11,7 +11,7 @@ interface TableInfo {
   function getName():String;
   function getColumns():Iterable<Column>;
   function columnNames():Iterable<String>;
-  function getIndexes():Iterable<Index>;
+  function getKeys():Iterable<Key>;
 }
 
 typedef Column = {
@@ -20,10 +20,10 @@ typedef Column = {
   type:DataType
 }
 
-enum Index {
-  IPrimary(fields:Array<String>);
-  IUnique(name:String, fields:Array<String>);
-  IIndex(name:String, fields:Array<String>);
+enum Key {
+  Primary(fields:Array<String>);
+  Unique(name:String, fields:Array<String>);
+  Index(name:String, fields:Array<String>);
 }
 
 enum DataType {

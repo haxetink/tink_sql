@@ -99,7 +99,7 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
     return getColumns().map(function(f) return f.name);
 
   @:noCompletion 
-  public function getIndexes():Array<Index> 
+  public function getKeys():Array<Key> 
     throw 'not implemented';
 
   // Alias

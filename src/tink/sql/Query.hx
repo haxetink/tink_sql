@@ -66,10 +66,10 @@ typedef Insert<Row:{}> = Row;
 
 enum AlterTableOperation {
   AddColumn(col:Column);
-  AddIndex(index:Index);
+  AddKey(key:Key);
   AddAutoIncrement(col:Column);
   AlterColumn(to:Column, ?from:Column);
   DropColumn(col:Column);
-  DropIndex(index:Index);
+  DropKey(key:Key);
   DropAutoIncrement(col:Column);
 }

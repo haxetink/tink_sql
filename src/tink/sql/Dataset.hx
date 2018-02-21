@@ -1,6 +1,5 @@
 package tink.sql;
 
-
 import tink.sql.Expr;
 import tink.streams.RealStream;
 import tink.sql.Table;
@@ -77,7 +76,13 @@ class Dataset<Fields, Filter, Result:{}, Db> {
     return stream(limit, orderBy).collect();
 
   public function count():Promise<Int>
-    return null;//cnx.countAll(target, condition);
+    return cnx.execute(Select({
+      from: target,
+      selection: {count: cast Functions.count()},
+      where: condition
+    }))
+      .collect()
+      .next(function (r) return Success((cast v[0]).count));
 
   @:noCompletion 
   static public function get<Fields, Filter, Result:{}, Db>(v:Dataset<Fields, Filter, Result, Db>) {
