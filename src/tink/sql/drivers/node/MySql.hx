@@ -4,14 +4,11 @@ import js.node.Buffer;
 import haxe.DynamicAccess;
 import haxe.io.Bytes;
 import tink.sql.Query;
-import tink.sql.Limit;
-import tink.sql.Expr;
 import tink.sql.Info;
 import tink.sql.Schema;
 import tink.sql.Types;
 import tink.sql.format.Sanitizer;
 import tink.streams.Stream;
-import tink.streams.RealStream;
 import tink.sql.format.Sql;
 
 using tink.CoreApi;
@@ -76,6 +73,10 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
         fetch().next(function(_) return Noise);
       case Insert(_):
         fetch().next(function(res) return new Id(res.insertId));
+      case Update(_):
+        fetch().next(function(res) return {rowsAffected: (res.changedRows: Int)});
+      case Delete(_):
+        fetch().next(function(res) return {rowsAffected: (res.affectedRows: Int)});
       default: null;// run({sql: sql});
     }
   }

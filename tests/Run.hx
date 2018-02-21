@@ -27,7 +27,7 @@ class Run extends TestWithDb {
       new TypeTest(driver, db),
       new SelectTest(driver, db),
       #if nodejs
-      //new FormatTest(driver, db),
+      new FormatTest(driver, db),
       #end
       new StringTest(driver, db),
       new GeometryTest(driver, db),
@@ -113,6 +113,16 @@ class Run extends TestWithDb {
   public function update() {
     await(runUpdate, asserts);
     return asserts;
+  }
+    
+  public function deleteUser() {
+    return insertUsers().next(function (_)
+      return db.User.delete({where: function (u) return u.id == 1})
+    ).next(function (_)
+      return db.User.count()
+    ).next(function (count) 
+      return assert(count == 4)
+    );
   }
 
   function await(run:AssertionBuffer->Promise<Noise>, asserts:AssertionBuffer)

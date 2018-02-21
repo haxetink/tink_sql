@@ -82,7 +82,7 @@ class Dataset<Fields, Filter, Result:{}, Db> {
       where: condition
     }))
       .collect()
-      .next(function (r) return Success((cast v[0]).count));
+      .next(function (v) return Success((cast v[0]).count));
 
   @:noCompletion 
   static public function get<Fields, Filter, Result:{}, Db>(v:Dataset<Fields, Filter, Result, Db>) {

@@ -78,7 +78,7 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
   
   public function delete(options:{ where: Filter, ?max:Int })
     return cnx.execute(Delete({
-      table: this, 
+      from: this, 
       where: toCondition(options.where),
       max: options.max
     }));

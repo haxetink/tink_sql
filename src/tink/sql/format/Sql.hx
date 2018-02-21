@@ -24,7 +24,8 @@ class Sql {
       case DropTable(table): dropTable(table);
       case Insert(op): insert(op);
       case Select(op): select(op);
-      //case Update(op): update(op);
+      case Update(op): update(op);
+      case Delete(op): delete(op);
       default: throw 'todo $query';
     }
 
@@ -83,7 +84,7 @@ class Sql {
     }
   
   function nullable(isNullable:Bool):String
-    return add(isNullable, 'NULL');
+    return if (isNullable) 'NULL' else 'NOT NULL';
 
   function autoIncrement(increment:Bool)
     return add(increment, 'AUTO_INCREMENT');
@@ -106,7 +107,7 @@ class Sql {
   function defineKey(key:Key)
     return join([switch key {
       case Primary(_): 'PRIMARY KEY';
-      case Unique(name, _): 'UNIQUE ' + ident(name);
+      case Unique(name, _): 'UNIQUE KEY ' + ident(name);
       case Index(name, _): 'INDEX ' + ident(name);
     }, parenthesis(
       keyFields(key).map(ident).join(separate)
@@ -204,13 +205,18 @@ class Sql {
     else '';
 
   function limit(limit:Limit)
-    return if (limit != null) join([
+    return if (limit != null && limit.limit != null) join([
       'LIMIT',
-      // We run these through value just in case, we can't be sure of the type at runtime
       value(limit.limit),
-      'OFFSET',
-      value(limit.offset)
+      if (limit.offset != null)
+        'OFFSET ' + value(limit.offset)
+      else ''
     ]) else '';
+  
+  function where(condition:Null<Condition>)
+    return if (condition != null) 
+      'WHERE ' + expr(condition) 
+    else '';
 
   function select<Db, Row:{}, Condition>(select:SelectOperation<Db, Row>)
     return join([
@@ -218,11 +224,29 @@ class Sql {
       selection(select.selection),
       'FROM',
       target(select.from),
-      if (select.where != null)
-        'WHERE ' + expr(select.where)
-      else '',
+      where(select.where),
       orderBy(select.orderBy),
       limit(select.limit)
+    ]);
+
+  function update<Row:{}>(update:UpdateOperation<Row>)
+    return join([
+      'UPDATE',
+      ident(update.table.getName()),
+      'SET',
+      update.set.map(function (set)
+        return ident(set.field.name) + '=' + expr(set.expr)
+      ).join(separate),
+      where(update.where),
+      if (update.max != null) limit(update.max) else ''
+    ]);
+
+  function delete<Row:{}>(delete:DeleteOperation<Row>)
+    return join([
+      'DELETE FROM',
+      ident(delete.from.getName()),
+      where(delete.where),
+      limit(delete.max)
     ]);
 
   function binOp(o:BinOp<Dynamic, Dynamic, Dynamic>)

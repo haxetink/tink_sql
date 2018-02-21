@@ -12,8 +12,8 @@ enum Query<Db, Result> {
   Union<Row:{}>(a:Query<Db, RealStream<Row>>, b:Query<Db, RealStream<Row>>, distinct:Bool):Query<Db, RealStream<Row>>;
   Select<Row:{}>(select:SelectOperation<Db, Row>):Query<Db, RealStream<Row>>;
   Insert<Row:{}>(insert:InsertOperation<Row>):Query<Db, Promise<Id<Row>>>;
-  Update<Row:{}, Condition>(update:UpdateOperation<Row, Condition>):Query<Db, Promise<{rowsAffected:Int}>>;
-  Delete<Row:{}, Condition>(delete:DeleteOperation<Row, Condition>):Query<Db, Promise<{rowsAffected:Int}>>;
+  Update<Row:{}>(update:UpdateOperation<Row>):Query<Db, Promise<{rowsAffected:Int}>>;
+  Delete<Row:{}>(delete:DeleteOperation<Row>):Query<Db, Promise<{rowsAffected:Int}>>;
   CreateTable<Row:{}>(table:TableInfo, ?ifNotExists:Bool):Query<Db, Promise<Noise>>;
   DropTable<Row:{}>(table:TableInfo):Query<Db, Promise<Noise>>;
   AlterTable<Row:{}>(table:TableInfo, change:AlterTableOperation):Query<Db, Promise<Noise>>;
@@ -30,7 +30,7 @@ typedef SelectOperation<Db, Row:{}> = {
   //?groupBy:GroupBy
 }
 
-typedef UpdateOperation<Row:{}, Condition> = {
+typedef UpdateOperation<Row:{}> = {
   table:TableInfo,
   set:Update<Row>,
   ?where:Condition,
@@ -50,8 +50,8 @@ class FieldUpdate<Row> {
   }
 }
 
-typedef DeleteOperation<Row:{}, Condition> = {
-  table:TableInfo,
+typedef DeleteOperation<Row:{}> = {
+  from:TableInfo,
   ?where:Condition,
   ?max:Int
 }
