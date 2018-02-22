@@ -3,7 +3,7 @@ package tink.sql.macros;
 import haxe.macro.Context;
 import tink.macro.BuildCache;
 import haxe.macro.Expr;
-import tink.sql.Info;
+import tink.sql.schema.KeyStore;
 
 using tink.MacroApi;
 
@@ -22,8 +22,7 @@ class TableBuilder {
                 fieldsTypeFields = new Array<Field>(),
                 fieldsExprFields = [],
                 fieldsValues = [],
-                primaryKeyFields = [],
-                namedKeys = new Map<String, Key>();
+                keys = new KeyStore();
 
             var rowType = TAnonymous(rowTypeFields),
                 fieldsType = TAnonymous(fieldsTypeFields);//caution: these are mutable until the function is done
@@ -81,7 +80,7 @@ class TableBuilder {
                           resolveType(params[0]);
                         case {module: 'tink.sql.Types', name: 'Blob'}:
                           var maxLength = getInt(params[0], f.pos);
-                          macro tink.sql.Info.DataType.DBlob($v{maxLength}, $defaultValue);
+                          macro tink.sql.Info.DataType.DBlob($v{maxLength});
                         case {module: 'tink.sql.Types', name: 'DateTime'}:
                           macro tink.sql.Info.DataType.DDateTime($defaultValue);
                         case {module: 'tink.sql.Types', name: 'Text'}:
@@ -94,12 +93,12 @@ class TableBuilder {
                         case {module: 'tink.sql.Types', name: 'MediumText'}:
                           macro tink.sql.Info.DataType.DText(tink.sql.Info.TextSize.Medium, $defaultValue);
                         case {module: 'tink.sql.Types', name: 'MultiPolygon'}:
-                          macro tink.sql.Info.DataType.DMultiPolygon($defaultValue);
+                          macro tink.sql.Info.DataType.DMultiPolygon;
                         case {module: 'tink.sql.Types', name: 'Number'}:
                           var maxLength = getInt(params[0], f.pos);
                           macro tink.sql.Info.DataType.DFloat($v{maxLength}, $defaultValue);
                         case {module: 'tink.sql.Types', name: 'Point'}:
-                          macro tink.sql.Info.DataType.DPoint($defaultValue);
+                          macro tink.sql.Info.DataType.DPoint;
                         case {module: 'tink.sql.Types', name: 'TinyText'}:
                           macro tink.sql.Info.DataType.DText(tink.sql.Info.TextSize.Tiny, $defaultValue);
                         case {module: 'tink.sql.Types', name: 'VarChar'}:
@@ -138,7 +137,7 @@ class TableBuilder {
 
                 var type = resolveType(f.type);
 
-                function index(metaKey, add) {
+                function index(metaKey, add)
                   switch meta[metaKey] {
                     case null:
                     case keys: for (key in keys) 
@@ -148,25 +147,10 @@ class TableBuilder {
                         default: null;
                       });
                   }
-                }
 
-                index(':primary', function (_) {
-                  primaryKeyFields.push(fName);
-                });
-
-                index(':unique', function (name) {
-                  if (namedKeys.exists(name)) switch namedKeys[name] {
-                    case Unique(_, fields): fields.push(fName);
-                    default: f.pos.error('Key "$name" is of different type');
-                  } else namedKeys.set(name, Unique(name, [fName]));
-                });
-
-                index(':index', function (name) {
-                  if (namedKeys.exists(name)) switch namedKeys[name] {
-                    case Index(_, fields): fields.push(fName);
-                    default: f.pos.error('Key "$name" is of different type');
-                  } else namedKeys.set(name, Index(name, [fName]));
-                });
+                index(':primary', function (_) keys.addPrimary(fName));
+                index(':unique', function (name) keys.addUnique(name, fName));
+                index(':index', function (name) keys.addIndex(name, fName));
 
                 macro @:pos(f.pos) {
                   name: $name,
@@ -175,10 +159,6 @@ class TableBuilder {
                 }
               });
             }
-            var keys = [];
-            if (primaryKeyFields.length > 0)
-              keys.push(Primary(primaryKeyFields));
-            keys = keys.concat(Lambda.array(namedKeys));
             var filterType = (macro function ($name:$fieldsType):tink.sql.Expr.Condition return tink.sql.Expr.ExprData.EValue(true, tink.sql.Expr.ValueType.VBool)).typeof().sure().toComplex({ direct: true });
 
             macro class $cName<Db> extends tink.sql.Table.TableSource<$fieldsType, $filterType, $rowType, Db> {
@@ -189,7 +169,7 @@ class TableBuilder {
 
               static var COLUMN_NAMES = $v{names};
               static var COLUMNS = $a{fieldsValues};
-              static var KEYS = $v{keys};
+              static var KEYS = $v{keys.get()};
               @:noCompletion override public function getColumns()
                 return COLUMNS;
               @:noCompletion override public function columnNames()

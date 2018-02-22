@@ -38,37 +38,45 @@ class SqlFormatter {
       default: false;
     }
 
-  function ident(name:String):String
+  inline function ident(name:String):String
     return sanitizer.ident(name);
 
-  function value(value:Any):String
+  inline function value(value:Any):String
     return sanitizer.value(value);
 
-  function parenthesis(statement:String)
+  inline function parenthesis(statement:String)
     return '($statement)';
 
-  function add(condition:Bool, addition:String)
+  inline function add(condition:Bool, addition:String)
     return if (condition) addition else '';
 
-  function join(parts:Array<String>):String
+  inline function join(parts:Array<String>):String
     return parts.filter(function (part) return part != '').join(' ');
+
+  inline function addDefault(defaultValue:Any)
+    return switch defaultValue {
+      case null: '';
+      case v: ' DEFAULT ' + value(defaultValue);
+    }
 
   function type(type: DataType): String
     return switch type {
-      case DBool(_):
-        'TINYINT(1)';
-      case DFloat(bits, _):
-        'FLOAT($bits)';
-      case DInt(bits, signed, _, _):
-        'INT($bits)' + add(!signed, ' UNSIGNED');
-      case DString(maxLength, _):
-        if (maxLength < 65536) 'VARCHAR($maxLength)';
-        else 'TEXT';
-      case DBlob(maxLength, _):
-        if (maxLength < 65536) 'VARBINARY($maxLength)';
+      case DBool(d):
+        'TINYINT(1)' + addDefault(d);
+      case DFloat(bits, d):
+        'FLOAT($bits)' + addDefault(d);
+      case DInt(bits, signed, _, d):
+        'INT($bits)' + add(!signed, ' UNSIGNED') + addDefault(d);
+      case DString(maxLength, d):
+        (if (maxLength < 65536) 'VARCHAR($maxLength)'
+        else 'TEXT') + addDefault(d);
+      case DBlob(maxLength):
+        if (maxLength < 65536) 'VARBINARY($maxLength)'
         else 'BLOB';
-      case DDateTime(_):
-        'DATETIME';
+      case DDateTime(d):
+        'DATETIME' + addDefault(d);
+      case DUnknown(type, d):
+        type + addDefault(d);
       default: throw 'Type not support in current formatter: $type';
     }
   
@@ -124,7 +132,7 @@ class SqlFormatter {
         return switch row[column.name] {
           case null: value(null);
           case v: switch column.type {
-            case DPoint(_) | DMultiPolygon(_):
+            case DPoint | DMultiPolygon:
               'ST_GeomFromGeoJSON(\'${haxe.Json.stringify(v)}\')';
             default: value(v);
           }
@@ -328,13 +336,13 @@ class SqlFormatter {
         throw 'Expression not supported in current formatter: $e';
     }
 
-  function toType(type:SqlType):DataType
+  function toDataType(type:SqlType):DataType
     throw 'implement';
 
   function parseType(type:String, autoIncrement:Bool, defaultValue:String):DataType {
     var flags = type.toUpperCase().split(' ');
     inline function getType(name, values)
-      return toType({
+      return toDataType({
         name: name, values: values,
         flags: flags, autoIncrement: autoIncrement,
         defaultValue: defaultValue
@@ -345,7 +353,7 @@ class SqlFormatter {
       default: throw 'Could not parse sql type: $type';
     }
   }
-  
+
 }
 
 typedef SqlType = {

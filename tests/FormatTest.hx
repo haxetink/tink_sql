@@ -3,24 +3,24 @@ package;
 import tink.sql.Info;
 import tink.sql.Types;
 import tink.sql.format.Sanitizer;
-import tink.sql.format.Sql;
+import tink.sql.format.SqlFormatter;
 import tink.unit.Assert.assert;
 
 using tink.CoreApi;
 
 @:allow(tink.unit)
-@:access(tink.sql.format.Sql)
+@:access(tink.sql.format.SqlFormatter)
 class FormatTest extends TestWithDb {
 
 	var uniqueDb:UniqueDb;
 	var sanitizer:Sanitizer;
-	var formatter:Sql;
+	var formatter:SqlFormatter;
 
 	public function new(driver, db) {
 		super(driver, db);
 		uniqueDb = new UniqueDb('test', driver);
 		sanitizer = new tink.sql.drivers.node.MySql.MySqlConnection(null, null);
-		formatter = new Sql(sanitizer);
+		formatter = new SqlFormatter(sanitizer);
 	}
 
 	@:variant(new FormatTest.FakeTable1(), 'CREATE TABLE `fake` (`id` INT(11) UNSIGNED NOT NULL AUTO_INCREMENT, `username` VARCHAR(50) NOT NULL, `admin` TINYINT(1) NOT NULL, `age` INT(11) UNSIGNED NULL)')

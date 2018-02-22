@@ -32,11 +32,11 @@ enum DataType {
   DFloat(bits:Int, ?byDefault:Float);
   DString(maxLength:Int, ?byDefault:String);
   DText(size:TextSize, ?byDefault:String);
-  DBlob(maxLength:Int, ?byDefault:haxe.io.Bytes);
+  DBlob(maxLength:Int);
   DDateTime(?byDefault:Date);
-  DPoint(?byDefault:geojson.Point);
-  DMultiPolygon(?byDefault:geojson.MultiPolygon);
-  DPlain(type:String, byDefault:Null<String>);
+  DPoint;
+  DMultiPolygon;
+  DUnknown(type:String, byDefault:Null<String>);
 }
 
 enum TextSize {

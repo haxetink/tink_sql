@@ -1,12 +1,13 @@
 package tink.sql.format;
 
 import tink.sql.Info;
+import tink.sql.schema.KeyStore;
 import tink.sql.Expr;
 import tink.sql.format.SqlFormatter;
 
 class MySqlFormatter extends SqlFormatter {
 
-  public function format<Db, Result>(query:Query<Db, Result>):String
+  override public function format<Db, Result>(query:Query<Db, Result>):String
     return switch query {
       case ShowColumns(from): showColumns(from);
       case ShowIndex(from): showIndex(from);
@@ -15,22 +16,22 @@ class MySqlFormatter extends SqlFormatter {
 
   override function type(type: DataType): String
     return switch type {
-      case DText(size, _):
-        switch size {
+      case DText(size, d):
+        (switch size {
           case Tiny: 'TINYTEXT';
           case Default: 'TEXT';
           case Medium: 'MEDIUMTEXT';
           case Long: 'LONGTEXT';
-        }
-      case DPoint(_):
+        }) + addDefault(d);
+      case DPoint:
         'POINT';
-      case DMultiPolygon(_):
+      case DMultiPolygon:
         'MULTIPOLYGON';
       default: super.type(type);
     }
 
-  override function toType(type:SqlType):String {
-    inline function parseDefault<T>(parser:String -> T): Null<T>
+  override function toDataType(type:SqlType):DataType {
+    inline function parseDefault<T>(parser:String -> T): T
       return if (type.defaultValue == null) null else parser(type.defaultValue);
     return switch type {
       case {name: 'TINYINT', values: ['1']}:
@@ -43,11 +44,11 @@ class MySqlFormatter extends SqlFormatter {
         // Changing that is a breaking change (todo)
         DFloat(0, parseDefault(Std.parseFloat));
       case {name: 'INT', values: [bits]}:
-        DInt(Std.parseInt(bits), flags.indexOf('UNSIGNED') == -1, parseDefault(Std.parseInt));
+        DInt(Std.parseInt(bits), type.flags.indexOf('UNSIGNED') == -1, type.autoIncrement, parseDefault(Std.parseInt));
       case {name: 'VARCHAR', values: [max]}:
         DString(Std.parseInt(max), type.defaultValue);
       case {name: 'BLOB', values: [max]}:
-        DBlob(Std.parseInt(max), parseDefault(haxe.io.Bytes.ofString));
+        DBlob(Std.parseInt(max));
       case {name: 'DATETIME'}:
         DDateTime(parseDefault(Date.fromString));
       case {name: 'TINYTEXT'}:
@@ -58,12 +59,12 @@ class MySqlFormatter extends SqlFormatter {
         DText(Medium, type.defaultValue);
       case {name: 'LONGTEXT'}:
         DText(Long, type.defaultValue);
-        // We could include the geojson types with default values here, but need a parser first
+      case {name: 'POINT'}:
+        DPoint;
+      case {name: 'MULTIPOLYGON'}:
+        DMultiPolygon;
       default:
-        // This might hit pretty often if you're diffing for changes on
-        // a schema with column types unused in tink_sql
-        // We might introduce an DUnknown(_) DataType to get past that
-        throw 'Unsupported type: ${type.name}';
+        DUnknown(type.name, type.defaultValue);
     }
   }
 
@@ -80,12 +81,25 @@ class MySqlFormatter extends SqlFormatter {
       default: super.expr(e);
     }
 
-  function parseColumns(res:MysqlColumnInfo):Column {
+  public function parseColumn(res:MysqlColumnInfo):Column
     return {  
       name: res.Field,
       nullable: res.Null == 'YES',
       type: parseType(res.Type, res.Extra.indexOf('auto_increment') > -1, res.Default)
     }
+
+  public function parseKeys(keys:Array<MysqlKeyInfo>):Array<Key> {
+    var store = new KeyStore();
+    for (key in keys)
+      switch key {
+        case {Key_name: _.toLowerCase() => 'primary'}:
+          store.addPrimary(key.Column_name);
+        case {Non_unique: 1}:
+          store.addUnique(key.Key_name, key.Column_name);
+        default:
+          store.addIndex(key.Key_name, key.Column_name);
+      }
+    return store.get();
   }
 
 }
@@ -99,7 +113,7 @@ typedef MysqlColumnInfo = {
   Extra: String
 }
 
-typedef MysqlIndexInfo = {
+typedef MysqlKeyInfo = {
   Key_name: String,
   Non_unique: Int,
   Column_name: String
