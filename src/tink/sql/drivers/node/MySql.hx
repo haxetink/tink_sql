@@ -9,7 +9,7 @@ import tink.sql.Schema;
 import tink.sql.Types;
 import tink.sql.format.Sanitizer;
 import tink.streams.Stream;
-import tink.sql.format.Sql;
+import tink.sql.format.MySqlFormatter;
 
 using tink.CoreApi;
 
@@ -45,12 +45,12 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
 
   var cnx:NativeConnection;
   var db:Db;
-  var formatter:Sql;
+  var formatter:MySqlFormatter;
 
   public function new(db, cnx) {
     this.db = db;
     this.cnx = cnx;
-    this.formatter = new Sql(this);
+    this.formatter = new MySqlFormatter(this);
   }
 
   public function value(v:Any):String
@@ -77,14 +77,19 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
         fetch().next(function(res) return {rowsAffected: (res.changedRows: Int)});
       case Delete(_):
         fetch().next(function(res) return {rowsAffected: (res.affectedRows: Int)});
-      default: null;// run({sql: sql});
+      case ShowColumns(_):
+        fetch().next(function(res) return [
+          for (row in rowIterator(res)) formatter.parseColumns(row)
+        ]);
+      default:
+        null;
     }
   }
 
   function queryOptions<Result>(query:Query<Db,Result>): QueryOptions {
     var sql = formatter.format(query);
     return switch query {
-      case Select(_) | Union(_, _, _):
+      case Select(_) | Union(_, _, _) | ShowColumns(_) | ShowIndex(_):
         {sql: sql, typeCast: typeCast, nestTables: formatter.isNested(query)}
       default:
         {sql: sql}

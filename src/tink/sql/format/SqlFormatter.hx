@@ -10,7 +10,7 @@ import haxe.DynamicAccess;
 
 using Lambda;
 
-class Sql {
+class SqlFormatter {
   var sanitizer:Sanitizer;
   var separate = ', ';
 
@@ -26,7 +26,8 @@ class Sql {
       case Select(op): select(op);
       case Update(op): update(op);
       case Delete(op): delete(op);
-      default: throw 'todo $query';
+      case AlterTable(table, op): alterTable(table, op);
+      default: throw 'Query not supported in currrent formatter: $query';
     }
 
   public function isNested<Db, Result>(query:Query<Db,Result>)
@@ -63,24 +64,12 @@ class Sql {
       case DString(maxLength, _):
         if (maxLength < 65536) 'VARCHAR($maxLength)';
         else 'TEXT';
-      case DText(size, _):
-        switch size {
-          case Tiny: 'TINYTEXT';
-          case Default: 'TEXT';
-          case Medium: 'MEDIUMTEXT';
-          case Long: 'LONGTEXT';
-        }
       case DBlob(maxLength, _):
         if (maxLength < 65536) 'VARBINARY($maxLength)';
         else 'BLOB';
       case DDateTime(_):
         'DATETIME';
-      case DPoint(_):
-        'POINT';
-      case DMultiPolygon(_):
-        'MULTIPOLYGON';
-      case DUnknown(t, _):
-        t;
+      default: throw 'Type not support in current formatter: $type';
     }
   
   function nullable(isNullable:Bool):String
@@ -89,7 +78,7 @@ class Sql {
   function autoIncrement(increment:Bool)
     return add(increment, 'AUTO_INCREMENT');
 
-  function defineColumn(column:Column, addIncrement:Bool):String
+  function defineColumn(column:Column, addIncrement = false):String
     return join([
       ident(column.name),
       type(column.type),
@@ -249,6 +238,26 @@ class Sql {
       limit(delete.max)
     ]);
 
+  function alterTable(table:TableInfo, change:AlterTableOperation)
+    return join([
+      'ALTER TABLE',
+      ident(table.getName())
+    ].concat(switch change {
+      case AddColumn(col):
+        ['ADD COLUMN', ident(col.name), defineColumn(col)];
+      case AlterColumn(to, _):
+        ['MODIFY COLUMN', ident(to.name), defineColumn(to)];
+      case DropColumn(col):
+        ['DROP COLUMN', ident(col.name)];
+      case DropKey(key):
+        ['DROP', switch key {
+          case Unique(name, _) | Index(name, _): 'INDEX ' + ident(name);
+          case Primary(_): 'PRIMARY KEY';
+        }];
+      case AddKey(key):
+        ['ADD', defineKey(key)];
+    }));
+
   function binOp(o:BinOp<Dynamic, Dynamic, Dynamic>)
     return switch o {
       case Add: '+';
@@ -277,7 +286,7 @@ class Sql {
   function values(values:Array<Dynamic>)
     return parenthesis(values.map(value).join(separate));
 
-  function expr(e:ExprData<Dynamic>):String 
+  function expr(e:ExprData<Dynamic>):String
     return switch e {
       case EUnOp(op, a, false):
         unOp(op) + ' ' + expr(a);
@@ -303,8 +312,6 @@ class Sql {
         value(v);
       case EValue(bytes, VBytes):
         value(bytes);
-      case EValue(geom, VGeometry(_)):
-        'ST_GeomFromGeoJSON(\'${haxe.Json.stringify(geom)}\')';
       case EValue(v, VArray(VBool)):
         values(v);
       case EValue(v, VArray(VInt)):
@@ -317,5 +324,34 @@ class Sql {
         values(v);
       case EValue(_, VArray(_)):
         throw 'Only arrays of primitive types are supported';
+      default:
+        throw 'Expression not supported in current formatter: $e';
     }
+
+  function toType(type:SqlType):DataType
+    throw 'implement';
+
+  function parseType(type:String, autoIncrement:Bool, defaultValue:String):DataType {
+    var flags = type.toUpperCase().split(' ');
+    inline function getType(name, values)
+      return toType({
+        name: name, values: values,
+        flags: flags, autoIncrement: autoIncrement,
+        defaultValue: defaultValue
+      });
+    return switch flags.shift().split('(') {
+      case [name]: getType(name, []);
+      case [name, values]: getType(name, values.substr(0, values.length - 1).split(','));
+      default: throw 'Could not parse sql type: $type';
+    }
+  }
+  
+}
+
+typedef SqlType = {
+  name:String,
+  values:Array<String>,
+  flags:Array<String>,
+  autoIncrement:Bool,
+  defaultValue:Null<String>
 }

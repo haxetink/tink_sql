@@ -17,8 +17,8 @@ enum Query<Db, Result> {
   CreateTable<Row:{}>(table:TableInfo, ?ifNotExists:Bool):Query<Db, Promise<Noise>>;
   DropTable<Row:{}>(table:TableInfo):Query<Db, Promise<Noise>>;
   AlterTable<Row:{}>(table:TableInfo, change:AlterTableOperation):Query<Db, Promise<Noise>>;
-  ShowColumns<Row:{}, Info>(from:TableInfo):Query<Db, Promise<Info>>;
-  ShowIndex<Row:{}, Info>(from:TableInfo):Query<Db, Promise<Info>>;
+  ShowColumns<Row:{}>(from:TableInfo):Query<Db, Promise<Array<Column>>>;
+  ShowIndex<Row:{}>(from:TableInfo):Query<Db, Promise<Array<Key>>>;
 }
 
 typedef SelectOperation<Db, Row:{}> = {
@@ -67,9 +67,7 @@ typedef Insert<Row:{}> = Row;
 enum AlterTableOperation {
   AddColumn(col:Column);
   AddKey(key:Key);
-  AddAutoIncrement(col:Column);
   AlterColumn(to:Column, ?from:Column);
   DropColumn(col:Column);
   DropKey(key:Key);
-  DropAutoIncrement(col:Column);
 }

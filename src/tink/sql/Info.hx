@@ -36,7 +36,7 @@ enum DataType {
   DDateTime(?byDefault:Date);
   DPoint(?byDefault:geojson.Point);
   DMultiPolygon(?byDefault:geojson.MultiPolygon);
-  DUnknown(type:String, ?byDefault:Any);
+  DPlain(type:String, byDefault:Null<String>);
 }
 
 enum TextSize {
