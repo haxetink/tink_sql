@@ -15,12 +15,15 @@ class Schema {
     ];
     this.keys = [
       for (key in keys)
-        (switch key {
-          case Primary(_): 'primary';
-          case Unique(name, _) | Index(name, _): name;
-        }) => key
+        keyName(key) => key
     ];
   }
+
+  function keyName(key)
+    return switch key {
+      case Primary(_): 'primary';
+      case Unique(name, _) | Index(name, _): name;
+    }
 
   function hasAutoIncrement(column:Column)
     return switch column.type {

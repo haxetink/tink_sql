@@ -4,8 +4,8 @@ import haxe.DynamicAccess;
 import haxe.io.Bytes;
 import haxe.io.BytesInput;
 import haxe.extern.EitherType;
-import tink.sql.Connection.Update;
-import tink.sql.Format.Sanitizer;
+import tink.sql.format.Sanitizer;
+import tink.sql.format.MySqlFormatter;
 import tink.sql.Limit;
 import tink.sql.Expr;
 import tink.sql.Info;
@@ -36,10 +36,12 @@ class MySQLiConnection<Db:DatabaseInfo> implements Connection<Db> implements San
 
   var cnx:NativeConnection;
   var db:Db;
+  var formatter:MySqlFormatter;
 
   public function new(db, cnx) {
     this.db = db;
     this.cnx = cnx;
+    this.formatter = new MySqlFormatter(this);
   }
 
   public function value(v:Any):String {
@@ -52,65 +54,38 @@ class MySQLiConnection<Db:DatabaseInfo> implements Connection<Db> implements San
   public function ident(s:String):String
     return tink.sql.drivers.MySql.getSanitizer(null).ident(s);
 
-  function query<T>(query:String):Promise<T>
+  public function getFormatter()
+    return formatter;
+
+  public function execute<Result>(query:Query<Db,Result>):Result {
+    inline function fetch<T>(): Promise<T> return run(formatter.format(query));
+    return switch query {
+      case Select(_) | Union(_, _, _): 
+        Stream.promise(fetch().next(function (res:ResultSet)
+          return Stream.ofIterator(res.nestedIterator(formatter.isNested(query)))
+        ));
+      case CreateTable(_, _) | DropTable(_) | AlterTable(_, _):
+        fetch().next(function(_) return Noise);
+      case Insert(_):
+        fetch().next(function(_) return new Id(cnx.insert_id));
+      case Update(_) | Delete(_):
+        fetch().next(function(_) return {rowsAffected: cnx.affected_rows});
+      case ShowColumns(_):
+        fetch().next(function(res:ResultSet):Array<Column>
+          return [for (row in res) formatter.parseColumn(cast row)]
+        );
+      case ShowIndex(_):
+        fetch().next(function(res:ResultSet):Array<Key>
+          return formatter.parseKeys([for (row in res) cast row])
+        );
+    }
+  }
+
+  function run<T>(query:String):Promise<T>
     return switch cnx.query(query) {
       case false: new Error(cnx.errno, cnx.error);
       case v: (cast v: T);
     }
-
-  public function dropTable<Row:{}>(table:TableInfo<Row>):Promise<Noise>
-    return query(Format.dropTable(table, this));
-
-  public function createTable<Row:{}>(table:TableInfo<Row>):Promise<Noise>
-    return query(Format.createTable(table, this));
-  
-  public function selectAll<A:{}>(t:Target<A, Db>, ?s:Selection<A>, ?c:Condition, ?limit:Limit, ?orderBy:OrderBy<A>):RealStream<A>
-    return Stream.promise(
-      query(Format.selectAll(t, s, c, this, limit, orderBy)).next(function (result: ResultSet)
-        return Stream.ofIterator(result.nestedIterator(
-          s == null && t.match(TJoin(_, _, _, _)))
-        ))
-    );
-
-  public function countAll<A:{}>(t:Target<A, Db>, ?c:Condition):Promise<Int>
-    return query(Format.countAll(t, c, this)).next(function (result: NativeResultSet) {
-      return Std.parseInt(result.fetch_row()[0]);
-    });
-
-  public function insert<Row:{}>(table:TableInfo<Row>, items:Array<Insert<Row>>, ?options):Promise<Id<Row>>
-    return query(Format.insert(table, items, this, options)).next(function (_)
-      return new Id(cnx.insert_id)
-    );
-
-  public function update<Row:{}>(table:TableInfo<Row>, ?c:Condition, ?max:Int, update:Update<Row>):Promise<{rowsAffected:Int}>
-    return query(Format.update(table, c, max, update, this)).next(function(_)
-      return {rowsAffected: cnx.affected_rows}
-    );
-
-  public function delete<Row:{}>(table:TableInfo<Row>, ?c:Condition, ?max:Int):Promise<{rowsAffected:Int}>
-    return query(Format.delete(table, c, max, this)).next(function(_)
-      return {rowsAffected: cnx.affected_rows}
-    );
-
-  public function diffSchema<Row:{}>(table:TableInfo<Row>):Promise<Array<SchemaChange>> {
-    function iter(res: ResultSet) return res.iterator();
-    return Promise.inParallel([
-      query(Format.columnInfo(table, this)).next(iter),
-      query(Format.indexInfo(table, this)).next(iter)
-    ]).next(function (res) switch res {
-      case [columns, indexes]:
-        return Schema
-          .fromMysql(cast columns, cast indexes)
-          .diff(table.getFields());
-      default: throw "assert";
-    });
-  }
-
-  public function updateSchema<Row:{}>(table:TableInfo<Row>, changes:Array<SchemaChange>):Promise<Noise>
-    return Promise.inSequence([
-      for (change in Format.alterTable(table, this, changes))
-        query(change)
-    ]);
 
 }
 
@@ -177,7 +152,7 @@ private abstract ResultSet(NativeResultSet) from NativeResultSet {
         Std.parseFloat(value);
       case DATETIME:
         Date.fromString(value);
-      case BLOB | TINYBLOB | MEDIUMBLOB | LONGBLOB | BLOB | VARCHAR | CHAR:
+      case BLOB | TINYBLOB | MEDIUMBLOB | LONGBLOB | VARCHAR | CHAR:
         if (field.flags & 128 > 0) Bytes.ofString(value);
         else value;
       case GEOMETRY:

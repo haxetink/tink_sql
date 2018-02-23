@@ -5,7 +5,6 @@ import haxe.DynamicAccess;
 import haxe.io.Bytes;
 import tink.sql.Query;
 import tink.sql.Info;
-import tink.sql.Schema;
 import tink.sql.Types;
 import tink.sql.format.Sanitizer;
 import tink.streams.Stream;
