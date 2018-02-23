@@ -24,6 +24,7 @@ class SqlFormatter implements Formatter {
       case DropTable(table): dropTable(table);
       case Insert(op): insert(op);
       case Select(op): select(op);
+      case Union(left, right, distinct): union(left, right, distinct);
       case Update(op): update(op);
       case Delete(op): delete(op);
       case AlterTable(table, op): alterTable(table, op);
@@ -215,7 +216,7 @@ class SqlFormatter implements Formatter {
       'WHERE ' + expr(condition) 
     else '';
 
-  function select<Db, Row:{}, Condition>(select:SelectOperation<Db, Row>)
+  function select<Db, Row:{}>(select:SelectOperation<Db, Row>)
     return join([
       'SELECT',
       selection(select.selection),
@@ -224,6 +225,14 @@ class SqlFormatter implements Formatter {
       where(select.where),
       orderBy(select.orderBy),
       limit(select.limit)
+    ]);
+
+  function union<Db, Result>(left:Query<Db, Result>, right:Query<Db, Result>, distinct:Bool)
+    return join([
+      parenthesis(format(left)),
+      'UNION',
+      add(!distinct, 'ALL'),
+      parenthesis(format(right))
     ]);
 
   function update<Row:{}>(update:UpdateOperation<Row>)

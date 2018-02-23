@@ -86,8 +86,8 @@ class Joins {
         
       var ret = new tink.sql.Dataset.JoinPoint(
         function (cond:$filterType) return new tink.sql.Dataset.Selectable(
-          ${EObjectDecl(fieldsObj).at()},
           left.cnx, 
+          ${EObjectDecl(fieldsObj).at()},
           tink.sql.Target.TJoin(left.target, right.target, ${joinTypeExpr(type)}, toCondition(cond) && left.condition && right.condition), 
           toCondition
         )

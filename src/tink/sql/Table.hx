@@ -31,8 +31,8 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
     this.fields = fields;
     
     super(
-      fields,
       cnx,
+      fields,
       TTable(name, alias),
       function (f:Filter) return (cast f : Fields->Condition)(fields) //TODO: raise issue on Haxe tracker and remove the cast once resolved
     );

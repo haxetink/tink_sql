@@ -127,6 +127,14 @@ class Run extends TestWithDb {
     });
   }
 
+  @:include public function unionTest() {
+    return insertUsers().next(function (_)
+      return db.User.union(db.User).first()
+    ).next(function (res)
+      return assert(res.id == 1)
+    );
+  }
+
   function await(run:AssertionBuffer->Promise<Noise>, asserts:AssertionBuffer)
     run(asserts).handle(function(o) switch o {
       case Success(_): asserts.done();
