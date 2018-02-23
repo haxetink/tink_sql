@@ -46,11 +46,19 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
   public function drop()
     return cnx.execute(DropTable(this));
 
-  /*public function diffSchema()
-    return cnx.diffSchema(this);
+  public function diffSchema() {
+    var schema = new Schema(getColumns(), getKeys());
+    return (cnx.execute(ShowColumns(this)) && cnx.execute(ShowIndex(this)))
+      .next(function(res) {
+        return new Schema(res.a, res.b).diff(schema, cnx.getFormatter());
+      });
+  }
 
-  public function updateSchema(changes: Array<SchemaChange>)
-    return cnx.updateSchema(this, changes);*/
+  public function updateSchema(changes: Array<AlterTableOperation>)
+    return Promise.inSequence([
+      for (change in changes)
+       cnx.execute(AlterTable(this, change))
+    ]).next(function(_) return Noise);
   
   public function insertMany(rows:Array<Insert<Row>>, ?options)
     return if (rows.length == 0) Promise.NULL

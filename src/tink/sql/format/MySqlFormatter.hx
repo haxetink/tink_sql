@@ -94,7 +94,7 @@ class MySqlFormatter extends SqlFormatter {
       switch key {
         case {Key_name: _.toLowerCase() => 'primary'}:
           store.addPrimary(key.Column_name);
-        case {Non_unique: 1}:
+        case {Non_unique: 0}:
           store.addUnique(key.Key_name, key.Column_name);
         default:
           store.addIndex(key.Key_name, key.Column_name);

@@ -10,9 +10,9 @@ import haxe.DynamicAccess;
 
 using Lambda;
 
-class SqlFormatter {
+class SqlFormatter implements Formatter {
   var sanitizer:Sanitizer;
-  var separate = ', ';
+  inline static var separate = ', ';
 
   public function new(sanitizer) {
     this.sanitizer = sanitizer;
@@ -58,13 +58,19 @@ class SqlFormatter {
       case null: '';
       case v: ' DEFAULT ' + value(defaultValue);
     }
+  
+  inline function nullable(isNullable:Bool):String
+    return if (isNullable) 'NULL' else 'NOT NULL';
 
-  function type(type: DataType): String
+  inline function autoIncrement(increment:Bool)
+    return add(increment, 'AUTO_INCREMENT');
+
+  function type(type: DataType):String
     return switch type {
       case DBool(d):
         'TINYINT(1)' + addDefault(d);
       case DFloat(bits, d):
-        'FLOAT($bits)' + addDefault(d);
+        'FLOAT' + addDefault(d);
       case DInt(bits, signed, _, d):
         'INT($bits)' + add(!signed, ' UNSIGNED') + addDefault(d);
       case DString(maxLength, d):
@@ -79,19 +85,13 @@ class SqlFormatter {
         type + addDefault(d);
       default: throw 'Type not support in current formatter: $type';
     }
-  
-  function nullable(isNullable:Bool):String
-    return if (isNullable) 'NULL' else 'NOT NULL';
 
-  function autoIncrement(increment:Bool)
-    return add(increment, 'AUTO_INCREMENT');
-
-  function defineColumn(column:Column, addIncrement = false):String
+  public function defineColumn(column:Column):String
     return join([
       ident(column.name),
       type(column.type),
       nullable(column.nullable),
-      autoIncrement(addIncrement && column.type.match(DInt(_, _, true)))
+      autoIncrement(column.type.match(DInt(_, _, true)))
     ]);
 
   function keyFields(key:Key)
@@ -101,7 +101,7 @@ class SqlFormatter {
         | Index(_, fields): fields;
     }
 
-  function defineKey(key:Key)
+  public function defineKey(key:Key)
     return join([switch key {
       case Primary(_): 'PRIMARY KEY';
       case Unique(name, _): 'UNIQUE KEY ' + ident(name);
@@ -117,7 +117,7 @@ class SqlFormatter {
       ident(table.getName()), 
       parenthesis(
         table.getColumns()
-          .map(defineColumn.bind(_, true))
+          .map(defineColumn)
           .concat(table.getKeys().map(defineKey))
           .join(separate)
       )
@@ -252,9 +252,9 @@ class SqlFormatter {
       ident(table.getName())
     ].concat(switch change {
       case AddColumn(col):
-        ['ADD COLUMN', ident(col.name), defineColumn(col)];
+        ['ADD COLUMN', defineColumn(col)];
       case AlterColumn(to, _):
-        ['MODIFY COLUMN', ident(to.name), defineColumn(to)];
+        ['MODIFY COLUMN', defineColumn(to)];
       case DropColumn(col):
         ['DROP COLUMN', ident(col.name)];
       case DropKey(key):
@@ -288,10 +288,10 @@ class SqlFormatter {
       case Neg: '-';
     }
 
-  function emptyArray<T>(e:ExprData<T>)
+  inline function emptyArray<T>(e:ExprData<T>)
     return e.match(EValue([], VArray(_)));
 
-  function values(values:Array<Dynamic>)
+  inline function values(values:Array<Dynamic>)
     return parenthesis(values.map(value).join(separate));
 
   function expr(e:ExprData<Dynamic>):String

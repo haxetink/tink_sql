@@ -17,7 +17,7 @@ class KeyStore {
         case Unique(_, fields): fields.push(field);
         default: throw 'Key "$name" is of different type';
       }
-    else namedKeys.set(name, Unique(name, [name]));
+    else namedKeys.set(name, Unique(name, [field]));
   
   public function addIndex(name:String, field:String)
     if (namedKeys.exists(name)) 
@@ -25,7 +25,7 @@ class KeyStore {
         case Index(_, fields): fields.push(field);
         default: throw 'Key "$name" is of different type';
       }
-    else namedKeys.set(name, Index(name, [name]));
+    else namedKeys.set(name, Index(name, [field]));
 
   public function get():Array<Key>
     return (

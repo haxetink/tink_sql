@@ -57,6 +57,9 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
 
   public function ident(s:String):String
     return NativeDriver.escapeId(s);
+
+  public function getFormatter()
+    return formatter;
   
   function toError<A>(error:js.Error):Outcome<A, Error>
     return Failure(Error.withData(error.message, error));
