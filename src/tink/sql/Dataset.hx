@@ -2,12 +2,14 @@ package tink.sql;
 
 import tink.sql.Expr;
 import tink.streams.RealStream;
-import tink.sql.Table;
 import tink.sql.Query;
 
 using tink.CoreApi;
 
-class Selectable<Fields, Filter, Result: {}, Db> extends Filterable<Fields, Filter, Result, Db> {
+typedef SingleField<T, Fields> = Fields;
+typedef MultiFields<T, Fields> = Fields;
+
+class Selectable<Fields, Filter, Result: {}, Db> extends Joinable<Fields, Filter, Result, Db> {
   
   macro public function select(ethis, select) {
     var selection = tink.sql.macros.Selects.makeSelection(ethis, select);
@@ -16,8 +18,12 @@ class Selectable<Fields, Filter, Result: {}, Db> extends Filterable<Fields, Filt
     );
   }
 
-  function _select<R: {}>(selection: Selection<R>):Filterable<Fields, Filter, R, Db>
-    return new Filterable(cnx, fields, cast target, toCondition, condition, selection);
+  function _select<Row: {}, Fields>(selection: Selection<Row, Fields>):Filterable<Fields, Filter, Row, Db>
+    return new Filterable(cnx, cast fields, cast target, toCondition, condition, selection);
+
+}
+
+class Joinable<Fields, Filter, Result: {}, Db> extends Filterable<Fields, Filter, Result, Db> {
     
   macro public function leftJoin(ethis, ethat)
     return tink.sql.macros.Joins.perform(Left, ethis, ethat);
@@ -30,7 +36,7 @@ class Selectable<Fields, Filter, Result: {}, Db> extends Filterable<Fields, Filt
 
 }
 
-class Filterable<Fields, Filter, Result: {}, Db> extends Dataset<Fields, Filter, Result, Db> {
+class Filterable<Fields, Filter, Result: {}, Db> extends Orderable<Fields, Filter, Result, Db> {
 
   macro public function where(ethis, filter) {
     filter = tink.sql.macros.Filters.makeFilter(ethis, filter);
@@ -40,82 +46,127 @@ class Filterable<Fields, Filter, Result: {}, Db> extends Dataset<Fields, Filter,
   function _where(filter:Filter):Filterable<Fields, Filter, Result, Db>
     return new Filterable(cnx, fields, target, toCondition, condition && toCondition(filter), selection);
 
-  public function orderBy(orderBy:Fields->OrderBy<Result>)
-    return new Dataset(cnx, fields, target, toCondition, condition, selection, orderBy(fields));
+  public function groupBy(groupBy:Fields->Array<Field<Dynamic, Result>>)
+    return new Orderable(cnx, fields, target, toCondition, condition, selection, groupBy(fields));
 
 }
 
-class Dataset<Fields, Filter, Result:{}, Db> extends Fetchable<Fields, Result, Db> { 
+class Orderable<Fields, Filter, Result: {}, Db> extends Selected<Fields, Filter, Result, Db> {
+
+  public function orderBy(orderBy:Fields->OrderBy<Result>)
+    return new Selected(cnx, fields, target, toCondition, condition, selection, grouped, orderBy(fields));
+
+}
+
+class Selected<Fields, Filter, Result:{}, Db> extends Limitable<Fields, Result, Db> {
   
   public var fields(default, null):Fields;
   
   var target:Target<Result, Db>;
   var toCondition:Filter->Condition;
-  var selection:Null<Selection<Result>>;
+  var selection:Null<Selection<Result, Fields>>;
   var condition:Null<Condition>;
+  var grouped:Null<Array<Field<Dynamic, Result>>>;
   var order:Null<OrderBy<Result>>;
   
-  function new(cnx, fields, target, toCondition, ?condition, ?selection, ?order) {
+  function new(cnx, fields, target, toCondition, ?condition, ?selection, ?grouped, ?order) {
     super(cnx);
     this.fields = fields;
     this.target = target;
     this.toCondition = toCondition;
     this.condition = condition;
     this.selection = selection;
+    this.grouped = grouped;
     this.order = order;
   }
 
-  override function toQuery(?limit:Limit):Query<Db, RealStream<Result>>
+  override function toQuery():Query<Db, RealStream<Result>>
     return Select({
       from: target,
       selection: selection,
       where: condition,
-      limit: limit,
+      limit: limited,
+      groupBy: grouped,
       orderBy: order
     });
 
 }
 
-class Unionset<Fields, Result:{}, Db> extends Fetchable<Fields, Result, Db> {
-  var left:Fetchable<Fields, Result, Db>;
-  var right:Fetchable<Fields, Result, Db>;
+class Union<Fields, Result:{}, Db> extends Limitable<Fields, Result, Db> {
+  
+  var left:Dataset<Fields, Result, Db>;
+  var right:Dataset<Fields, Result, Db>;
+  var distinct:Bool;
 
-  function new(cnx, left, right) {
+  function new(cnx, left, right, distinct) {
     super(cnx);
     this.left = left;
     this.right = right;
+    this.distinct = distinct;
   }
 
-  override function toQuery(?limit:Limit):Query<Db, RealStream<Result>>
-    return Union(left.toQuery(), right.toQuery(), true);
+  override function toQuery():Query<Db, RealStream<Result>>
+    return Union({
+      left: left.toQuery(), 
+      right: right.toQuery(),
+      distinct: distinct,
+      limit: limited
+    });
 
 }
 
-class Fetchable<Fields, Result:{}, Db> {
+class Limitable<Fields, Result:{}, Db> extends Dataset<Fields, Result, Db> {
+
+  public function limit(limit:Limit):Dataset<Fields, Result, Db>
+    return new Limited(cnx, limit, toQuery);
+
+  override public function first():Promise<Result>
+    return limit(1).first();
+
+}
+
+class Limited<Fields, Result:{}, Db> extends Dataset<Fields, Result, Db> {
+
+  var create: Void -> Query<Db, RealStream<Result>>;
+
+  function new(cnx, limited, create) {
+    super(cnx);
+    this.limited = limited;
+    this.create = create;
+  }
+
+  override function toQuery():Query<Db, RealStream<Result>>
+    return create();
+
+}
+
+class Dataset<Fields, Result:{}, Db> {
+
   var cnx:Connection<Db>;
+  var limited:Limit;
 
   function new(cnx) { 
     this.cnx = cnx;
   }
 
-  function toQuery(?limit:Limit):Query<Db, RealStream<Result>>
+  function toQuery():Query<Db, RealStream<Result>>
     throw 'implement';
 
-  public function union(other:Fetchable<Fields, Result, Db>):Unionset<Fields, Result, Db>
-    return new Unionset(cnx, this, other);
+  public function union(other:Dataset<Fields, Result, Db>, distinct = true):Union<Fields, Result, Db>
+    return new Union(cnx, this, other, distinct);
 
-  public function stream(?limit:Limit):RealStream<Result>
-    return cnx.execute(toQuery(limit));
+  public function stream():RealStream<Result>
+    return cnx.execute(toQuery());
+    
+  public function all():Promise<Array<Result>>
+    return stream().collect();
 
-  public function first():Promise<Result> 
-    return all({limit:1, offset:0})
+  public function first():Promise<Result>
+    return all()
       .next(function (r:Array<Result>) return switch r {
         case []: Failure(new Error(NotFound, 'The requested item was not found'));
         case v: Success(v[0]);
       });
-    
-  public function all(?limit:Limit):Promise<Array<Result>>
-    return stream(limit).collect();
 
   public function count():Promise<Int>
     return 0; // Todo: use subquery

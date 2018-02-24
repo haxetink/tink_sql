@@ -12,7 +12,7 @@ using Lambda;
 
 class SqlFormatter implements Formatter {
   var sanitizer:Sanitizer;
-  inline static var separate = ', ';
+  var separate = ', ';
 
   public function new(sanitizer) {
     this.sanitizer = sanitizer;
@@ -24,10 +24,9 @@ class SqlFormatter implements Formatter {
       case DropTable(table): dropTable(table);
       case Insert(op): insert(op);
       case Select(op): select(op);
-      case Union(left, right, distinct): union(left, right, distinct);
+      case Union(op): union(op);
       case Update(op): update(op);
       case Delete(op): delete(op);
-      case AlterTable(table, op): alterTable(table, op);
       default: throw 'Query not supported in currrent formatter: $query';
     }
 
@@ -35,7 +34,7 @@ class SqlFormatter implements Formatter {
     return switch query {
       case Select({from: TJoin(_, _, _, _), selection: null}): true;
       case Select(_): false;
-      case Union(a, _, _): isNested(a);
+      case Union(op): isNested(op.left);
       default: false;
     }
 
@@ -165,7 +164,7 @@ class SqlFormatter implements Formatter {
       ident(name)
     ]);
 
-  function selection<Row:{}>(selection:Selection<Row>)
+  function selection<Row:{}>(selection:Selection<Row, Dynamic>)
     return switch selection {
       case null: '*'; // Todo: list all fields if nested to fix #25
       case fields:
@@ -193,6 +192,12 @@ class SqlFormatter implements Formatter {
           expr(cond)
         ]);
     }
+
+  function groupBy<Row:{}>(grouped:Null<Array<Field<Dynamic, Row>>>)
+    return if (grouped != null)
+      'GROUP BY ' +
+      grouped.map(function (field) return expr(field.data)).join(separate)
+    else '';
 
   function orderBy<Row:{}>(orderBy:Null<OrderBy<Row>>)
     return if (orderBy != null)
@@ -223,16 +228,18 @@ class SqlFormatter implements Formatter {
       'FROM',
       target(select.from),
       where(select.where),
+      groupBy(select.groupBy),
       orderBy(select.orderBy),
       limit(select.limit)
     ]);
 
-  function union<Db, Result>(left:Query<Db, Result>, right:Query<Db, Result>, distinct:Bool)
+  function union<Db, Row:{}>(union:UnionOperation<Db, Row>)
     return join([
-      parenthesis(format(left)),
+      parenthesis(format(union.left)),
       'UNION',
-      add(!distinct, 'ALL'),
-      parenthesis(format(right))
+      add(!union.distinct, 'ALL'),
+      parenthesis(format(union.right)),
+      limit(union.limit)
     ]);
 
   function update<Row:{}>(update:UpdateOperation<Row>)
@@ -254,26 +261,6 @@ class SqlFormatter implements Formatter {
       where(delete.where),
       limit(delete.max)
     ]);
-
-  function alterTable(table:TableInfo, change:AlterTableOperation)
-    return join([
-      'ALTER TABLE',
-      ident(table.getName())
-    ].concat(switch change {
-      case AddColumn(col):
-        ['ADD COLUMN', defineColumn(col)];
-      case AlterColumn(to, _):
-        ['MODIFY COLUMN', defineColumn(to)];
-      case DropColumn(col):
-        ['DROP COLUMN', ident(col.name)];
-      case DropKey(key):
-        ['DROP', switch key {
-          case Unique(name, _) | Index(name, _): 'INDEX ' + ident(name);
-          case Primary(_): 'PRIMARY KEY';
-        }];
-      case AddKey(key):
-        ['ADD', defineKey(key)];
-    }));
 
   function binOp(o:BinOp<Dynamic, Dynamic, Dynamic>)
     return switch o {
@@ -341,6 +328,8 @@ class SqlFormatter implements Formatter {
         values(v);
       case EValue(_, VArray(_)):
         throw 'Only arrays of primitive types are supported';
+      case EQuery(query):
+        parenthesis(format(query));
       default:
         throw 'Expression not supported in current formatter: $e';
     }

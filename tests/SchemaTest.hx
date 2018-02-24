@@ -23,11 +23,6 @@ class SchemaTest extends TestWithDb {
 				changes = diff;
 				asserts.assert(diff.length == 0);
 				return asserts.done();
-			})
-			.tryRecover(function(err) {
-				// Get some context in travis logs
-				trace(changes);
-				return Failure(err);
 			});
 	}
 

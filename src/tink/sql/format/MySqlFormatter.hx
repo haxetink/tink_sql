@@ -1,6 +1,7 @@
 package tink.sql.format;
 
 import tink.sql.Info;
+import tink.sql.Query;
 import tink.sql.schema.KeyStore;
 import tink.sql.Expr;
 import tink.sql.format.SqlFormatter;
@@ -11,6 +12,7 @@ class MySqlFormatter extends SqlFormatter {
     return switch query {
       case ShowColumns(from): showColumns(from);
       case ShowIndex(from): showIndex(from);
+      case AlterTable(table, changes): alterTable(table, changes);
       default: super.format(query);
     }
 
@@ -73,6 +75,30 @@ class MySqlFormatter extends SqlFormatter {
 
   function showIndex(from:TableInfo)
     return 'SHOW INDEX FROM ' + ident(from.getName());
+
+  function alterTable(table:TableInfo, changes:Array<AlterTableOperation>)
+    return join([
+      'ALTER TABLE',
+      ident(table.getName()),
+      changes.map(alteration).join(separate)
+    ]);
+
+  function alteration(change:AlterTableOperation)
+    return join(switch change {
+      case AddColumn(col):
+        ['ADD COLUMN', defineColumn(col)];
+      case AlterColumn(to, _):
+        ['MODIFY COLUMN', defineColumn(to)];
+      case DropColumn(col):
+        ['DROP COLUMN', ident(col.name)];
+      case DropKey(key):
+        ['DROP', switch key {
+          case Unique(name, _) | Index(name, _): 'INDEX ' + ident(name);
+          case Primary(_): 'PRIMARY KEY';
+        }];
+      case AddKey(key):
+        ['ADD', defineKey(key)];
+    });
 
   override function expr(e:ExprData<Dynamic>):String
    return switch e {

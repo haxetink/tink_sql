@@ -1,7 +1,5 @@
 package tink.sql;
 
-using tink.CoreApi;
-
 interface DatabaseInfo {
   function tableNames():Iterable<String>;
   function tableInfo(name:String):TableInfo;

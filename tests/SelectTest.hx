@@ -34,13 +34,15 @@ class SelectTest extends TestWithDb {
 		]);
 	}
 
-	public function selectExpr()
+	@:include public function selectExpr() {
 		return db.Post
-			.select({id: Post.id + 5})
-			.where(Post.id == 1).first()
+			.where(
+				Post.author == db.User.select({id: User.id}).where(User.name == 'Bob')
+			).first()
 			.next(function(row) {
-				return assert(row.id == 6);
+				return assert(row.title == 'Just checking');
 			});
+	}
 	
 	public function selectJoin()
 		return db.Post

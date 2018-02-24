@@ -66,7 +66,7 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
   public function execute<Result>(query:Query<Db,Result>):Result {
     inline function fetch<T>(): Promise<T> return run(queryOptions(query));
     return switch query {
-      case Select(_) | Union(_, _, _): 
+      case Select(_) | Union(_): 
         Stream.promise(fetch().next(function (res)
           return Stream.ofIterator(rowIterator(res, formatter.isNested(query)))
         ));
@@ -89,8 +89,9 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
 
   function queryOptions(query:Query<Db, Dynamic>): QueryOptions {
     var sql = formatter.format(query);
+    trace(sql);
     return switch query {
-      case Select(_) | Union(_, _, _):
+      case Select(_) | Union(_):
         {sql: sql, typeCast: typeCast, nestTables: formatter.isNested(query)}
       default:
         {sql: sql}

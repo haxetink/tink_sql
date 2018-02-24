@@ -49,16 +49,24 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
   public function diffSchema() {
     var schema = new Schema(getColumns(), getKeys());
     return (cnx.execute(ShowColumns(this)) && cnx.execute(ShowIndex(this)))
-      .next(function(res) {
-        return new Schema(res.a, res.b).diff(schema, cnx.getFormatter());
-      });
+      .next(function(res)
+        return new Schema(res.a, res.b).diff(schema, cnx.getFormatter())
+      );
   }
 
-  public function updateSchema(changes: Array<AlterTableOperation>)
-    return Promise.inSequence([
-      for (change in changes)
-       cnx.execute(AlterTable(this, change))
-    ]).next(function(_) return Noise);
+  public function updateSchema(changes: Array<AlterTableOperation>) {
+    var pre = [], post = [];
+    for (i in 0 ... changes.length) 
+      switch changes[i] {
+        case AddKey(_): post = changes.slice(i); break;
+        case v: pre.push(v);
+      }
+    return cnx.execute(AlterTable(this, pre)).next(function(_)
+      return 
+        if (post.length > 0) cnx.execute(AlterTable(this, post))
+        else Noise
+    );
+  }
   
   public function insertMany(rows:Array<Insert<Row>>, ?options)
     return if (rows.length == 0) Promise.NULL
@@ -138,20 +146,6 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
       default: e.reject();
     }
   }
-  
-  /*@:noCompletion 
-  public function sqlizeRow(row:Insert<Row>, val:Any->String):Array<String> 
-    return [for (f in getFields()) {
-      var fname = f.name;
-      var fval = Reflect.field(row, fname);
-      if(fval == null) val(null);
-      else switch f.type {
-        case DPoint | DMultiPolygon:
-          'ST_GeomFromGeoJSON(\'${haxe.Json.stringify(fval)}\')';
-        default:
-          val(fval);
-      }
-    }];*/
     
   @:noCompletion
   macro public function init(e:Expr, rest:Array<Expr>) {

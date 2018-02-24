@@ -9,25 +9,32 @@ import tink.streams.RealStream;
 using tink.CoreApi;
 
 enum Query<Db, Result> {
-  Union<Row:{}>(a:Query<Db, RealStream<Row>>, b:Query<Db, RealStream<Row>>, distinct:Bool):Query<Db, RealStream<Row>>;
+  Union<Row:{}>(union:UnionOperation<Db, Row>):Query<Db, RealStream<Row>>;
   Select<Row:{}>(select:SelectOperation<Db, Row>):Query<Db, RealStream<Row>>;
   Insert<Row:{}>(insert:InsertOperation<Row>):Query<Db, Promise<Id<Row>>>;
   Update<Row:{}>(update:UpdateOperation<Row>):Query<Db, Promise<{rowsAffected:Int}>>;
   Delete<Row:{}>(delete:DeleteOperation<Row>):Query<Db, Promise<{rowsAffected:Int}>>;
   CreateTable<Row:{}>(table:TableInfo, ?ifNotExists:Bool):Query<Db, Promise<Noise>>;
   DropTable<Row:{}>(table:TableInfo):Query<Db, Promise<Noise>>;
-  AlterTable<Row:{}>(table:TableInfo, change:AlterTableOperation):Query<Db, Promise<Noise>>;
+  AlterTable<Row:{}>(table:TableInfo, changes:Array<AlterTableOperation>):Query<Db, Promise<Noise>>;
   ShowColumns<Row:{}>(from:TableInfo):Query<Db, Promise<Array<Column>>>;
   ShowIndex<Row:{}>(from:TableInfo):Query<Db, Promise<Array<Key>>>;
 }
 
+typedef UnionOperation<Db, Row:{}> = {
+  left:Query<Db, RealStream<Row>>,
+  right:Query<Db, RealStream<Row>>, 
+  distinct:Bool,
+  ?limit:Limit
+}
+
 typedef SelectOperation<Db, Row:{}> = {
   from:Target<Row, Db>,
-  ?selection:Selection<Row>,
+  ?selection:Selection<Row, Dynamic>,
   ?where:Condition,
   ?limit:Limit,
   ?orderBy:OrderBy<Row>,
-  //?groupBy:GroupBy
+  ?groupBy:Array<Field<Dynamic, Row>>
 }
 
 typedef UpdateOperation<Row:{}> = {

@@ -127,7 +127,7 @@ class Run extends TestWithDb {
     });
   }
 
-  @:include public function unionTest() {
+  public function unionTest() {
     return insertUsers().next(function (_)
       return db.User.union(db.User).first()
     ).next(function (res)
