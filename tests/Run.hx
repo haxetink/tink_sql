@@ -2,7 +2,6 @@ package;
 
 import Db;
 import haxe.PosInfos;
-import tink.sql.Expr;
 import tink.unit.Assert.*;
 import tink.unit.AssertionBuffer;
 import tink.unit.*;
@@ -80,8 +79,8 @@ class Run extends TestWithDb {
 
   public function info() {
     asserts.assert(db.name == 'test');
-    asserts.assert(sorted(db.tablesnames()).join(',') == 'Geometry,Post,PostTags,Schema,StringTypes,Types,User');
-    asserts.assert(sorted(db.tableinfo('Post').fieldnames()).join(',') == 'author,content,id,title');
+    asserts.assert(sorted(db.tableNames()).join(',') == 'Geometry,Post,PostTags,Schema,StringTypes,Types,User');
+    asserts.assert(sorted(db.tableInfo('Post').columnNames()).join(',') == 'author,content,id,title');
     return asserts.done();
   }
 
@@ -113,6 +112,27 @@ class Run extends TestWithDb {
   public function update() {
     await(runUpdate, asserts);
     return asserts;
+  }
+  
+  @:asserts
+  public function deleteUser() {
+    return insertUsers().next(function (_)
+      return db.User.delete({where: function (u) return u.id == 1})
+    ).next(function (res) {
+      asserts.assert(res.rowsAffected == 1);
+      return db.User.count();
+    }).next(function (count) {
+      asserts.assert(count == 4);
+      return asserts.done();
+    });
+  }
+
+  public function unionTest() {
+    return insertUsers().next(function (_)
+      return db.User.union(db.User).first()
+    ).next(function (res)
+      return assert(res.id == 1)
+    );
   }
 
   function await(run:AssertionBuffer->Promise<Noise>, asserts:AssertionBuffer)

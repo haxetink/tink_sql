@@ -1,11 +1,11 @@
 package tink.sql;
 
 import tink.core.Any;
-import tink.sql.Connection.Update;
 import tink.sql.Expr;
 import tink.sql.Info;
 import tink.sql.Schema;
 import tink.sql.Dataset;
+import tink.sql.Query;
 
 using tink.CoreApi;
 
@@ -20,59 +20,105 @@ class Table<T> {
 #end
 
 class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db> 
-    extends Selectable<Fields, Filter, Row, Db> 
-    implements TableInfo<Row> 
+    extends Selectable<Fields, Filter, Row, Db>
+    implements TableInfo
 {
   
   public var name(default, null):TableName<Row>;
-
-  @:noCompletion 
-  public function getName():String
-    return name;
   
   function new(cnx, name, alias, fields) {
-    
     this.name = name;
     this.fields = fields;
     
     super(
-      fields,
       cnx,
+      fields,
       TTable(name, alias),
       function (f:Filter) return (cast f : Fields->Condition)(fields) //TODO: raise issue on Haxe tracker and remove the cast once resolved
     );
   }
+
+  // Query
   
-  public function create()
-    return cnx.createTable(this);
+  public function create(ifNotExists = false)
+    return cnx.execute(CreateTable(this, ifNotExists));
   
   public function drop()
-    return cnx.dropTable(this);
+    return cnx.execute(DropTable(this));
 
-  public function diffSchema()
-    return cnx.diffSchema(this);
+  public function diffSchema() {
+    var schema = new Schema(getColumns(), getKeys());
+    return (cnx.execute(ShowColumns(this)) && cnx.execute(ShowIndex(this)))
+      .next(function(res)
+        return new Schema(res.a, res.b).diff(schema, cnx.getFormatter())
+      );
+  }
 
-  public function updateSchema(changes: Array<SchemaChange>)
-    return cnx.updateSchema(this, changes);
+  public function updateSchema(changes: Array<AlterTableOperation>) {
+    var pre = [], post = [];
+    for (i in 0 ... changes.length) 
+      switch changes[i] {
+        case AddKey(_): post = changes.slice(i); break;
+        case v: pre.push(v);
+      }
+    return cnx.execute(AlterTable(this, pre)).next(function(_)
+      return 
+        if (post.length > 0) cnx.execute(AlterTable(this, post))
+        else Noise
+    );
+  }
   
   public function insertMany(rows:Array<Insert<Row>>, ?options)
-    return rows.length == 0 ? Promise.NULL : cnx.insert(this, rows, options);
+    return if (rows.length == 0) Promise.NULL
+      else cnx.execute(Insert({
+        table: this, 
+        rows: rows, 
+        ignore: if (options == null) null else options.ignore
+      }));
     
   public function insertOne(row:Insert<Row>, ?options)
     return insertMany([row], options);
     
-  public function update(f:Fields->Update<Row>, options:{ where: Filter, ?max:Int }) {
+  public function update(f:Fields->Update<Row>, options:{ where: Filter, ?max:Int })
     return switch f(this.fields) {
       case []:
         Promise.lift({rowsAffected: 0});
       case patch:
-        cnx.update(this, toCondition(options.where), options.max, patch);
+        cnx.execute(Update({
+          table: this,
+          set: patch,
+          where: toCondition(options.where),
+          max: options.max
+        }));
     }
-  }
   
-  public function delete(options:{ where: Filter, ?max:Int }) {
-    return cnx.delete(this, toCondition(options.where), options.max);
-  }
+  public function delete(options:{ where: Filter, ?max:Int })
+    return cnx.execute(Delete({
+      from: this, 
+      where: toCondition(options.where),
+      max: options.max
+    }));
+
+
+  // TableInfo
+
+  @:noCompletion 
+  public function getName():String 
+    return name;
+
+  @:noCompletion 
+  public function getColumns():Array<Column> 
+    throw 'not implemented';
+  
+  @:noCompletion 
+  public function columnNames():Array<String>
+    return getColumns().map(function(f) return f.name);
+
+  @:noCompletion 
+  public function getKeys():Array<Key> 
+    throw 'not implemented';
+
+  // Alias
 
   macro public function as(e:Expr, alias:String) {
     return switch haxe.macro.Context.typeof(e) {
@@ -100,28 +146,6 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
       default: e.reject();
     }
   }
-  
-  @:noCompletion 
-  public function getFields():Array<Column>
-    throw 'not implemented';
-  
-  @:noCompletion 
-  public function fieldnames():Array<String>
-    return getFields().map(function(f) return f.name);
-  
-  @:noCompletion 
-  public function sqlizeRow(row:Insert<Row>, val:Any->String):Array<String> 
-    return [for (f in getFields()) {
-      var fname = f.name;
-      var fval = Reflect.field(row, fname);
-      if(fval == null) val(null);
-      else switch f.type {
-        case DPoint | DMultiPolygon:
-          'ST_GeomFromGeoJSON(\'${haxe.Json.stringify(fval)}\')';
-        default:
-          val(fval);
-      }
-    }];
     
   @:noCompletion
   macro public function init(e:Expr, rest:Array<Expr>) {

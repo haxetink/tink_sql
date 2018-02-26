@@ -1,212 +1,90 @@
 package tink.sql;
 
 import tink.sql.Info;
-import tink.sql.Format;
-using StringTools;
+import tink.sql.Query;
+import tink.sql.format.Formatter;
 
-typedef SchemaColumn = {
-  name: String,
-  type: String,
-  autoIncrement: Bool,
-  nullable: Bool,
-  keys: Array<KeyType>,
-  byDefault: Null<String>
-}
+class Schema {
+  var columns:Map<String, Column>;
+  var keys:Map<String, Key>;
 
-typedef Index = {
-  name: String,
-  type: IndexType,
-  fields: Array<String>
-}
-
-enum IndexType {
-  IPrimary;
-  IUnique;
-  IIndex;
-}
-
-enum SchemaChange {
-  AddColumn(col: SchemaColumn);
-  RemoveColumn(col: SchemaColumn);
-  ChangeColumn(from: SchemaColumn, to: SchemaColumn);
-  AddIndex(index: Index);
-  RemoveIndex(index: Index);
-  ChangeIndex(from: Index, to: Index);
-}
-
-typedef SchemaInfo = Map<String, SchemaColumn>;
-
-@:forward
-abstract Schema(SchemaInfo) from SchemaInfo to SchemaInfo {
-
-  public function new() this = new Map();
-
-  public function diff(that: Schema)
-    return postProcess([for (key in mergeKeys(this, that))
-      switch [this[key], that[key]] {
-        case [null, added]: AddColumn(added);
-        case [removed, null]: RemoveColumn(removed);
-        case [a, b]:
-          if (
-            normalizeType(a.type) == normalizeType(b.type) 
-            && a.nullable == b.nullable
-            && a.autoIncrement == b.autoIncrement
-          )
-            continue;
-          ChangeColumn(a, b);
-      }
-    ].concat(diffIndex(that)));
-
-  function diffIndex(that: Schema) {
-    var indexA = indexes();
-    var indexB = that.indexes();
-    return [for (name in mergeKeys(indexA, indexB))
-      switch [indexA[name], indexB[name]] {
-        case [null, added]: AddIndex(added);
-        case [removed, null]:
-          if (!that.exists(name))
-            continue;
-          RemoveIndex(removed);
-        case [a, b]:
-          if (a.type.equals(b.type) && a.fields.join(',') == b.fields.join(','))
-            continue;
-          ChangeIndex(a, b);
-      }
+  public function new(columns:Array<Column>, keys:Array<Key>) {
+    this.columns = [
+      for (column in columns)
+        column.name => column
+    ];
+    this.keys = [
+      for (key in keys)
+        keyName(key) => key
     ];
   }
 
-  function postProcess(changes: Array<SchemaChange>) {
-    // Add columns first, otherwise we risk removing all columns which results in an error
-    // Todo: set this order when creating the diff
-    haxe.ds.ArraySort.sort(changes, function (a, b) {
-      return switch [a, b] {
-        case [AddColumn(_), RemoveColumn(_)]: -1;
-        case [RemoveColumn(_), AddColumn(_)]: 1;
-        default: 0;
-      }
-    });
-    
-    // The column must exist and have an index before auto_increment can be set
-    // Todo: make changing autoincrement a seperate schema change, which makes this easier
-    for (change in changes)
-      switch change {
-        case AddColumn(c) | ChangeColumn(_, c) if (c.autoIncrement):
-          c.autoIncrement = false;
-          changes.push(ChangeColumn(c, {
-            name: c.name, nullable: c.nullable,
-            type: c.type, byDefault: c.byDefault,
-            keys: c.keys, autoIncrement: true
-          }));
-          break;
-        default:
-      }
-    return changes;
-  }
-
-  function normalizeType(type: String) {
-    type = type.toLowerCase();
-    // Mysql does not report float/double precision
-    if (type.startsWith('float')) return 'float';
-    if (type.startsWith('double')) return 'double';
-    return type;
-  }
-
-  public function indexes() {
-    var index = new Map<String, Index>();
-    inline function add(name: String, col, key) {
-      name = name.toLowerCase();
-      var type = keyIndexType(key);
-      if (!index.exists(name)) {
-        index[name] = {name: name, type: type, fields: [col.name]}
-      } else {
-        var existing = index[name];
-        if (existing.type != type)
-          throw 'Different index types (${existing.type}, $type) under same name: `$name`';
-        existing.fields.push(col.name);
-      }
-    }
-    for (col in this)
-      for (key in col.keys)
-        add(switch key {
-          case Primary: 'PRIMARY';
-          case Unique(None) | Index(None): col.name;
-          case Unique(Some(name)) | Index(Some(name)): name;
-        }, col, key);
-    return index;
-  }
-
-  function keyIndexType(key: KeyType)
+  function keyName(key)
     return switch key {
-      case Primary: IPrimary;
-      case Unique(_): IUnique;
-      case Index(_): IIndex;
+      case Primary(_): 'primary';
+      case Unique(name, _) | Index(name, _): name;
     }
+
+  function hasAutoIncrement(column:Column)
+    return switch column.type {
+      case DInt(_, _, true, _): true;
+      default: false;
+    }
+
+  function withoutAutoIncrement(column:Column)
+    return switch column.type {
+      case DInt(bits, signed, true, defaultValue): {
+        name: column.name, 
+        nullable: column.nullable, 
+        type: DInt(bits, signed, false, defaultValue)
+      }
+      default: column;
+    }
+
+  public function diff(that: Schema, formatter:Formatter):Array<AlterTableOperation> {
+    var changes = [], post = [];
+
+    for (key in mergeKeys(this.columns, that.columns))
+      switch [this.columns[key], that.columns[key]] {
+        case [null, added]:
+          if (hasAutoIncrement(added)) {
+            var without = withoutAutoIncrement(added);
+            changes.unshift(AddColumn(without));
+            post.push(AlterColumn(added, without));
+          } else {
+            changes.unshift(AddColumn(added));
+          }
+        case [removed, null]: changes.push(DropColumn(removed));
+        case [a, b]:
+          if (formatter.defineColumn(a) == formatter.defineColumn(b))
+            continue;
+          if (hasAutoIncrement(b)) {
+            var without = withoutAutoIncrement(b);
+            if (formatter.defineColumn(a) != formatter.defineColumn(without))
+              changes.unshift(AlterColumn(without, a));
+            post.push(AlterColumn(b, without));
+          } else {
+            changes.push(AlterColumn(b, a));
+          }
+      }
+    for (name in mergeKeys(this.keys, that.keys))
+      switch [this.keys[name], that.keys[name]] {
+        case [null, added]: changes.push(AddKey(added));
+        case [removed, null]:
+          changes.unshift(DropKey(removed));
+        case [a, b]:
+          if (formatter.defineKey(a) == formatter.defineKey(b))
+            continue;
+          changes.unshift(DropKey(a));
+          changes.push(AddKey(b));
+      }
+    return changes.concat(post);
+  }
 
   static function mergeKeys<T>(a: Map<String, T>, b: Map<String, T>)
     return [for (key in a.keys()) key].concat([
       for (key in b.keys())
         if (!a.exists(key)) key
     ]);
-
-  public static function fromMysql(columns: Iterator<MysqlColumnInfo>, indexes: Iterator<MysqlIndexInfo>): Schema {
-    var cols = new Schema();
-    for (col in columns)
-      cols[col.Field] = {
-        name: col.Field,
-        type: col.Type,
-        autoIncrement: col.Extra == 'auto_increment',
-        nullable: col.Null == 'YES',
-        byDefault: col.Default,
-        keys: []
-      }
-    var schema = new Schema();
-    inline function addField(field)
-      if (!schema.exists(field.name)) 
-        schema[field.name] = field;
-    // Todo: store index info separately from columns, see #47 and #57
-    for (index in indexes) {
-      var name = index.Key_name;
-      var field = cols[index.Column_name];
-      if (name == 'PRIMARY')
-        field.keys.push(Primary);
-      else if (index.Non_unique == 0)
-        field.keys.push(Unique(Some(name)));
-      else
-        field.keys.push(Index(Some(name)));
-      addField(field);
-    }
-    for (field in cols) addField(field);
-    return schema;
-  }
-
-  @:from public static function fromFields(fields: Iterable<Column>): Schema
-    return [for (field in fields) field.name => {
-      name: field.name, type: Format.sqlType(field.type),
-      autoIncrement: field.type.match(DInt(_, _, true)),
-      nullable: field.nullable, keys: field.keys, byDefault: null
-    }];
-
-  @:arrayAccess
-  public inline function get(key: String) 
-    return this.get(key);
-  
-  @:arrayAccess
-  public inline function arrayWrite(k: String, v: SchemaColumn)
-    return this.set(k, v);
-
-}
-
-typedef MysqlColumnInfo = {
-  Field: String,
-  Type: String,
-  Null: String, // 'YES', 'NO'
-  Key: String, // 'PRI', 'UNI', 'MUL'
-  Default: Null<String>,
-  Extra: String
-}
-
-typedef MysqlIndexInfo = {
-  Key_name: String,
-  Non_unique: Int,
-  Column_name: String
+    
 }

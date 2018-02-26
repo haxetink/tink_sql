@@ -3,7 +3,8 @@ package tink.sql;
 import haxe.io.Bytes;
 import geojson.*;
 import tink.sql.Types;
-import tink.sql.Connection.FieldUpdate;
+import tink.sql.Query;
+import tink.sql.Dataset;
 
 typedef Condition = Expr<Bool>;
 
@@ -13,10 +14,10 @@ enum ExprData<T> {
   EField(table:String, name:String):ExprData<T>;
   ECall(name:String, args:Array<Expr<Any>>):ExprData<T>;
   EValue<T>(value:T, type:ValueType<T>):ExprData<T>;
+  EQuery<T, Db, Result>(query:Query<Db, Result>):ExprData<T>;
 }
 
 enum ValueType<T> {
-  // VAny:ValueType<T>;
   VString:ValueType<String>;
   VBool:ValueType<Bool>;
   VFloat:ValueType<Float>;
@@ -241,6 +242,10 @@ class Functions {
   public static function iif<T>(cond:Expr<Bool>, ifTrue:Expr<T>, ifFalse:Expr<T>):Expr<T>
     return ECall('IF', [cast cond, cast ifTrue, cast ifFalse]);
 
+  // Todo: count can also take an Expr<Bool>
+  public static function count<D,O>(?e:Field<D,O>):Expr<Int> 
+    return ECall('COUNT', if (e == null) cast [EValue(true, VBool)] else cast [e]);
+
   public static function stContains<T>(g1:Expr<Geometry>, g2:Expr<Geometry>):Expr<Bool>
     return ECall('ST_Contains', cast [g1, g2]);
 
@@ -426,6 +431,15 @@ abstract Field<Data, Owner>(Expr<Data>) to Expr<Data> {
     @:op(a == b) static function eqBytes<T:Bytes, S>(a:Field<T, S>, b:T):Condition
       return (a:Expr<T>) == EValue(b, cast VBytes);
   //} endregion
+
+  //{ region relations for queries
+    @:commutative
+    @:op(a == b) static function eqQuery<T, S, F, R:{}, D>(
+      a:Field<T, S>,
+      b:Limitable<SingleField<T, F>, R, D>
+    ):Condition
+      return (a:Expr<T>) == EQuery(@:privateAccess b.limit(1).toQuery());
+  //}
 
   //{ region logic
     @:op(!a) static function not<X, Y>(c:Field<Bool, Y>):Condition
