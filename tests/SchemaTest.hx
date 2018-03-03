@@ -1,10 +1,8 @@
 package;
 
 import Run.loadFixture;
-import tink.unit.Assert.assert;
 import tink.unit.AssertionBuffer;
-
-using tink.CoreApi;
+import tink.sql.Info;
 
 @:asserts
 class SchemaTest extends TestWithDb {
@@ -12,7 +10,7 @@ class SchemaTest extends TestWithDb {
 	function check(asserts: AssertionBuffer, version, inspect) {
 		loadFixture('schema_$version');
 		var changes;
-		return db.Schema.diffSchema()
+		return db.Schema.diffSchema(true)
 			.next(function (changes) {
 				inspect(changes);
 				return changes;
@@ -43,11 +41,43 @@ class SchemaTest extends TestWithDb {
 	
 	public function diffModify()
 		return check(asserts, 'modify', function(changes) {
+			for (change in changes) switch change {
+				case AlterColumn(to = {name: 'toBoolean'}, from):
+					asserts.assert(from.type.match(DFloat(_, null)));
+					asserts.assert(to.type.match(DBool(null)));
+				case AlterColumn(to = {name: 'toFloat'}, from):
+					asserts.assert(from.type.match(DInt(11, false, false, null)));
+					asserts.assert(to.type.match(DFloat(_, null)));
+				case AlterColumn(to = {name: 'toInt'}, from):
+					asserts.assert(from.type.match(DBool(null)));
+					asserts.assert(to.type.match(DInt(11, true, false, null)));
+				case AlterColumn(to = {name: 'toLongText'}, from):
+					asserts.assert(from.type.match(DBool(null)));
+					asserts.assert(to.type.match(DText(Default, null)));
+				case AlterColumn(to = {name: 'toText'}, from):
+					asserts.assert(from.type.match(DText(Default, null)));
+					asserts.assert(to.type.match(DString(1)));
+				case AlterColumn(to = {name: 'toDate'}, from):
+					asserts.assert(from.type.match(DBool(null)));
+					asserts.assert(to.type.match(DDateTime(null)));
+				default:
+			}
 			asserts.assert(changes.length == 23);
 		});
 
 	public function diffIndexes()
 		return check(asserts, 'indexes', function(changes) {
+			for (change in changes) switch change {
+				case DropKey(Index('ab', _)):
+				case DropKey(Unique('unique' | 'ef' | 'h' | 'indexed', _)):
+				case DropKey(key):
+					asserts.assert(false, 'Dropped key: $key');
+				case AddKey(Index('indexed' | 'ab' | 'cd', _)):
+				case AddKey(Unique('unique' | 'ef' | 'gh', _)):
+				case AddKey(key):
+					asserts.assert(false, 'Added key: $key');
+				default:
+			}
 		});
 
 }

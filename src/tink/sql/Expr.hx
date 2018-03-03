@@ -432,15 +432,6 @@ abstract Field<Data, Owner>(Expr<Data>) to Expr<Data> {
       return (a:Expr<T>) == EValue(b, cast VBytes);
   //} endregion
 
-  //{ region relations for queries
-    @:commutative
-    @:op(a == b) static function eqQuery<T, S, F, R:{}, D>(
-      a:Field<T, S>,
-      b:Limitable<SingleField<T, F>, R, D>
-    ):Condition
-      return (a:Expr<T>) == EQuery(@:privateAccess b.limit(1).toQuery());
-  //}
-
   //{ region logic
     @:op(!a) static function not<X, Y>(c:Field<Bool, Y>):Condition
       return EUnOp(Not, c, false);

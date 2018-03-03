@@ -46,11 +46,15 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
   public function drop()
     return cnx.execute(DropTable(this));
 
-  public function diffSchema() {
+  public function diffSchema(destructive = false) {
     var schema = new Schema(getColumns(), getKeys());
     return (cnx.execute(ShowColumns(this)) && cnx.execute(ShowIndex(this)))
       .next(function(res)
-        return new Schema(res.a, res.b).diff(schema, cnx.getFormatter())
+        return new Schema(res.a, res.b)
+          .diff(schema, cnx.getFormatter())
+          .filter(function (change) 
+            return destructive || !change.match(DropColumn(_))
+          )
       );
   }
 

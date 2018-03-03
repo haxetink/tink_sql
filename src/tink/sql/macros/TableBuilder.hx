@@ -87,7 +87,7 @@ class TableBuilder {
                           macro tink.sql.Info.DataType.DText(tink.sql.Info.TextSize.Default, $defaultValue);
                         case {module: 'tink.sql.Types', name: 'Integer'}:
                           var maxLength = getInt(params[0], f.pos);
-                          macro tink.sql.Info.DataType.DInt($v{maxLength}, false, $v{f.meta.has(':autoIncrement')}, $defaultValue);
+                          macro tink.sql.Info.DataType.DInt($v{maxLength}, true, $v{f.meta.has(':autoIncrement')}, $defaultValue);
                         case {module: 'tink.sql.Types', name: 'LongText'}:
                           macro tink.sql.Info.DataType.DText(tink.sql.Info.TextSize.Long, $defaultValue);
                         case {module: 'tink.sql.Types', name: 'MediumText'}:

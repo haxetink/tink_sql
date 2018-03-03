@@ -9,7 +9,7 @@ using tink.CoreApi;
 typedef SingleField<T, Fields> = Fields;
 typedef MultiFields<T, Fields> = Fields;
 
-class Selectable<Fields, Filter, Result: {}, Db> extends Joinable<Fields, Filter, Result, Db> {
+class Selectable<Fields, Filter, Result: {}, Db> extends Filterable<Fields, Filter, Result, Db> {
   
   macro public function select(ethis, select) {
     var selection = tink.sql.macros.Selects.makeSelection(ethis, select);
@@ -20,10 +20,6 @@ class Selectable<Fields, Filter, Result: {}, Db> extends Joinable<Fields, Filter
 
   function _select<Row: {}, Fields>(selection: Selection<Row, Fields>):Filterable<Fields, Filter, Row, Db>
     return new Filterable(cnx, cast fields, cast target, toCondition, condition, selection);
-
-}
-
-class Joinable<Fields, Filter, Result: {}, Db> extends Filterable<Fields, Filter, Result, Db> {
     
   macro public function leftJoin(ethis, ethat)
     return tink.sql.macros.Joins.perform(Left, ethis, ethat);
@@ -46,14 +42,14 @@ class Filterable<Fields, Filter, Result: {}, Db> extends Orderable<Fields, Filte
   function _where(filter:Filter):Filterable<Fields, Filter, Result, Db>
     return new Filterable(cnx, fields, target, toCondition, condition && toCondition(filter), selection);
 
-  public function groupBy(groupBy:Fields->Array<Field<Dynamic, Result>>)
+  public function groupBy(groupBy:Fields->Array<Field<Dynamic, Result>>):Orderable<Fields, Filter, Result, Db>
     return new Orderable(cnx, fields, target, toCondition, condition, selection, groupBy(fields));
 
 }
 
 class Orderable<Fields, Filter, Result: {}, Db> extends Selected<Fields, Filter, Result, Db> {
 
-  public function orderBy(orderBy:Fields->OrderBy<Result>)
+  public function orderBy(orderBy:Fields->OrderBy<Result>):Selected<Fields, Filter, Result, Db>
     return new Selected(cnx, fields, target, toCondition, condition, selection, grouped, orderBy(fields));
 
 }
@@ -80,15 +76,26 @@ class Selected<Fields, Filter, Result:{}, Db> extends Limitable<Fields, Result, 
     this.order = order;
   }
 
-  override function toQuery():Query<Db, RealStream<Result>>
+  override function toQuery(?limit:Limit):Query<Db, RealStream<Result>>
     return Select({
       from: target,
       selection: selection,
       where: condition,
-      limit: limited,
+      limit: limit,
       groupBy: grouped,
       orderBy: order
     });
+
+  public function count():Promise<Int>
+    return cnx.execute(Select({
+      from: target,
+      selection: {count: cast Functions.count()},
+      where: condition,
+      groupBy: grouped,
+      orderBy: order
+    }))
+      .collect()
+      .next(function (v) return Success((cast v[0]).count));
 
 }
 
@@ -105,12 +112,12 @@ class Union<Fields, Result:{}, Db> extends Limitable<Fields, Result, Db> {
     this.distinct = distinct;
   }
 
-  override function toQuery():Query<Db, RealStream<Result>>
+  override function toQuery(?limit:Limit):Query<Db, RealStream<Result>>
     return Union({
       left: left.toQuery(), 
       right: right.toQuery(),
       distinct: distinct,
-      limit: limited
+      limit: limit
     });
 
 }
@@ -127,29 +134,29 @@ class Limitable<Fields, Result:{}, Db> extends Dataset<Fields, Result, Db> {
 
 class Limited<Fields, Result:{}, Db> extends Dataset<Fields, Result, Db> {
 
-  var create: Void -> Query<Db, RealStream<Result>>;
+  var create: Limit -> Query<Db, RealStream<Result>>;
+  var limit:Limit;
 
-  function new(cnx, limited, create) {
+  function new(cnx, limit, create) {
     super(cnx);
-    this.limited = limited;
+    this.limit = limit;
     this.create = create;
   }
 
-  override function toQuery():Query<Db, RealStream<Result>>
-    return create();
+  override function toQuery(?_:Limit):Query<Db, RealStream<Result>>
+    return create(limit);
 
 }
 
 class Dataset<Fields, Result:{}, Db> {
 
   var cnx:Connection<Db>;
-  var limited:Limit;
 
   function new(cnx) { 
     this.cnx = cnx;
   }
 
-  function toQuery():Query<Db, RealStream<Result>>
+  function toQuery(?limit:Limit):Query<Db, RealStream<Result>>
     throw 'implement';
 
   public function union(other:Dataset<Fields, Result, Db>, distinct = true):Union<Fields, Result, Db>
@@ -168,15 +175,6 @@ class Dataset<Fields, Result:{}, Db> {
         case v: Success(v[0]);
       });
 
-  public function count():Promise<Int>
-    return 0; // Todo: use subquery
-    /*return cnx.execute(Select({
-      from: target,
-      selection: {count: cast Functions.count()},
-      where: condition
-    }))
-      .collect()
-      .next(function (v) return Success((cast v[0]).count));*/
 }
 
 class JoinPoint<Filter, Ret> {
