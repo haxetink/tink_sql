@@ -30,7 +30,7 @@ typedef UnionOperation<Db, Row:{}> = {
 
 typedef SelectOperation<Db, Row:{}> = {
   from:Target<Row, Db>,
-  ?selection:Selection<Row, Dynamic>,
+  ?selection:Selection<Row>,
   ?where:Condition,
   ?limit:Limit,
   ?orderBy:OrderBy<Row>,

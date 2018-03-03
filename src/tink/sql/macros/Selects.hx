@@ -52,20 +52,7 @@ class Selects {
       case v: trace(v);
     }
     var resultType = TAnonymous(resultFields);
-    var fieldsType = Context.typeof(fields).toComplex();
-    // To type subqueries properly we need to distinguish between
-    // three possible kinds of selections:
-    // - a single column
-    // - multiple columns of the same type
-    // - something else (can't be used as an expr)
-    if (resultFields.length == 1) {
-      var fieldType = switch resultFields[0].kind {
-        case FProp(_, _, type): type;
-        default: throw 'assert';
-      }
-      fieldsType = (macro: tink.sql.Dataset.SingleField<$fieldType, $fieldsType>);
-    }
-    return macro @:pos(select.pos) (cast $call: tink.sql.Selection<$resultType, $fieldsType>);
+    return macro @:pos(select.pos) (cast $call: tink.sql.Selection<$resultType>);
   }
 
   static function typeOfExpr(type, pos: Position)

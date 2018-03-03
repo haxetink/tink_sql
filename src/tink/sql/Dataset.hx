@@ -6,9 +6,6 @@ import tink.sql.Query;
 
 using tink.CoreApi;
 
-typedef SingleField<T, Fields> = Fields;
-typedef MultiFields<T, Fields> = Fields;
-
 class Selectable<Fields, Filter, Result: {}, Db> extends Filterable<Fields, Filter, Result, Db> {
   
   macro public function select(ethis, select) {
@@ -18,8 +15,8 @@ class Selectable<Fields, Filter, Result: {}, Db> extends Filterable<Fields, Filt
     );
   }
 
-  function _select<Row: {}, Fields>(selection: Selection<Row, Fields>):Filterable<Fields, Filter, Row, Db>
-    return new Filterable(cnx, cast fields, cast target, toCondition, condition, selection);
+  function _select<Row: {}>(selection: Selection<Row>):Filterable<Fields, Filter, Row, Db>
+    return new Filterable(cnx, fields, cast target, toCondition, condition, selection);
     
   macro public function leftJoin(ethis, ethat)
     return tink.sql.macros.Joins.perform(Left, ethis, ethat);
@@ -60,7 +57,7 @@ class Selected<Fields, Filter, Result:{}, Db> extends Limitable<Fields, Result, 
   
   var target:Target<Result, Db>;
   var toCondition:Filter->Condition;
-  var selection:Null<Selection<Result, Fields>>;
+  var selection:Null<Selection<Result>>;
   var condition:Null<Condition>;
   var grouped:Null<Array<Field<Dynamic, Result>>>;
   var order:Null<OrderBy<Result>>;
