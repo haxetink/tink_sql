@@ -1,17 +1,16 @@
 package;
 
 import Run.loadFixture;
-import tink.unit.Assert.assert;
 import tink.unit.AssertionBuffer;
-
-using tink.CoreApi;
+import tink.sql.Info;
 
 @:asserts
 class SchemaTest extends TestWithDb {
 
 	function check(asserts: AssertionBuffer, version, inspect) {
 		loadFixture('schema_$version');
-		return db.Schema.diffSchema()
+		var changes;
+		return db.Schema.diffSchema(true)
 			.next(function (changes) {
 				inspect(changes);
 				return changes;
@@ -19,7 +18,7 @@ class SchemaTest extends TestWithDb {
 			.next(db.Schema.updateSchema)
 			.next(function (_) return db.Schema.diffSchema())
 			.next(function (diff) {
-				//trace(diff);
+				changes = diff;
 				asserts.assert(diff.length == 0);
 				return asserts.done();
 			});
@@ -42,64 +41,43 @@ class SchemaTest extends TestWithDb {
 	
 	public function diffModify()
 		return check(asserts, 'modify', function(changes) {
-			#if !php // Match doesn't seem to work reliably on php
-			asserts.assert(changes[0].match(ChangeColumn(
-				{type: 'float'}, 
-				{name: 'toBoolean', type: 'TINYINT(1)'}
-			)));
-			asserts.assert(changes[1].match(ChangeColumn(
-				{type: 'int(11)'}, 
-				{name: 'toFloat', type: 'FLOAT(11)'}
-			)));
-			asserts.assert(changes[2].match(ChangeColumn(
-				{type: 'tinyint(1) unsigned'}, 
-				{name: 'toInt', type: 'INT(11) UNSIGNED'}
-			)));
-			asserts.assert(changes[3].match(ChangeColumn(
-				{type: 'tinyint(1)'}, 
-				{name: 'toLongText', type: 'TEXT'}
-			)));
-			asserts.assert(changes[4].match(ChangeColumn(
-				{type: 'text'}, 
-				{name: 'toText', type: 'VARCHAR(1)'}
-			)));
-			asserts.assert(changes[5].match(ChangeColumn(
-				{type: 'tinyint(1)'}, 
-				{name: 'toDate', type: 'DATETIME'}
-			)));
-			#end
+			for (change in changes) switch change {
+				case AlterColumn(to = {name: 'toBoolean'}, from):
+					asserts.assert(from.type.match(DFloat(_, null)));
+					asserts.assert(to.type.match(DBool(null)));
+				case AlterColumn(to = {name: 'toFloat'}, from):
+					asserts.assert(from.type.match(DInt(11, false, false, null)));
+					asserts.assert(to.type.match(DFloat(_, null)));
+				case AlterColumn(to = {name: 'toInt'}, from):
+					asserts.assert(from.type.match(DBool(null)));
+					asserts.assert(to.type.match(DInt(11, true, false, null)));
+				case AlterColumn(to = {name: 'toLongText'}, from):
+					asserts.assert(from.type.match(DBool(null)));
+					asserts.assert(to.type.match(DText(Default, null)));
+				case AlterColumn(to = {name: 'toText'}, from):
+					asserts.assert(from.type.match(DText(Default, null)));
+					asserts.assert(to.type.match(DString(1)));
+				case AlterColumn(to = {name: 'toDate'}, from):
+					asserts.assert(from.type.match(DBool(null)));
+					asserts.assert(to.type.match(DDateTime(null)));
+				default:
+			}
 			asserts.assert(changes.length == 23);
 		});
 
 	public function diffIndexes()
 		return check(asserts, 'indexes', function(changes) {
-			#if !php
-			asserts.assert(changes[4].match(ChangeIndex(
-				{name: 'ab', type: IIndex, fields: ['a']},
-				{name: 'ab', type: IIndex, fields: ['a', 'b']}
-			)));
-			asserts.assert(changes[2].match(ChangeIndex(
-				{name: 'unique', fields: ['b']}, 
-				{name: 'unique', fields: ['unique']}
-			)));
-			asserts.assert(changes[0].match(ChangeIndex(
-				{name: 'ef', type: IUnique, fields: ['f']}, 
-				{name: 'ef', type: IUnique, fields: ['e', 'f']}
-			)));
-			asserts.assert(changes[1].match(RemoveIndex(
-				{name: 'h', type: IUnique, fields: ['h']}
-			)));
-			asserts.assert(changes[3].match(ChangeIndex(
-				{name: 'indexed', type: IUnique}, 
-				{name: 'indexed', type: IIndex}
-			)));
-			asserts.assert(changes[5].match(AddIndex(
-				{name: 'cd', type: IIndex, fields: ['c', 'd']}
-			)));
-			asserts.assert(changes[6].match(AddIndex(
-				{name: 'gh', type: IUnique, fields: ['g', 'h']}
-			)));
-			#end
+			for (change in changes) switch change {
+				case DropKey(Index('ab', _)):
+				case DropKey(Unique('unique' | 'ef' | 'h' | 'indexed', _)):
+				case DropKey(key):
+					asserts.assert(false, 'Dropped key: $key');
+				case AddKey(Index('indexed' | 'ab' | 'cd', _)):
+				case AddKey(Unique('unique' | 'ef' | 'gh', _)):
+				case AddKey(key):
+					asserts.assert(false, 'Added key: $key');
+				default:
+			}
 		});
 
 }

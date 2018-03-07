@@ -13,7 +13,7 @@ CREATE TABLE test.Schema (
   `toAdd` tinyint(1) NOT NULL,
   `toBoolean` tinyint(1) NOT NULL,
   `toFloat` float NOT NULL,
-  `toInt` int(11) UNSIGNED NOT NULL,
+  `toInt` int(11) NOT NULL,
   `toLongText` text NOT NULL,
   `toText` varchar(1) NOT NULL,
   `toDate` datetime NOT NULL,

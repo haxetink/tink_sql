@@ -27,27 +27,26 @@ class Selects {
       default:
     }
     var fields = macro $dataset.fields;
-    var input = if (arguments.length > 1) [
-      for (arg in arguments)
-        fields.field(arg.name)
-    ] else [
-      fields
-    ];
+    var input = 
+      if (arguments.length > 1) 
+        [for (arg in arguments) fields.field(arg.name)] 
+      else 
+        [fields];
     var call = macro $select($a{input});
     var resultFields = [];
+    var fieldExprTypes = [];
     switch Context.typeof(call) {
       case TAnonymous(_.get().fields => fields):
         // For each of the fields in the anonymous object we need
         // a result type, which can be found as T in ExprData<T>
         for (field in fields) {
-          var type = typeOfExpr(field.type, 
+          var pos = 
             if (posInfo.exists(field.name)) posInfo.get(field.name)
-            else select.pos
-          );
+            else select.pos;
           resultFields.push({
             name: field.name,
             pos: select.pos,
-            kind: FProp('default', 'null', type.toComplex())
+            kind: FProp('default', 'null', typeOfExpr(field.type, pos).toComplex())
           });
         }
       case v: trace(v);
@@ -56,14 +55,13 @@ class Selects {
     return macro @:pos(select.pos) (cast $call: tink.sql.Selection<$resultType>);
   }
 
-  static function typeOfExpr(type, pos: Position) {
+  static function typeOfExpr(type, pos: Position)
     return switch Context.followWithAbstracts(type) {
       case TEnum(_.get() => {
         pack: ['tink', 'sql'], name: 'ExprData'
       }, [p]):
-        Context.followWithAbstracts(p);
+        p;
       default: pos.error("Expected tink.sql.Expr<T>");
     }
-  }
       
 }

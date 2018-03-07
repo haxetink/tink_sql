@@ -64,7 +64,7 @@ typedef Schema = {
   public var toInt(default, null): Integer<11>;
   public var toFloat(default, null): Number<11>;
   public var toText(default, null): VarChar<1>;
-  public var toLongText(default, null): VarChar<999999>;
+  public var toLongText(default, null): Text;
   public var toDate(default, null): DateTime;
 
   public var toAdd(default, null): Boolean;

@@ -3,6 +3,7 @@ package tink.sql.macros;
 import haxe.macro.Context;
 import tink.macro.BuildCache;
 import haxe.macro.Expr;
+import tink.sql.schema.KeyStore;
 
 using tink.MacroApi;
 
@@ -20,19 +21,16 @@ class TableBuilder {
             var rowTypeFields = new Array<Field>(),
                 fieldsTypeFields = new Array<Field>(),
                 fieldsExprFields = [],
-                fieldsValues = [];
+                fieldsValues = [],
+                keys = new KeyStore();
 
             var rowType = TAnonymous(rowTypeFields),
                 fieldsType = TAnonymous(fieldsTypeFields);//caution: these are mutable until the function is done
 
             for (f in fields) {
               var fType = f.type.reduce().toComplex(),
-                  fName = f.name;
-              //var fStruct = TAnonymous([{
-                //name: fName,
-                //kind: FVar(fType),
-                //pos: f.pos,
-              //}]);
+                  fName = f.name,
+                  meta = f.meta.get().toMap();
 
               rowTypeFields.push({
                 pos: f.pos,
@@ -45,12 +43,10 @@ class TableBuilder {
                 },
               });
 
-              var followedType = f.type.reduce().toComplex();
               fieldsTypeFields.push({
                 pos: f.pos,
                 name: fName,
                 kind: FProp('default', 'null', macro : tink.sql.Expr.Field<$fType, $rowType>)
-                //kind: FProp('default', 'null', macro : tink.sql.Expr<$fType>)
               });
 
               fieldsExprFields.push({
@@ -61,6 +57,11 @@ class TableBuilder {
               fieldsValues.push({
                 var name = macro $v{fName};
                 var nullable = f.meta.has(':optional');
+                var defaultValue = switch meta.get(':byDefault') {
+                  case null: macro null;
+                  case [[value]]: value;
+                  case more: f.pos.error('@:byDefault excepts one expression');
+                }
 
                 function resolveType(type:haxe.macro.Type) {
                   return switch type {
@@ -70,7 +71,7 @@ class TableBuilder {
 
                     case TAbstract(_.get() => {module: 'tink.sql.Types', name: 'Id'}, [p]):
                       var maxLength = 12; // TODO: make these configurable
-                      macro tink.sql.Info.DataType.DInt($v{maxLength}, false, $v{f.meta.has(':autoIncrement')});
+                      macro tink.sql.Info.DataType.DInt($v{maxLength}, false, $v{f.meta.has(':autoIncrement')}, $defaultValue);
 
                     case TType(_.get() => tdef, params):
                       switch tdef {
@@ -81,37 +82,37 @@ class TableBuilder {
                           var maxLength = getInt(params[0], f.pos);
                           macro tink.sql.Info.DataType.DBlob($v{maxLength});
                         case {module: 'tink.sql.Types', name: 'DateTime'}:
-                          macro tink.sql.Info.DataType.DDateTime;
+                          macro tink.sql.Info.DataType.DDateTime($defaultValue);
                         case {module: 'tink.sql.Types', name: 'Text'}:
-                          macro tink.sql.Info.DataType.DText(tink.sql.Info.TextSize.Default);
+                          macro tink.sql.Info.DataType.DText(tink.sql.Info.TextSize.Default, $defaultValue);
                         case {module: 'tink.sql.Types', name: 'Integer'}:
                           var maxLength = getInt(params[0], f.pos);
-                          macro tink.sql.Info.DataType.DInt($v{maxLength}, false, $v{f.meta.has(':autoIncrement')});
+                          macro tink.sql.Info.DataType.DInt($v{maxLength}, true, $v{f.meta.has(':autoIncrement')}, $defaultValue);
                         case {module: 'tink.sql.Types', name: 'LongText'}:
-                          macro tink.sql.Info.DataType.DText(tink.sql.Info.TextSize.Long);
+                          macro tink.sql.Info.DataType.DText(tink.sql.Info.TextSize.Long, $defaultValue);
                         case {module: 'tink.sql.Types', name: 'MediumText'}:
-                          macro tink.sql.Info.DataType.DText(tink.sql.Info.TextSize.Medium);
+                          macro tink.sql.Info.DataType.DText(tink.sql.Info.TextSize.Medium, $defaultValue);
                         case {module: 'tink.sql.Types', name: 'MultiPolygon'}:
                           macro tink.sql.Info.DataType.DMultiPolygon;
                         case {module: 'tink.sql.Types', name: 'Number'}:
                           var maxLength = getInt(params[0], f.pos);
-                          macro tink.sql.Info.DataType.DFloat($v{maxLength});
+                          macro tink.sql.Info.DataType.DFloat($v{maxLength}, $defaultValue);
                         case {module: 'tink.sql.Types', name: 'Point'}:
                           macro tink.sql.Info.DataType.DPoint;
                         case {module: 'tink.sql.Types', name: 'TinyText'}:
-                          macro tink.sql.Info.DataType.DText(tink.sql.Info.TextSize.Tiny);
+                          macro tink.sql.Info.DataType.DText(tink.sql.Info.TextSize.Tiny, $defaultValue);
                         case {module: 'tink.sql.Types', name: 'VarChar'}:
                           var maxLength = getInt(params[0], f.pos);
-                          macro tink.sql.Info.DataType.DString($v{maxLength});
+                          macro tink.sql.Info.DataType.DString($v{maxLength}, $defaultValue);
                         default:
                           resolveType(tdef.type);
                       }
 
                     case _.getID() => 'Date':
-                      macro tink.sql.Info.DataType.DDateTime;
+                      macro tink.sql.Info.DataType.DDateTime($defaultValue);
 
                     case _.getID() => 'Bool':
-                      macro tink.sql.Info.DataType.DBool;
+                      macro tink.sql.Info.DataType.DBool($defaultValue);
 
                     case TAbstract(_.get() => {name: name, type: type}, _):
                       switch type {
@@ -135,28 +136,29 @@ class TableBuilder {
                 }
 
                 var type = resolveType(f.type);
-                var keys = [];
-                if(f.meta.has(':primary')) keys.push(macro tink.sql.Info.KeyType.Primary);
-                function index(meta, type)
-                  for(m in f.meta.extract(meta)) keys.push(macro $type(${
-                    switch m.params {
-                      case []: macro None;
-                      case [_.getString() => Success(s)]: macro Some($v{s});
-                      case _: macro None; // TODO: should show a warning
-                    }
-                  }));
-                index(':unique', macro tink.sql.Info.KeyType.Unique);
-                index(':index', macro tink.sql.Info.KeyType.Index);
+
+                function index(metaKey, add)
+                  switch meta[metaKey] {
+                    case null:
+                    case keys: for (key in keys) 
+                      add(switch key {
+                        case []: fName;
+                        case [_.getString() => Success(s)]: s;
+                        default: null;
+                      });
+                  }
+
+                index(':primary', function (_) keys.addPrimary(fName));
+                index(':unique', function (name) keys.addUnique(name, fName));
+                index(':index', function (name) keys.addIndex(name, fName));
 
                 macro @:pos(f.pos) {
                   name: $name,
                   nullable: $v{nullable},
-                  type: ${type},
-                  keys: $a{keys},
+                  type: ${type}
                 }
               });
             }
-
             var filterType = (macro function ($name:$fieldsType):tink.sql.Expr.Condition return tink.sql.Expr.ExprData.EValue(true, tink.sql.Expr.ValueType.VBool)).typeof().sure().toComplex({ direct: true });
 
             macro class $cName<Db> extends tink.sql.Table.TableSource<$fieldsType, $filterType, $rowType, Db> {
@@ -165,14 +167,15 @@ class TableBuilder {
                 super(cnx, new tink.sql.Table.TableName(tableName), alias, ${EObjectDecl(fieldsExprFields).at(ctx.pos)});
               }
 
-              static var FIELD_NAMES = $v{names};
-              static var FIELDS = $a{fieldsValues};
-              @:noCompletion override public function getFields()
-                return FIELDS;
-              @:noCompletion override public function fieldnames():Array<String>
-                return FIELD_NAMES;
-
-                //TODO: override sqlizeRow
+              static var COLUMN_NAMES = $v{names};
+              static var COLUMNS = $a{fieldsValues};
+              static var KEYS = $v{keys.get()};
+              @:noCompletion override public function getColumns()
+                return COLUMNS;
+              @:noCompletion override public function columnNames()
+                return COLUMN_NAMES;
+              @:noCompletion override public function getKeys()
+                return KEYS;
             }
 
           default:

@@ -3,7 +3,8 @@ package tink.sql;
 import haxe.io.Bytes;
 import geojson.*;
 import tink.sql.Types;
-import tink.sql.Connection.FieldUpdate;
+import tink.sql.Query;
+import tink.sql.Dataset;
 
 typedef Condition = Expr<Bool>;
 
@@ -13,10 +14,10 @@ enum ExprData<T> {
   EField(table:String, name:String):ExprData<T>;
   ECall(name:String, args:Array<Expr<Any>>):ExprData<T>;
   EValue<T>(value:T, type:ValueType<T>):ExprData<T>;
+  EQuery<T, Db, Result>(query:Query<Db, Result>):ExprData<T>;
 }
 
 enum ValueType<T> {
-  // VAny:ValueType<T>;
   VString:ValueType<String>;
   VBool:ValueType<Bool>;
   VFloat:ValueType<Float>;
@@ -240,6 +241,10 @@ enum ValueType<T> {
 class Functions {
   public static function iif<T>(cond:Expr<Bool>, ifTrue:Expr<T>, ifFalse:Expr<T>):Expr<T>
     return ECall('IF', [cast cond, cast ifTrue, cast ifFalse]);
+
+  // Todo: count can also take an Expr<Bool>
+  public static function count<D,O>(?e:Field<D,O>):Expr<Int> 
+    return ECall('COUNT', if (e == null) cast [EValue(true, VBool)] else cast [e]);
 
   public static function stContains<T>(g1:Expr<Geometry>, g2:Expr<Geometry>):Expr<Bool>
     return ECall('ST_Contains', cast [g1, g2]);

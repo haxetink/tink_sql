@@ -33,14 +33,6 @@ class SelectTest extends TestWithDb {
 			db.User.drop()
 		]);
 	}
-
-	public function selectExpr()
-		return db.Post
-			.select({id: Post.id + 5})
-			.where(Post.id == 1).first()
-			.next(function(row) {
-				return assert(row.id == 6);
-			});
 	
 	public function selectJoin()
 		return db.Post

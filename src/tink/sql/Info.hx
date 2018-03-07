@@ -1,47 +1,40 @@
 package tink.sql;
 
-import haxe.ds.Option;
-import tink.core.Any;
-
 interface DatabaseInfo {
-  function tablesnames():Iterable<String>;
-  function tableinfo<Row:{}>(name:String):TableInfo<Row>;
+  function tableNames():Iterable<String>;
+  function tableInfo(name:String):TableInfo;
 }
 
-interface TableInfo<Row:{}> {
+interface TableInfo {
   function getName():String;
-  function getFields():Iterable<Column>;
-  function fieldnames():Iterable<String>;
-  function sqlizeRow(row:Insert<Row>, val:Any->String):Array<String>;
+  function getColumns():Iterable<Column>;
+  function columnNames():Iterable<String>;
+  function getKeys():Iterable<Key>;
 }
 
 typedef Column = {
-  > FieldType,
   name:String,
-  keys:Array<KeyType>,
-}
-
-typedef FieldType = {
   nullable:Bool,
-  type:DataType,
+  type:DataType
 }
 
-enum KeyType {
-  Primary;
-  Index(indexName:Option<String>);
-  Unique(indexName:Option<String>);
+enum Key {
+  Primary(fields:Array<String>);
+  Unique(name:String, fields:Array<String>);
+  Index(name:String, fields:Array<String>);
 }
 
 enum DataType {
-  DBool;
-  DInt(bits:Int, signed:Bool, autoIncrement:Bool);
-  DFloat(bits:Int);
-  DString(maxLength:Int);
-  DText(size:TextSize);
+  DBool(?byDefault:Bool);
+  DInt(bits:Int, signed:Bool, autoIncrement:Bool, ?byDefault:Int);
+  DFloat(bits:Int, ?byDefault:Float);
+  DString(maxLength:Int, ?byDefault:String);
+  DText(size:TextSize, ?byDefault:String);
   DBlob(maxLength:Int);
-  DDateTime;
-  DPoint; // geojson
-  DMultiPolygon; // geojson
+  DDateTime(?byDefault:Date);
+  DPoint;
+  DMultiPolygon;
+  DUnknown(type:String, byDefault:Null<String>);
 }
 
 enum TextSize {
@@ -50,5 +43,3 @@ enum TextSize {
   Medium;
   Long;
 }
-
-typedef Insert<Row> = Row;
