@@ -64,7 +64,7 @@ class MySQLiConnection<Db:DatabaseInfo> implements Connection<Db> implements San
         Stream.promise(fetch().next(function (res:ResultSet)
           return Stream.ofIterator(res.nestedIterator(formatter.isNested(query)))
         ));
-      case CreateTable(_, _) | DropTable(_) | AlterTable(_, _):
+      case Multi(_) | Transaction(_) | CreateTable(_, _) | DropTable(_) | AlterTable(_, _):
         fetch().next(function(_) return Noise);
       case Insert(_):
         fetch().next(function(_) return new Id(cnx.insert_id));

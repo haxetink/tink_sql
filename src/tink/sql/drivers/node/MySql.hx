@@ -27,6 +27,7 @@ class MySql implements Driver {
 
   public function open<Db:DatabaseInfo>(name:String, info:Db):Connection<Db> {
     var cnx = NativeDriver.createPool({
+      multipleStatements: true,
       user: settings.user,
       password: settings.password,
       host: settings.host,
@@ -70,7 +71,7 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
         Stream.promise(fetch().next(function (res)
           return Stream.ofIterator(rowIterator(res, formatter.isNested(query)))
         ));
-      case CreateTable(_, _) | DropTable(_) | AlterTable(_, _):
+      case Multi(_) | Transaction(_) | CreateTable(_, _) | DropTable(_) | AlterTable(_, _):
         fetch().next(function(_) return Noise);
       case Insert(_):
         fetch().next(function(res) return new Id(res.insertId));
@@ -89,6 +90,7 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
 
   function queryOptions(query:Query<Db, Dynamic>): QueryOptions {
     var sql = formatter.format(query);
+    trace(sql);
     return switch query {
       case Select(_) | Union(_):
         {sql: sql, typeCast: typeCast, nestTables: formatter.isNested(query)}
@@ -196,6 +198,7 @@ private extern class NativeDriver {
 }
 
 private typedef Config = {>MySqlSettings,
+  public var multipleStatements(default, null):Bool;
   public var database(default, null):String;
   @:optional public var connectionLimit(default, null):Int;
 }

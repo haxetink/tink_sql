@@ -20,6 +20,7 @@ class SqlFormatter implements Formatter {
 
   public function format<Db, Result>(query:Query<Db, Result>):String
     return switch query {
+      case Multi(queries): queries.map(format).join('; ');
       case CreateTable(table, ifNotExists): createTable(table, ifNotExists);
       case DropTable(table): dropTable(table);
       case Insert(op): insert(op);
@@ -27,6 +28,7 @@ class SqlFormatter implements Formatter {
       case Union(op): union(op);
       case Update(op): update(op);
       case Delete(op): delete(op);
+      case Transaction(op): transaction(op);
       default: throw 'Query not supported in currrent formatter: $query';
     }
 
@@ -261,6 +263,13 @@ class SqlFormatter implements Formatter {
       where(delete.where),
       limit(delete.max)
     ]);
+
+  function transaction(transaction:TransactionOperation)
+    return switch transaction {
+      case Start: 'START TRANSACTION';
+      case Commit: 'COMMIT';
+      case Rollback: 'ROLLBACK';
+    }
 
   function binOp(o:BinOp<Dynamic, Dynamic, Dynamic>)
     return switch o {

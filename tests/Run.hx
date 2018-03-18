@@ -33,6 +33,7 @@ class Run extends TestWithDb {
       new ExprTest(driver, db),
       new Run(driver, db),
       new SchemaTest(driver, db),
+      new TransactionTest(driver, db),
     ])).handle(Runner.exit);
   }
   

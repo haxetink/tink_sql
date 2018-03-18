@@ -8,11 +8,6 @@ using tink.MacroApi;
 
 class DatabaseBuilder {
   static function doBuild(c:ClassBuilder) {
-    
-    //var tables = [];
-    
-    //function add(name, type) 
-      //tables.push({ name: name, type: type });
       
     for (t in c.target.meta.extract(':tables'))
       for (p in t.params) {
@@ -56,9 +51,21 @@ class DatabaseBuilder {
     
     if (c.hasConstructor())
       c.getConstructor().toHaxe().pos.error('Custom constructors are currently not supported');
+
+    /*var self = TPType(TPath({
+      name: c.target.module,
+      pack: c.target.pack,
+      params: [],
+      sub: if (c.target.module == c.target.name) null else c.target.name
+    }));
+    c.addMember({
+      pos: c.target.pos,
+      name: 'cnx',
+      kind: FVar('tink.sql.Connection'.asComplexType([self]), macro null)
+    });*/
       
     var ctor = c.getConstructor((macro function (name, driver:tink.sql.Driver) {
-      var cnx = driver.open(name, this);
+      cnx = cast driver.open(name, this);
       $b{init};
       super(name, driver, $a{tables});
     }).getFunction().sure());

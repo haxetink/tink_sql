@@ -9,6 +9,7 @@ import tink.unit.Assert.assert;
 using tink.CoreApi;
 
 @:allow(tink.unit)
+@:asserts
 @:access(tink.sql.format.SqlFormatter)
 class FormatTest extends TestWithDb {
 
@@ -64,6 +65,13 @@ class FormatTest extends TestWithDb {
 			from: @:privateAccess dataset.target, 
 			where: @:privateAccess dataset.condition
 		}) == 'SELECT * FROM `Types` WHERE false');
+	}
+
+	@:asserts public function transaction() {
+		asserts.assert(formatter.transaction(Start) == 'START TRANSACTION');
+		asserts.assert(formatter.transaction(Rollback) == 'ROLLBACK');
+		asserts.assert(formatter.transaction(Commit) == 'COMMIT');
+		return asserts.done();
 	}
 
 	public function tableAlias() {
