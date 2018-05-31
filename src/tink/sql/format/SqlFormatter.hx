@@ -303,7 +303,7 @@ class SqlFormatter implements Formatter {
       case ECall(name, args):
         '$name(${[for(arg in args) expr(arg)].join(',')})';
       case EField(table, name):
-        ident(table) + '.' + ident(name);
+        (table == null ? '' : ident(table) + '.') + ident(name);
       case EValue(v, VBool):
         value(v);
       case EValue(v, VString):
