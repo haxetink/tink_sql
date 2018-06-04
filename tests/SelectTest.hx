@@ -34,6 +34,7 @@ class SelectTest extends TestWithDb {
 		]);
 	}
 	
+	@:include
 	public function selectJoin()
 		return db.Post
 			.join(db.User).on(Post.author == User.id)
@@ -42,6 +43,7 @@ class SelectTest extends TestWithDb {
 				name: User.name
 			})
 			.where(Post.title == 'test')
+			.having(User.name == 'Alice')
 			.first()
 			.next(function(row) {
 				return assert(row.title == 'test' && row.name == 'Alice');

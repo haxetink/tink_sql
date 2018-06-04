@@ -8,8 +8,7 @@
     "postinstall": "lix download"
   },
   "dependencies": {
-    "haxeshim": "^0.9.0",
-    "lix.pm": "^0.10.2",
+    "lix": "^15.1.1",
     "mysql": "^2.15.0"
   }
 }

@@ -6,7 +6,7 @@ import tink.sql.Query;
 
 using tink.CoreApi;
 
-class Selectable<Fields, Filter, Result: {}, Db> extends Filterable<Fields, Filter, Result, Db> {
+class Selectable<Fields, Filter, Result: {}, Db> extends FilterableWhere<Fields, Filter, Result, Db> {
   
   macro public function select(ethis, select) {
     var selection = tink.sql.macros.Selects.makeSelection(ethis, select);
@@ -15,8 +15,8 @@ class Selectable<Fields, Filter, Result: {}, Db> extends Filterable<Fields, Filt
     );
   }
 
-  function _select<Row: {}>(selection: Selection<Row>):Filterable<Fields, Filter, Row, Db>
-    return new Filterable(cnx, fields, cast target, toCondition, condition, selection);
+  function _select<Row: {}>(selection: Selection<Row>):FilterableWhere<Fields, Filter, Row, Db>
+    return new FilterableWhere(cnx, fields, cast target, toCondition, condition, selection);
     
   macro public function leftJoin(ethis, ethat)
     return tink.sql.macros.Joins.perform(Left, ethis, ethat);
@@ -29,18 +29,36 @@ class Selectable<Fields, Filter, Result: {}, Db> extends Filterable<Fields, Filt
 
 }
 
-class Filterable<Fields, Filter, Result: {}, Db> extends Orderable<Fields, Filter, Result, Db> {
+class FilterableWhere<Fields, Filter, Result: {}, Db> extends FilterableHaving<Fields, Filter, Result, Db> {
 
   macro public function where(ethis, filter) {
     filter = tink.sql.macros.Filters.makeFilter(ethis, filter);
     return macro @:pos(ethis.pos) @:privateAccess $ethis._where(@:noPrivateAccess $filter);
   }
   
-  function _where(filter:Filter):Filterable<Fields, Filter, Result, Db>
-    return new Filterable(cnx, fields, target, toCondition, condition && toCondition(filter), selection);
+  function _where(filter:Filter):FilterableWhere<Fields, Filter, Result, Db>
+    return new FilterableWhere(cnx, fields, target, toCondition, {
+      where: condition.where && toCondition(filter),
+      having: condition.having
+    }, selection);
 
-  public function groupBy(groupBy:Fields->Array<Field<Dynamic, Result>>):Orderable<Fields, Filter, Result, Db>
-    return new Orderable(cnx, fields, target, toCondition, condition, selection, groupBy(fields));
+  public function groupBy(groupBy:Fields->Array<Field<Dynamic, Result>>):FilterableHaving<Fields, Filter, Result, Db>
+    return new FilterableHaving(cnx, fields, target, toCondition, condition, selection, groupBy(fields));
+
+}
+
+class FilterableHaving<Fields, Filter, Result: {}, Db> extends Orderable<Fields, Filter, Result, Db> {
+
+  macro public function having(ethis, filter) {
+    filter = tink.sql.macros.Filters.makeFilter(ethis, filter);
+    return macro @:pos(ethis.pos) @:privateAccess $ethis._having(@:noPrivateAccess $filter);
+  }
+  
+  function _having(filter:Filter):FilterableHaving<Fields, Filter, Result, Db>
+    return new FilterableHaving(cnx, fields, target, toCondition, {
+      where: condition.where,
+      having: condition.having && toCondition(filter)
+    }, selection);
 
 }
 
@@ -58,7 +76,7 @@ class Selected<Fields, Filter, Result:{}, Db> extends Limitable<Fields, Result, 
   var target:Target<Result, Db>;
   var toCondition:Filter->Condition;
   var selection:Null<Selection<Result>>;
-  var condition:Null<Condition>;
+  var condition:{?where:Condition, ?having:Condition} = {}
   var grouped:Null<Array<Field<Dynamic, Result>>>;
   var order:Null<OrderBy<Result>>;
   
@@ -67,7 +85,7 @@ class Selected<Fields, Filter, Result:{}, Db> extends Limitable<Fields, Result, 
     this.fields = fields;
     this.target = target;
     this.toCondition = toCondition;
-    this.condition = condition;
+    this.condition = if (condition == null) {} else condition;
     this.selection = selection;
     this.grouped = grouped;
     this.order = order;
@@ -77,7 +95,8 @@ class Selected<Fields, Filter, Result:{}, Db> extends Limitable<Fields, Result, 
     return Select({
       from: target,
       selection: selection,
-      where: condition,
+      where: condition.where,
+      having: condition.having,
       limit: limit,
       groupBy: grouped,
       orderBy: order
@@ -87,7 +106,8 @@ class Selected<Fields, Filter, Result:{}, Db> extends Limitable<Fields, Result, 
     return cnx.execute(Select({
       from: target,
       selection: {count: cast Functions.count()},
-      where: condition,
+      where: condition.where,
+      having: condition.having,
       groupBy: grouped,
       orderBy: order
     }))
