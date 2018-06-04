@@ -34,7 +34,6 @@ class SelectTest extends TestWithDb {
 		]);
 	}
 	
-	@:include
 	public function selectJoin()
 		return db.Post
 			.join(db.User).on(Post.author == User.id)
