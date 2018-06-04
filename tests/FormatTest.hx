@@ -46,7 +46,7 @@ class FormatTest extends TestWithDb {
 		var dataset = db.Types.where(Types.text.like('mystring'));
 		return assert(formatter.select({
 			from: @:privateAccess dataset.target, 
-			where: @:privateAccess dataset.condition
+			where: @:privateAccess dataset.condition.where
 		}) == 'SELECT * FROM `Types` WHERE (`Types`.`text` LIKE \'mystring\')');
 	}
 
@@ -54,7 +54,7 @@ class FormatTest extends TestWithDb {
 		var dataset = db.Types.where(Types.int.inArray([1, 2, 3]));
 		return assert(formatter.select({
 			from: @:privateAccess dataset.target, 
-			where: @:privateAccess dataset.condition
+			where: @:privateAccess dataset.condition.where
 		}) == 'SELECT * FROM `Types` WHERE (`Types`.`int` IN (1, 2, 3))');
 	}
 
@@ -62,7 +62,7 @@ class FormatTest extends TestWithDb {
 		var dataset = db.Types.where(Types.int.inArray([]));
 		return assert(formatter.select({
 			from: @:privateAccess dataset.target, 
-			where: @:privateAccess dataset.condition
+			where: @:privateAccess dataset.condition.where
 		}) == 'SELECT * FROM `Types` WHERE false');
 	}
 
@@ -70,7 +70,7 @@ class FormatTest extends TestWithDb {
 		var dataset = db.Types.as('alias');
 		return assert(formatter.select({
 			from: @:privateAccess dataset.target, 
-			where: @:privateAccess dataset.condition
+			where: @:privateAccess dataset.condition.where
 		}) == 'SELECT * FROM `Types` AS `alias`');
 	}
 
@@ -78,7 +78,7 @@ class FormatTest extends TestWithDb {
 		var dataset = db.Types.leftJoin(db.Types.as('alias')).on(Types.int == alias.int);
 		return assert(formatter.select({
 			from: @:privateAccess dataset.target, 
-			where: @:privateAccess dataset.condition
+			where: @:privateAccess dataset.condition.where
 		}) == 'SELECT * FROM `Types` LEFT JOIN `Types` AS `alias` ON (`Types`.`int` = `alias`.`int`)');
 	}
 
@@ -86,7 +86,7 @@ class FormatTest extends TestWithDb {
 		var dataset = db.Types;
 		return assert(formatter.select({
 			from: @:privateAccess dataset.target, 
-			where: @:privateAccess dataset.condition, 
+			where: @:privateAccess dataset.condition.where, 
 			limit: {limit: 1, offset: 0}, 
 			orderBy: [{field: db.Types.fields.int, order: Desc}]
 		}) == 'SELECT * FROM `Types` ORDER BY `Types`.`int` DESC LIMIT 1 OFFSET 0');

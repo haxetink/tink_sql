@@ -88,8 +88,17 @@ class Joins {
         function (cond:$filterType) return new tink.sql.Dataset.Selectable(
           left.cnx, 
           ${EObjectDecl(fieldsObj).at()},
-          tink.sql.Target.TJoin(left.target, right.target, ${joinTypeExpr(type)}, toCondition(cond) && left.condition && right.condition), 
-          toCondition
+          tink.sql.Target.TJoin(
+            left.target, 
+            right.target, 
+            ${joinTypeExpr(type)}, 
+            toCondition(cond)
+          ),
+          toCondition,
+          {
+            where: left.condition.where && right.condition.where,
+            having: left.condition.having && right.condition.having
+          }
         )
       );
       

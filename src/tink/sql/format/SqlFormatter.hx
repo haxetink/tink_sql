@@ -221,6 +221,11 @@ class SqlFormatter implements Formatter {
       'WHERE ' + expr(condition) 
     else '';
 
+  function having(condition:Null<Condition>)
+    return if (condition != null) 
+      'HAVING ' + expr(condition) 
+    else '';
+
   function select<Db, Row:{}>(select:SelectOperation<Db, Row>)
     return join([
       'SELECT',
@@ -229,6 +234,7 @@ class SqlFormatter implements Formatter {
       target(select.from),
       where(select.where),
       groupBy(select.groupBy),
+      having(select.having),
       orderBy(select.orderBy),
       limit(select.limit)
     ]);
