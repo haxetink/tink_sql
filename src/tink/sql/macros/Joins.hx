@@ -92,9 +92,13 @@ class Joins {
             left.target, 
             right.target, 
             ${joinTypeExpr(type)}, 
-            toCondition(cond) && left.condition.where && right.condition.where
-          ), 
-          toCondition
+            toCondition(cond)
+          ),
+          toCondition,
+          {
+            where: left.condition.where && right.condition.where,
+            having: left.condition.having && right.condition.having
+          }
         )
       );
       
