@@ -116,6 +116,7 @@ class Selected<Fields, Filter, Result:{}, Db> extends Limitable<Fields, Result, 
 
 }
 
+@:allow(tink.sql)
 class Union<Fields, Result:{}, Db> extends Limitable<Fields, Result, Db> {
   
   var left:Dataset<Fields, Result, Db>;
@@ -149,6 +150,7 @@ class Limitable<Fields, Result:{}, Db> extends Dataset<Fields, Result, Db> {
 
 }
 
+@:allow(tink.sql)
 class Limited<Fields, Result:{}, Db> extends Dataset<Fields, Result, Db> {
 
   var create: Limit -> Query<Db, RealStream<Result>>;
