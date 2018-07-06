@@ -9,6 +9,20 @@ typedef Boolean = Bool;
 
 typedef DateTime = Date;
 
+typedef Integer<@:const L> = Int;
+typedef Number<@:const L> = Float;
+
+typedef Text = String;
+typedef LongText = String;
+typedef MediumText = String;
+typedef TinyText = String;
+typedef VarChar<@:const L> = String;
+
+#if geojson
+typedef MultiPolygon = geojson.MultiPolygon;
+typedef Point = geojson.Point;
+#end
+
 abstract Id<T>(Int) to Int {
 
   public inline function new(v)
@@ -41,27 +55,9 @@ abstract Id<T>(Int) to Int {
 
 }
 
-typedef Integer<@:const L> = Int;
 
-typedef LongText = String;
 
-typedef MediumText = String;
 
-#if geojson
-typedef MultiPolygon = geojson.MultiPolygon;
-#end
-
-typedef Number<@:const L> = Float;
-
-#if geojson
-typedef Point = geojson.Point;
-#end
-
-typedef Text = String;
-
-typedef TinyText = String;
-
-typedef VarChar<@:const L> = String;
 
 
 
