@@ -5,8 +5,6 @@ import tink.json.Representation;
 
 typedef Blob<@:const L> = haxe.io.Bytes;
 
-typedef Boolean = Bool;
-
 typedef DateTime = Date;
 
 typedef TinyInt = Int;

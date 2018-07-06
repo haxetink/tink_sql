@@ -124,13 +124,13 @@ class TableBuilder {
                     case _.getID() => 'Bool':
                       macro tink.sql.Info.DataType.DBool($defaultValue);
 
+                    case _.getID() => 'Int':
+                      macro tink.sql.Info.DataType.DInt(Default, $v{!f.meta.has(':unsigned')}, $v{f.meta.has(':autoIncrement')}, $defaultValue);
+
                     case TAbstract(_.get() => {name: name, type: type}, _):
                       switch type {
-                        case TAbstract(_.get() => {module: 'StdTypes', name: 'Int'}, _):
-                          macro tink.sql.Info.DataType.DInt(Default, $v{!f.meta.has(':unsigned')}, $v{f.meta.has(':autoIncrement')}, $defaultValue);
-                          
-                        case TAbstract(_.get() => {module: module, name: core, meta: meta}, _) if(meta.has(':coreType')):
-                          f.pos.error('$module - $core as underlying type for the abstract $name is unsupported. Use types from the tink.sql.Types module.');
+                        // case TAbstract(_.get() => {module: module, name: core, meta: meta}, _) if(meta.has(':coreType')):
+                        //   f.pos.error('$module - $core as underlying type for the abstract $name is unsupported. Use types from the tink.sql.Types module.');
                         default:
                           resolveType(type);
                       }
