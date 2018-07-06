@@ -126,6 +126,9 @@ class TableBuilder {
 
                     case _.getID() => 'Int':
                       macro tink.sql.Info.DataType.DInt(Default, $v{!f.meta.has(':unsigned')}, $v{f.meta.has(':autoIncrement')}, $defaultValue);
+                      
+                    case _.getID() => 'Float':
+                      macro tink.sql.Info.DataType.DFloat(23, $defaultValue);
 
                     case TAbstract(_.get() => {name: name, type: type}, _):
                       switch type {
