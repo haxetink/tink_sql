@@ -21,7 +21,7 @@ typedef PostTags = {
 }
 
 typedef Types = {
-  public var int(default, null):Integer<21>;
+  public var int(default, null):Int;
   public var float(default, null):Number<21>;
   public var text(default, null):VarChar<40>;
   public var blob(default, null):Blob<1000000>;
@@ -29,13 +29,13 @@ typedef Types = {
   public var boolTrue(default, null):Bool;
   public var boolFalse(default, null):Bool;
 
-  @:optional public var optionalInt(default, null):Integer<21>;
+  @:optional public var optionalInt(default, null):Int;
   @:optional public var optionalText(default, null):VarChar<40>;
   @:optional public var optionalBlob(default, null):Blob<1000000>;
   @:optional public var optionalDate(default, null):DateTime;
   @:optional public var optionalBool(default, null):Bool;
 
-  public var nullInt(default, null):Null<Integer<21>>;
+  public var nullInt(default, null):Null<Int>;
   public var nullText(default, null):Null<VarChar<40>>;
   public var nullBlob(default, null):Null<Blob<1000000>>;
   public var nullDate(default, null):Null<DateTime>;
@@ -61,7 +61,7 @@ typedef Schema = {
   @:autoIncrement @:primary public var id(default, null):Id<Schema>;
 
   public var toBoolean(default, null): Boolean;
-  public var toInt(default, null): Integer<11>;
+  public var toInt(default, null): Int;
   public var toFloat(default, null): Number<11>;
   public var toText(default, null): VarChar<1>;
   public var toLongText(default, null): Text;
@@ -98,13 +98,13 @@ typedef StringTypes = {
 @:tables(User, Post, PostTags, Types, Geometry, Schema, StringTypes)
 class Db extends tink.sql.Database {}
 
-abstract AInt(Integer<1>) from Int to Int {}
+abstract AInt(Int) from Int to Int {}
 abstract AFloat(Number<1>) from Float to Float {}
 abstract AString(VarChar<255>) from String to String {}
 abstract ABool(Boolean) from Bool to Bool {}
 abstract ADate(DateTime) from Date to Date {}
 
-@:enum abstract EInt(Integer<1>) to Int {var I = 1;}
+@:enum abstract EInt(Int) to Int {var I = 1;}
 @:enum abstract EFloat(Number<1>) to Float {var F = 1.0;}
 @:enum abstract EString(VarChar<255>) to String {var S = 'a';}
 @:enum abstract EBool(Boolean) to Bool {var B = true;}

@@ -46,11 +46,11 @@ class SchemaTest extends TestWithDb {
 					asserts.assert(from.type.match(DFloat(_, null)));
 					asserts.assert(to.type.match(DBool(null)));
 				case AlterColumn(to = {name: 'toFloat'}, from):
-					asserts.assert(from.type.match(DInt(11, false, false, null)));
+					asserts.assert(from.type.match(DInt(Default, false, false, null)));
 					asserts.assert(to.type.match(DFloat(_, null)));
 				case AlterColumn(to = {name: 'toInt'}, from):
 					asserts.assert(from.type.match(DBool(null)));
-					asserts.assert(to.type.match(DInt(11, true, false, null)));
+					asserts.assert(to.type.match(DInt(Default, true, false, null)));
 				case AlterColumn(to = {name: 'toLongText'}, from):
 					asserts.assert(from.type.match(DBool(null)));
 					asserts.assert(to.type.match(DText(Default, null)));

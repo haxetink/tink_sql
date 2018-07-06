@@ -45,8 +45,17 @@ class MySqlFormatter extends SqlFormatter {
         // is simply ignored (FLOAT(x) is returned as FLOAT)
         // Changing that is a breaking change (todo)
         DFloat(0, parseDefault(Std.parseFloat));
-      case {name: 'INT', values: [bits]}:
-        DInt(Std.parseInt(bits), type.flags.indexOf('UNSIGNED') == -1, type.autoIncrement, parseDefault(Std.parseInt));
+        
+      case {name: 'TINYINT'}:
+        DInt(Tiny, type.flags.indexOf('UNSIGNED') == -1, type.autoIncrement, parseDefault(Std.parseInt));
+      case {name: 'SMALLINT'}:
+        DInt(Small, type.flags.indexOf('UNSIGNED') == -1, type.autoIncrement, parseDefault(Std.parseInt));
+      case {name: 'MEDIUMINT'}:
+        DInt(Medium, type.flags.indexOf('UNSIGNED') == -1, type.autoIncrement, parseDefault(Std.parseInt));
+      case {name: 'INT'}:
+        DInt(Default, type.flags.indexOf('UNSIGNED') == -1, type.autoIncrement, parseDefault(Std.parseInt));
+      // case {name: 'BIGINT'}:
+      //   DInt(Big, type.flags.indexOf('UNSIGNED') == -1, type.autoIncrement, parseDefault(Std.parseInt));
       case {name: 'VARCHAR', values: [max]}:
         DString(Std.parseInt(max), type.defaultValue);
       case {name: 'BLOB', values: [max]}:

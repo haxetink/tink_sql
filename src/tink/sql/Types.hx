@@ -9,7 +9,11 @@ typedef Boolean = Bool;
 
 typedef DateTime = Date;
 
-typedef Integer<@:const L> = Int;
+typedef TinyInt = Int;
+typedef SmallInt = Int;
+typedef MediumInt = Int;
+// typedef BigInt = Int;
+
 typedef Number<@:const L> = Float;
 
 typedef Text = String;
