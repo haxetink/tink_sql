@@ -23,9 +23,9 @@ class FormatTest extends TestWithDb {
 		formatter = new SqlFormatter(sanitizer);
 	}
 
-	@:variant(new FormatTest.FakeTable1(), 'CREATE TABLE `fake` (`id` INT(11) UNSIGNED NOT NULL AUTO_INCREMENT, `username` VARCHAR(50) NOT NULL, `admin` TINYINT(1) NOT NULL, `age` INT(11) UNSIGNED NULL)')
-	@:variant(this.db.User, 'CREATE TABLE `User` (`email` VARCHAR(50) NOT NULL, `id` INT(12) UNSIGNED NOT NULL AUTO_INCREMENT, `name` VARCHAR(50) NOT NULL, PRIMARY KEY (`id`))')
-	@:variant(this.db.Types, 'CREATE TABLE `Types` (`abstractBool` TINYINT(1) NULL, `abstractDate` DATETIME NULL, `abstractFloat` FLOAT NULL, `abstractInt` INT(1) NULL, `abstractString` VARCHAR(255) NULL, `blob` BLOB NOT NULL, `boolFalse` TINYINT(1) NOT NULL, `boolTrue` TINYINT(1) NOT NULL, `date` DATETIME NOT NULL, `enumAbstractBool` TINYINT(1) NULL, `enumAbstractFloat` FLOAT NULL, `enumAbstractInt` INT(1) NULL, `enumAbstractString` VARCHAR(255) NULL, `float` FLOAT NOT NULL, `int` INT(21) NOT NULL, `nullBlob` BLOB NULL, `nullBool` TINYINT(1) NULL, `nullDate` DATETIME NULL, `nullInt` INT(21) NULL, `nullText` VARCHAR(40) NULL, `optionalBlob` BLOB NULL, `optionalBool` TINYINT(1) NULL, `optionalDate` DATETIME NULL, `optionalInt` INT(21) NULL, `optionalText` VARCHAR(40) NULL, `text` VARCHAR(40) NOT NULL)')
+	@:variant(new FormatTest.FakeTable1(), 'CREATE TABLE `fake` (`id` INT UNSIGNED NOT NULL AUTO_INCREMENT, `username` VARCHAR(50) NOT NULL, `admin` TINYINT NOT NULL, `age` INT UNSIGNED NULL)')
+	@:variant(this.db.User, 'CREATE TABLE `User` (`email` VARCHAR(50) NOT NULL, `id` INT UNSIGNED NOT NULL AUTO_INCREMENT, `name` VARCHAR(50) NOT NULL, PRIMARY KEY (`id`))')
+	@:variant(this.db.Types, 'CREATE TABLE `Types` (`abstractBool` TINYINT NULL, `abstractDate` DATETIME NULL, `abstractFloat` DOUBLE NULL, `abstractInt` INT NULL, `abstractString` VARCHAR(255) NULL, `blob` BLOB NOT NULL, `boolFalse` TINYINT NOT NULL, `boolTrue` TINYINT NOT NULL, `date` DATETIME NOT NULL, `enumAbstractBool` TINYINT NULL, `enumAbstractFloat` DOUBLE NULL, `enumAbstractInt` INT NULL, `enumAbstractString` VARCHAR(255) NULL, `float` DOUBLE NOT NULL, `int` INT NOT NULL, `nullBlob` BLOB NULL, `nullBool` TINYINT NULL, `nullDate` DATETIME NULL, `nullInt` INT NULL, `nullText` VARCHAR(40) NULL, `optionalBlob` BLOB NULL, `optionalBool` TINYINT NULL, `optionalDate` DATETIME NULL, `optionalInt` INT NULL, `optionalText` VARCHAR(40) NULL, `text` VARCHAR(40) NOT NULL)')
 	@:variant(this.uniqueDb.UniqueTable, 'CREATE TABLE `UniqueTable` (`u1` VARCHAR(123) NOT NULL, `u2` VARCHAR(123) NOT NULL, `u3` VARCHAR(123) NOT NULL, UNIQUE KEY `u1` (`u1`), UNIQUE KEY `index_name1` (`u2`, `u3`))')
 	public function createTable(table:TableInfo, sql:String) {
 		// TODO: should separate out the sanitizer
@@ -106,10 +106,10 @@ class FakeTable1 extends FakeTable {
 
 	override function getColumns():Iterable<Column>
 		return [
-			{name: 'id', nullable: false, type: DInt(11, false, true)},
+			{name: 'id', nullable: false, type: DInt(Default, false, true)},
 			{name: 'username', nullable: false, type: DString(50)},
 			{name: 'admin', nullable: false, type: DBool()},
-			{name: 'age', nullable: true, type: DInt(11, false, false)},
+			{name: 'age', nullable: true, type: DInt(Default, false, false)},
 		];
 }
 

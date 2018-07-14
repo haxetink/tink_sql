@@ -68,11 +68,17 @@ class SqlFormatter implements Formatter {
   function type(type: DataType):String
     return switch type {
       case DBool(d):
-        'TINYINT(1)' + addDefault(d);
-      case DFloat(bits, d):
-        'FLOAT' + addDefault(d);
-      case DInt(bits, signed, _, d):
-        'INT($bits)' + add(!signed, ' UNSIGNED') + addDefault(d);
+        'TINYINT' + addDefault(d);
+      case DDouble(d):
+        'DOUBLE' + addDefault(d);
+      case DInt(Tiny, signed, _, d):
+        'TINYINT' + add(!signed, ' UNSIGNED') + addDefault(d);
+      case DInt(Small, signed, _, d):
+        'SMALLINT' + add(!signed, ' UNSIGNED') + addDefault(d);
+      case DInt(Medium, signed, _, d):
+        'MEDIUMINT' + add(!signed, ' UNSIGNED') + addDefault(d);
+      case DInt(Default, signed, _, d):
+        'INT' + add(!signed, ' UNSIGNED') + addDefault(d);
       case DString(maxLength, d):
         (if (maxLength < 65536) 'VARCHAR($maxLength)'
         else 'TEXT') + addDefault(d);
@@ -81,6 +87,8 @@ class SqlFormatter implements Formatter {
         else 'BLOB';
       case DDateTime(d):
         'DATETIME' + addDefault(d);
+      case DTimestamp(d):
+        'Timestamp' + addDefault(d);
       case DUnknown(type, d):
         type + addDefault(d);
       default: throw 'Type not support in current formatter: $type';
