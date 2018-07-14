@@ -13,8 +13,6 @@ typedef SmallInt = Int;
 typedef MediumInt = Int;
 // typedef BigInt = Int;
 
-typedef Number<@:const L> = Float;
-
 typedef Text = String;
 typedef LongText = String;
 typedef MediumText = String;

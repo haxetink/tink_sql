@@ -62,7 +62,7 @@ typedef Schema = {
 
   public var toBoolean(default, null): Bool;
   public var toInt(default, null): Int;
-  public var toFloat(default, null): Number<11>;
+  public var toFloat(default, null): Float;
   public var toText(default, null): VarChar<1>;
   public var toLongText(default, null): Text;
   public var toDate(default, null): DateTime;
@@ -99,12 +99,12 @@ typedef StringTypes = {
 class Db extends tink.sql.Database {}
 
 abstract AInt(Int) from Int to Int {}
-abstract AFloat(Number<1>) from Float to Float {}
+abstract AFloat(Float) from Float to Float {}
 abstract AString(VarChar<255>) from String to String {}
 abstract ABool(Bool) from Bool to Bool {}
 abstract ADate(DateTime) from Date to Date {}
 
 @:enum abstract EInt(Int) to Int {var I = 1;}
-@:enum abstract EFloat(Number<1>) to Float {var F = 1.0;}
+@:enum abstract EFloat(Float) to Float {var F = 1.0;}
 @:enum abstract EString(VarChar<255>) to String {var S = 'a';}
 @:enum abstract EBool(Bool) to Bool {var B = true;}
