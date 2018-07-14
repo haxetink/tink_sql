@@ -43,11 +43,11 @@ class SchemaTest extends TestWithDb {
 		return check(asserts, 'modify', function(changes) {
 			for (change in changes) switch change {
 				case AlterColumn(to = {name: 'toBoolean'}, from):
-					asserts.assert(from.type.match(DFloat(_, null)));
+					asserts.assert(from.type.match(DDouble(null)));
 					asserts.assert(to.type.match(DBool(null)));
 				case AlterColumn(to = {name: 'toFloat'}, from):
 					asserts.assert(from.type.match(DInt(Default, false, false, null)));
-					asserts.assert(to.type.match(DFloat(_, null)));
+					asserts.assert(to.type.match(DDouble(null)));
 				case AlterColumn(to = {name: 'toInt'}, from):
 					asserts.assert(from.type.match(DBool(null)));
 					asserts.assert(to.type.match(DInt(Default, true, false, null)));

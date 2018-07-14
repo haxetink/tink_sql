@@ -22,7 +22,7 @@ typedef PostTags = {
 
 typedef Types = {
   public var int(default, null):Int;
-  public var float(default, null):Number<21>;
+  public var float(default, null):Float;
   public var text(default, null):VarChar<40>;
   public var blob(default, null):Blob<1000000>;
   public var date(default, null):DateTime;

@@ -69,8 +69,8 @@ class SqlFormatter implements Formatter {
     return switch type {
       case DBool(d):
         'TINYINT' + addDefault(d);
-      case DFloat(bits, d):
-        'FLOAT' + addDefault(d);
+      case DDouble(d):
+        'DOUBLE' + addDefault(d);
       case DInt(Tiny, signed, _, d):
         'TINYINT' + add(!signed, ' UNSIGNED') + addDefault(d);
       case DInt(Small, signed, _, d):
@@ -87,6 +87,8 @@ class SqlFormatter implements Formatter {
         else 'BLOB';
       case DDateTime(d):
         'DATETIME' + addDefault(d);
+      case DTimestamp(d):
+        'Timestamp' + addDefault(d);
       case DUnknown(type, d):
         type + addDefault(d);
       default: throw 'Type not support in current formatter: $type';

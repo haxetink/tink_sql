@@ -44,8 +44,9 @@ class MySqlFormatter extends SqlFormatter {
         // Hence the single value produced by tink_sql at this time
         // is simply ignored (FLOAT(x) is returned as FLOAT)
         // Changing that is a breaking change (todo)
-        DFloat(0, parseDefault(Std.parseFloat));
-        
+        DDouble(parseDefault(Std.parseFloat));
+      case {name: 'DOUBLE'}:
+        DDouble(parseDefault(Std.parseFloat));
       case {name: 'TINYINT'}:
         DInt(Tiny, type.flags.indexOf('UNSIGNED') == -1, type.autoIncrement, parseDefault(Std.parseInt));
       case {name: 'SMALLINT'}:

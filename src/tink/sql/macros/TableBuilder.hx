@@ -83,6 +83,8 @@ class TableBuilder {
                           macro tink.sql.Info.DataType.DBlob($v{maxLength});
                         case {module: 'tink.sql.Types', name: 'DateTime'}:
                           macro tink.sql.Info.DataType.DDateTime($defaultValue);
+                        case {module: 'tink.sql.Types', name: 'Timestamp'}:
+                          macro tink.sql.Info.DataType.DTimestamp($defaultValue);
                           
                         case {module: 'tink.sql.Types', name: 'TinyInt'}:
                           macro tink.sql.Info.DataType.DInt(Tiny, $v{!f.meta.has(':unsigned')}, $v{f.meta.has(':autoIncrement')}, $defaultValue);
@@ -110,16 +112,12 @@ class TableBuilder {
                         case {module: 'tink.sql.Types', name: 'Point'}:
                           macro tink.sql.Info.DataType.DPoint;
                         
-                        case {module: 'tink.sql.Types', name: 'Number'}:
-                          var maxLength = getInt(params[0], f.pos);
-                          macro tink.sql.Info.DataType.DFloat($v{maxLength}, $defaultValue);
-                        
                         default:
                           resolveType(tdef.type);
                       }
 
                     case _.getID() => 'Date':
-                      macro tink.sql.Info.DataType.DDateTime($defaultValue);
+                      macro tink.sql.Info.DataType.DDate($defaultValue);
 
                     case _.getID() => 'Bool':
                       macro tink.sql.Info.DataType.DBool($defaultValue);
@@ -128,7 +126,7 @@ class TableBuilder {
                       macro tink.sql.Info.DataType.DInt(Default, $v{!f.meta.has(':unsigned')}, $v{f.meta.has(':autoIncrement')}, $defaultValue);
                       
                     case _.getID() => 'Float':
-                      macro tink.sql.Info.DataType.DFloat(23, $defaultValue);
+                      macro tink.sql.Info.DataType.DDouble($defaultValue);
 
                     case TAbstract(_.get() => {name: name, type: type}, _):
                       switch type {

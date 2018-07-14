@@ -27,11 +27,13 @@ enum Key {
 enum DataType {
   DBool(?byDefault:Bool);
   DInt(size:IntSize, signed:Bool, autoIncrement:Bool, ?byDefault:Int);
-  DFloat(bits:Int, ?byDefault:Float);
+  DDouble(?byDefault:Float);
   DString(maxLength:Int, ?byDefault:String);
   DText(size:TextSize, ?byDefault:String);
   DBlob(maxLength:Int);
+  DDate(?byDefault:Date);
   DDateTime(?byDefault:Date);
+  DTimestamp(?byDefault:Date);
   DPoint;
   DMultiPolygon;
   DUnknown(type:String, byDefault:Null<String>);
