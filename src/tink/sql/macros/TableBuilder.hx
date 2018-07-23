@@ -107,10 +107,12 @@ class TableBuilder {
                           var maxLength = getInt(params[0], f.pos);
                           macro tink.sql.Info.DataType.DString($v{maxLength}, $defaultValue);
                         
-                        case {module: 'tink.sql.Types', name: 'MultiPolygon'}:
-                          macro tink.sql.Info.DataType.DMultiPolygon;
                         case {module: 'tink.sql.Types', name: 'Point'}:
                           macro tink.sql.Info.DataType.DPoint;
+                        case {module: 'tink.sql.Types', name: 'Polygon'}:
+                          macro tink.sql.Info.DataType.DPolygon;
+                        case {module: 'tink.sql.Types', name: 'MultiPolygon'}:
+                          macro tink.sql.Info.DataType.DMultiPolygon;
                         
                         default:
                           resolveType(tdef.type);
