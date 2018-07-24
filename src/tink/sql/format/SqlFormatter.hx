@@ -140,7 +140,7 @@ class SqlFormatter implements Formatter {
         return switch row[column.name] {
           case null: value(null);
           case v: switch column.type {
-            case DPoint | DMultiPolygon:
+            case DPoint | DPolygon | DMultiPolygon:
               'ST_GeomFromGeoJSON(\'${haxe.Json.stringify(v)}\')';
             default: value(v);
           }

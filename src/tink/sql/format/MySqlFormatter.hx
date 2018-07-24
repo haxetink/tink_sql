@@ -27,6 +27,8 @@ class MySqlFormatter extends SqlFormatter {
         }) + addDefault(d);
       case DPoint:
         'POINT';
+      case DPolygon:
+        'POLYGON';
       case DMultiPolygon:
         'MULTIPOLYGON';
       default: super.type(type);
@@ -73,6 +75,8 @@ class MySqlFormatter extends SqlFormatter {
         DText(Long, type.defaultValue);
       case {name: 'POINT'}:
         DPoint;
+      case {name: 'POLYGON'}:
+        DPolygon;
       case {name: 'MULTIPOLYGON'}:
         DMultiPolygon;
       default:
