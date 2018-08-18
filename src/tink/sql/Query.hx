@@ -36,7 +36,8 @@ typedef SelectOperation<Db, Row:{}> = {
   ?where:Condition,
   ?limit:Limit,
   ?orderBy:OrderBy<Row>,
-  ?groupBy:Array<Field<Dynamic, Row>>
+  ?groupBy:Array<Field<Dynamic, Row>>,
+  ?having:Condition
 }
 
 typedef UpdateOperation<Row:{}> = {

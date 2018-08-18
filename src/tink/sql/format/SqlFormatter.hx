@@ -70,11 +70,17 @@ class SqlFormatter implements Formatter {
   function type(type: DataType):String
     return switch type {
       case DBool(d):
-        'TINYINT(1)' + addDefault(d);
-      case DFloat(bits, d):
-        'FLOAT' + addDefault(d);
-      case DInt(bits, signed, _, d):
-        'INT($bits)' + add(!signed, ' UNSIGNED') + addDefault(d);
+        'TINYINT' + addDefault(d);
+      case DDouble(d):
+        'DOUBLE' + addDefault(d);
+      case DInt(Tiny, signed, _, d):
+        'TINYINT' + add(!signed, ' UNSIGNED') + addDefault(d);
+      case DInt(Small, signed, _, d):
+        'SMALLINT' + add(!signed, ' UNSIGNED') + addDefault(d);
+      case DInt(Medium, signed, _, d):
+        'MEDIUMINT' + add(!signed, ' UNSIGNED') + addDefault(d);
+      case DInt(Default, signed, _, d):
+        'INT' + add(!signed, ' UNSIGNED') + addDefault(d);
       case DString(maxLength, d):
         (if (maxLength < 65536) 'VARCHAR($maxLength)'
         else 'TEXT') + addDefault(d);
@@ -83,6 +89,8 @@ class SqlFormatter implements Formatter {
         else 'BLOB';
       case DDateTime(d):
         'DATETIME' + addDefault(d);
+      case DTimestamp(d):
+        'Timestamp' + addDefault(d);
       case DUnknown(type, d):
         type + addDefault(d);
       default: throw 'Type not support in current formatter: $type';
@@ -134,7 +142,7 @@ class SqlFormatter implements Formatter {
         return switch row[column.name] {
           case null: value(null);
           case v: switch column.type {
-            case DPoint | DMultiPolygon:
+            case DPoint | DPolygon | DMultiPolygon:
               'ST_GeomFromGeoJSON(\'${haxe.Json.stringify(v)}\')';
             default: value(v);
           }
@@ -223,6 +231,11 @@ class SqlFormatter implements Formatter {
       'WHERE ' + expr(condition) 
     else '';
 
+  function having(condition:Null<Condition>)
+    return if (condition != null) 
+      'HAVING ' + expr(condition) 
+    else '';
+
   function select<Db, Row:{}>(select:SelectOperation<Db, Row>)
     return join([
       'SELECT',
@@ -231,6 +244,7 @@ class SqlFormatter implements Formatter {
       target(select.from),
       where(select.where),
       groupBy(select.groupBy),
+      having(select.having),
       orderBy(select.orderBy),
       limit(select.limit)
     ]);
@@ -312,7 +326,7 @@ class SqlFormatter implements Formatter {
       case ECall(name, args):
         '$name(${[for(arg in args) expr(arg)].join(',')})';
       case EField(table, name):
-        ident(table) + '.' + ident(name);
+        (table == null ? '' : ident(table) + '.') + ident(name);
       case EValue(v, VBool):
         value(v);
       case EValue(v, VString):

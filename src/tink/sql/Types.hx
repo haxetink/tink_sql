@@ -5,9 +5,25 @@ import tink.json.Representation;
 
 typedef Blob<@:const L> = haxe.io.Bytes;
 
-typedef Boolean = Bool;
-
 typedef DateTime = Date;
+typedef Timestamp = Date;
+
+typedef TinyInt = Int;
+typedef SmallInt = Int;
+typedef MediumInt = Int;
+// typedef BigInt = Int;
+
+typedef Text = String;
+typedef LongText = String;
+typedef MediumText = String;
+typedef TinyText = String;
+typedef VarChar<@:const L> = String;
+
+#if geojson
+typedef Point = geojson.Point;
+typedef Polygon = geojson.Polygon;
+typedef MultiPolygon = geojson.MultiPolygon;
+#end
 
 abstract Id<T>(Int) to Int {
 
@@ -41,27 +57,9 @@ abstract Id<T>(Int) to Int {
 
 }
 
-typedef Integer<@:const L> = Int;
 
-typedef LongText = String;
 
-typedef MediumText = String;
 
-#if geojson
-typedef MultiPolygon = geojson.MultiPolygon;
-#end
-
-typedef Number<@:const L> = Float;
-
-#if geojson
-typedef Point = geojson.Point;
-#end
-
-typedef Text = String;
-
-typedef TinyText = String;
-
-typedef VarChar<@:const L> = String;
 
 
 

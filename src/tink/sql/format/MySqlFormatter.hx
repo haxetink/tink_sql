@@ -27,6 +27,8 @@ class MySqlFormatter extends SqlFormatter {
         }) + addDefault(d);
       case DPoint:
         'POINT';
+      case DPolygon:
+        'POLYGON';
       case DMultiPolygon:
         'MULTIPOLYGON';
       default: super.type(type);
@@ -44,9 +46,19 @@ class MySqlFormatter extends SqlFormatter {
         // Hence the single value produced by tink_sql at this time
         // is simply ignored (FLOAT(x) is returned as FLOAT)
         // Changing that is a breaking change (todo)
-        DFloat(0, parseDefault(Std.parseFloat));
-      case {name: 'INT', values: [bits]}:
-        DInt(Std.parseInt(bits), type.flags.indexOf('UNSIGNED') == -1, type.autoIncrement, parseDefault(Std.parseInt));
+        DDouble(parseDefault(Std.parseFloat));
+      case {name: 'DOUBLE'}:
+        DDouble(parseDefault(Std.parseFloat));
+      case {name: 'TINYINT'}:
+        DInt(Tiny, type.flags.indexOf('UNSIGNED') == -1, type.autoIncrement, parseDefault(Std.parseInt));
+      case {name: 'SMALLINT'}:
+        DInt(Small, type.flags.indexOf('UNSIGNED') == -1, type.autoIncrement, parseDefault(Std.parseInt));
+      case {name: 'MEDIUMINT'}:
+        DInt(Medium, type.flags.indexOf('UNSIGNED') == -1, type.autoIncrement, parseDefault(Std.parseInt));
+      case {name: 'INT'}:
+        DInt(Default, type.flags.indexOf('UNSIGNED') == -1, type.autoIncrement, parseDefault(Std.parseInt));
+      // case {name: 'BIGINT'}:
+      //   DInt(Big, type.flags.indexOf('UNSIGNED') == -1, type.autoIncrement, parseDefault(Std.parseInt));
       case {name: 'VARCHAR', values: [max]}:
         DString(Std.parseInt(max), type.defaultValue);
       case {name: 'BLOB', values: [max]}:
@@ -63,6 +75,8 @@ class MySqlFormatter extends SqlFormatter {
         DText(Long, type.defaultValue);
       case {name: 'POINT'}:
         DPoint;
+      case {name: 'POLYGON'}:
+        DPolygon;
       case {name: 'MULTIPOLYGON'}:
         DMultiPolygon;
       default:

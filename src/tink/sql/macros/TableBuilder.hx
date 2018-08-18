@@ -71,7 +71,7 @@ class TableBuilder {
 
                     case TAbstract(_.get() => {module: 'tink.sql.Types', name: 'Id'}, [p]):
                       var maxLength = 12; // TODO: make these configurable
-                      macro tink.sql.Info.DataType.DInt($v{maxLength}, false, $v{f.meta.has(':autoIncrement')}, $defaultValue);
+                      macro tink.sql.Info.DataType.DInt(Default, false, $v{f.meta.has(':autoIncrement')}, $defaultValue);
 
                     case TType(_.get() => tdef, params):
                       switch tdef {
@@ -83,41 +83,57 @@ class TableBuilder {
                           macro tink.sql.Info.DataType.DBlob($v{maxLength});
                         case {module: 'tink.sql.Types', name: 'DateTime'}:
                           macro tink.sql.Info.DataType.DDateTime($defaultValue);
-                        case {module: 'tink.sql.Types', name: 'Text'}:
-                          macro tink.sql.Info.DataType.DText(tink.sql.Info.TextSize.Default, $defaultValue);
-                        case {module: 'tink.sql.Types', name: 'Integer'}:
-                          var maxLength = getInt(params[0], f.pos);
-                          macro tink.sql.Info.DataType.DInt($v{maxLength}, true, $v{f.meta.has(':autoIncrement')}, $defaultValue);
-                        case {module: 'tink.sql.Types', name: 'LongText'}:
-                          macro tink.sql.Info.DataType.DText(tink.sql.Info.TextSize.Long, $defaultValue);
-                        case {module: 'tink.sql.Types', name: 'MediumText'}:
-                          macro tink.sql.Info.DataType.DText(tink.sql.Info.TextSize.Medium, $defaultValue);
-                        case {module: 'tink.sql.Types', name: 'MultiPolygon'}:
-                          macro tink.sql.Info.DataType.DMultiPolygon;
-                        case {module: 'tink.sql.Types', name: 'Number'}:
-                          var maxLength = getInt(params[0], f.pos);
-                          macro tink.sql.Info.DataType.DFloat($v{maxLength}, $defaultValue);
-                        case {module: 'tink.sql.Types', name: 'Point'}:
-                          macro tink.sql.Info.DataType.DPoint;
+                        case {module: 'tink.sql.Types', name: 'Timestamp'}:
+                          macro tink.sql.Info.DataType.DTimestamp($defaultValue);
+                          
+                        case {module: 'tink.sql.Types', name: 'TinyInt'}:
+                          macro tink.sql.Info.DataType.DInt(Tiny, $v{!f.meta.has(':unsigned')}, $v{f.meta.has(':autoIncrement')}, $defaultValue);
+                        case {module: 'tink.sql.Types', name: 'SmallInt'}:
+                          macro tink.sql.Info.DataType.DInt(Small, $v{!f.meta.has(':unsigned')}, $v{f.meta.has(':autoIncrement')}, $defaultValue);
+                        case {module: 'tink.sql.Types', name: 'MediumInt'}:
+                          macro tink.sql.Info.DataType.DInt(Medium, $v{!f.meta.has(':unsigned')}, $v{f.meta.has(':autoIncrement')}, $defaultValue);
+                        // case {module: 'tink.sql.Types', name: 'BigInt'}:
+                        //   macro tink.sql.Info.DataType.DInt(Big, true, $v{f.meta.has(':autoIncrement')}, $defaultValue);
+                          
                         case {module: 'tink.sql.Types', name: 'TinyText'}:
                           macro tink.sql.Info.DataType.DText(tink.sql.Info.TextSize.Tiny, $defaultValue);
+                        case {module: 'tink.sql.Types', name: 'MediumText'}:
+                          macro tink.sql.Info.DataType.DText(tink.sql.Info.TextSize.Medium, $defaultValue);
+                        case {module: 'tink.sql.Types', name: 'Text'}:
+                          macro tink.sql.Info.DataType.DText(tink.sql.Info.TextSize.Default, $defaultValue);
+                        case {module: 'tink.sql.Types', name: 'LongText'}:
+                          macro tink.sql.Info.DataType.DText(tink.sql.Info.TextSize.Long, $defaultValue);
                         case {module: 'tink.sql.Types', name: 'VarChar'}:
                           var maxLength = getInt(params[0], f.pos);
                           macro tink.sql.Info.DataType.DString($v{maxLength}, $defaultValue);
+                        
+                        case {module: 'tink.sql.Types', name: 'Point'}:
+                          macro tink.sql.Info.DataType.DPoint;
+                        case {module: 'tink.sql.Types', name: 'Polygon'}:
+                          macro tink.sql.Info.DataType.DPolygon;
+                        case {module: 'tink.sql.Types', name: 'MultiPolygon'}:
+                          macro tink.sql.Info.DataType.DMultiPolygon;
+                        
                         default:
                           resolveType(tdef.type);
                       }
 
                     case _.getID() => 'Date':
-                      macro tink.sql.Info.DataType.DDateTime($defaultValue);
+                      macro tink.sql.Info.DataType.DDate($defaultValue);
 
                     case _.getID() => 'Bool':
                       macro tink.sql.Info.DataType.DBool($defaultValue);
 
+                    case _.getID() => 'Int':
+                      macro tink.sql.Info.DataType.DInt(Default, $v{!f.meta.has(':unsigned')}, $v{f.meta.has(':autoIncrement')}, $defaultValue);
+                      
+                    case _.getID() => 'Float':
+                      macro tink.sql.Info.DataType.DDouble($defaultValue);
+
                     case TAbstract(_.get() => {name: name, type: type}, _):
                       switch type {
-                        case TAbstract(_.get() => {name: core, meta: meta}, _) if(meta.has(':coreType')):
-                          f.pos.error('$core as underlying type for the abstract $name is unsupported. Use types from the tink.sql.Types module.');
+                        // case TAbstract(_.get() => {module: module, name: core, meta: meta}, _) if(meta.has(':coreType')):
+                        //   f.pos.error('$module - $core as underlying type for the abstract $name is unsupported. Use types from the tink.sql.Types module.');
                         default:
                           resolveType(type);
                       }

@@ -10,10 +10,6 @@ core-util-is@~1.0.0:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/core-util-is/-/core-util-is-1.0.2.tgz#b5fd54220aa2bc5ab57aab7140c940754503c1a7"
 
-haxeshim@^0.9.0:
-  version "0.9.2"
-  resolved "https://registry.yarnpkg.com/haxeshim/-/haxeshim-0.9.2.tgz#05546bae7f9c1211c334c49d02e120a0ce7eac33"
-
 inherits@~2.0.3:
   version "2.0.3"
   resolved "https://registry.yarnpkg.com/inherits/-/inherits-2.0.3.tgz#633c2c83e3da42a502f52466022480f4208261de"
@@ -22,9 +18,9 @@ isarray@~1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/isarray/-/isarray-1.0.0.tgz#bb935d48582cba168c06834957a54a3e07124f11"
 
-lix.pm@^0.10.2:
-  version "0.10.2"
-  resolved "https://registry.yarnpkg.com/lix.pm/-/lix.pm-0.10.2.tgz#5c8e0731f44d293b58c6583dbfaeb9f2b0c10d34"
+lix@^15.1.1:
+  version "15.1.1"
+  resolved "https://registry.yarnpkg.com/lix/-/lix-15.1.1.tgz#732b53e5dd67ffbf8b0d431b5a0f72462bf1155a"
 
 mysql@^2.15.0:
   version "2.15.0"

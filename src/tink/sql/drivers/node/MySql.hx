@@ -15,6 +15,7 @@ using tink.CoreApi;
 typedef NodeSettings = {
   > MySqlSettings,
   ?connectionLimit:Int,
+  ?charset:String,
 }
 
 class MySql implements Driver {
@@ -34,6 +35,7 @@ class MySql implements Driver {
       port: settings.port,
       database: name,
       connectionLimit: settings.connectionLimit,
+      charset: settings.charset,
     });
 
     return new MySqlConnection(info, cnx);
@@ -201,6 +203,7 @@ private typedef Config = {>MySqlSettings,
   public var multipleStatements(default, null):Bool;
   public var database(default, null):String;
   @:optional public var connectionLimit(default, null):Int;
+  @:optional public var charset(default, null):String;
 }
 
 private typedef QueryOptions = {

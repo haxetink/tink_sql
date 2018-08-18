@@ -46,7 +46,7 @@ typedef PostTags = {
 }
 
 @:tables(User, Post, Tag, PostTags)
-class BlogDb extends tink.sql.Database {}
+class Db extends tink.sql.Database {}
 ```
 
 ## Connecting to the database
