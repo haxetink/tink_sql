@@ -136,7 +136,7 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
           ).concat([TPType(e.pos.makeBlankType())])
         );
         var aliasFields = [];
-        switch fields {
+        switch haxe.macro.Context.follow(fields) {
           case TAnonymous(_.get().fields => originalFields):
             for (field in originalFields) 
               aliasFields.push({
