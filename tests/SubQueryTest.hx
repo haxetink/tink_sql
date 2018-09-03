@@ -4,6 +4,7 @@ import tink.unit.Assert.assert;
 import tink.sql.OrderBy;
 import tink.sql.Types;
 import tink.sql.Expr;
+import tink.sql.Expr.Functions.*;
 import Db;
 
 using tink.CoreApi;
@@ -36,14 +37,33 @@ class SubQueryTest extends TestWithDb {
 		]);
 	}
 
-
 	@:include public function selectExpr() {
 		return db.Post
 			.where(
-				Post.author == db.User.select({id: User.id}).where(User.name == 'Bob').sub()
+				Post.author == db.User.select({id: User.id}).where(Post.author == User.id && User.name == 'Bob')
 			).first()
 			.next(function(row) {
 				return assert(row.title == 'Just checking');
+			});
+	}
+
+	@:include public function anyFunc() {
+		return db.Post
+			.where(
+				Post.author == any(db.User.select({id: User.id}))
+			).first()
+			.next(function(row) {
+				return assert(true);
+			});
+	}
+
+	@:include public function existsFunc() {
+		return db.Post
+			.where(
+				exists(db.User.where(User.id == Post.author))
+			).first()
+			.next(function(row) {
+				return assert(true);
 			});
 	}
 }

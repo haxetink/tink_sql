@@ -314,8 +314,11 @@ class SqlFormatter implements Formatter {
         value(false);
       case EBinOp(op, a, b):
         '(${expr(a)} ${binOp(op)} ${expr(b)})';
-      case ECall(name, args):
-        '$name(${[for(arg in args) expr(arg)].join(',')})';
+      case ECall(name, args, wrap):
+        var params = [for(arg in args) expr(arg)].join(',');
+        name + 
+          if (wrap == null || wrap) parenthesis(params)
+          else params;
       case EField(table, name):
         (table == null ? '' : ident(table) + '.') + ident(name);
       case EValue(v, VBool):

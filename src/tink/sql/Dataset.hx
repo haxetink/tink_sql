@@ -6,17 +6,7 @@ import tink.sql.Query;
 
 using tink.CoreApi;
 
-@:forward abstract SingleField<T, Fields>(Fields) to Fields {}
-@:forward abstract MultiFields<T, Fields>(Fields) to Fields {}
-
-interface QueryAble {}
-
-@:forward
-abstract SubQuery<T: QueryAble>(T) from T {
-  @:impl
-  public static function sub<T, F, R: {}, D>(q: Dataset<SingleField<T, F>, R, D>): Expr<T>
-    return EQuery(@:privateAccess q.toQuery());
-}
+@:forward abstract SingleField<T, Fields>(Fields) {}
 
 class Selectable<Fields, Filter, Result: {}, Db> extends FilterableWhere<Fields, Filter, Result, Db> {
   
@@ -48,13 +38,13 @@ class FilterableWhere<Fields, Filter, Result: {}, Db> extends FilterableHaving<F
     return macro @:pos(ethis.pos) @:privateAccess $ethis._where(@:noPrivateAccess $filter);
   }
   
-  function _where(filter:Filter):SubQuery<FilterableWhere<Fields, Filter, Result, Db>>
+  function _where(filter:Filter):FilterableWhere<Fields, Filter, Result, Db>
     return new FilterableWhere(cnx, fields, target, toCondition, {
       where: condition.where && toCondition(filter),
       having: condition.having
     }, selection);
 
-  public function groupBy(groupBy:Fields->Array<Field<Dynamic, Result>>):SubQuery<FilterableHaving<Fields, Filter, Result, Db>>
+  public function groupBy(groupBy:Fields->Array<Field<Dynamic, Result>>):FilterableHaving<Fields, Filter, Result, Db>
     return new FilterableHaving(cnx, fields, target, toCondition, condition, selection, groupBy(fields));
 
 }
@@ -66,7 +56,7 @@ class FilterableHaving<Fields, Filter, Result: {}, Db> extends Orderable<Fields,
     return macro @:pos(ethis.pos) @:privateAccess $ethis._having(@:noPrivateAccess $filter);
   }
   
-  function _having(filter:Filter):SubQuery<FilterableHaving<Fields, Filter, Result, Db>>
+  function _having(filter:Filter):FilterableHaving<Fields, Filter, Result, Db>
     return new FilterableHaving(cnx, fields, target, toCondition, {
       where: condition.where,
       having: condition.having && toCondition(filter)
@@ -76,7 +66,7 @@ class FilterableHaving<Fields, Filter, Result: {}, Db> extends Orderable<Fields,
 
 class Orderable<Fields, Filter, Result: {}, Db> extends Selected<Fields, Filter, Result, Db> {
 
-  public function orderBy(orderBy:Fields->OrderBy<Result>):SubQuery<Selected<Fields, Filter, Result, Db>>
+  public function orderBy(orderBy:Fields->OrderBy<Result>):Selected<Fields, Filter, Result, Db>
     return new Selected(cnx, fields, target, toCondition, condition, selection, grouped, orderBy(fields));
 
 }
@@ -154,7 +144,7 @@ class Union<Fields, Result:{}, Db> extends Limitable<Fields, Result, Db> {
 
 class Limitable<Fields, Result:{}, Db> extends Dataset<Fields, Result, Db> {
 
-  public function limit(limit:Limit):SubQuery<Dataset<Fields, Result, Db>>
+  public function limit(limit:Limit):Dataset<Fields, Result, Db>
     return new Limited(cnx, limit, toQuery);
 
   override public function first():Promise<Result>
@@ -180,7 +170,7 @@ class Limited<Fields, Result:{}, Db> extends Dataset<Fields, Result, Db> {
 }
 
 @:allow(tink.sql)
-class Dataset<Fields, Result:{}, Db> implements QueryAble {
+class Dataset<Fields, Result:{}, Db> {
 
   var cnx:Connection<Db>;
 
@@ -189,6 +179,12 @@ class Dataset<Fields, Result:{}, Db> implements QueryAble {
 
   function toQuery(?limit:Limit):Query<Db, RealStream<Result>>
     throw 'implement';
+
+  inline function toScalarExpr<T>(): Expr<T>
+    return EQuery(toQuery(1));
+
+  inline function toExpr<T>(): Expr<T>
+    return EQuery(toQuery());
 
   public function union(other:Dataset<Fields, Result, Db>, distinct = true):Union<Fields, Result, Db>
     return new Union(cnx, this, other, distinct);

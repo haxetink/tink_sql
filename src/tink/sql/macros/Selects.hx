@@ -53,35 +53,15 @@ class Selects {
     }
     var resultType = TAnonymous(resultFields);
     var fieldsType = Context.typeof(fields).toComplex();
-
-    // To type subqueries properly we need to distinguish between
-    // three possible kinds of selections:
-    // - a single column
-    // - multiple columns of the same type
-    // - something else (can't be used as an expr)
+    
     if (resultFields.length == 1) {
       var fieldType = switch resultFields[0].kind {
         case FProp(_, _, type): type;
         default: throw 'assert';
       }
       fieldsType = (macro: tink.sql.Dataset.SingleField<$fieldType, $fieldsType>);
-    } else {
-      var fieldType, last, isMulti = true;
-      for (f in resultFields) {
-        fieldType = switch f.kind {
-          case FProp(_, _, type): type;
-          default: throw 'assert';
-        }
-        var type = fieldType.toType().sure();
-        if (last != null && !Context.unify(type, last)) {
-          isMulti = false;
-          break;
-        }
-        last = type;
-      }
-      if (isMulti)
-        fieldsType = (macro: tink.sql.Dataset.MultiFields<$fieldType, $fieldsType>);
     }
+
     return macro @:pos(select.pos) (cast $call: tink.sql.Selection<$resultType, $fieldsType>);
   }
 
