@@ -40,7 +40,7 @@ class SubQueryTest extends TestWithDb {
 	@:include public function selectExpr() {
 		return db.Post
 			.where(
-				Post.author == db.User.select({id: User.id}).where(User.name == 'Bob')
+				Post.author == db.User.select({id: User.id}).where(User.name == 'Bob').sub()
 			).first()
 			.next(function(row) {
 				return assert(row.title == 'Just checking');

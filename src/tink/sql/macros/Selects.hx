@@ -59,14 +59,13 @@ class Selects {
     // - a single column
     // - multiple columns of the same type
     // - something else (can't be used as an expr)
-    var wrapper, blank = dataset.pos.makeBlankType();
     if (resultFields.length == 1) {
       var fieldType = switch resultFields[0].kind {
         case FProp(_, _, type): type;
         default: throw 'assert';
       }
-      wrapper = (macro: tink.sql.SubQuery.ScalarSubQuery<$fieldType, $blank>);
-    } /*else {
+      fieldsType = (macro: tink.sql.Dataset.SingleField<$fieldType, $fieldsType>);
+    } else {
       var fieldType, last, isMulti = true;
       for (f in resultFields) {
         fieldType = switch f.kind {
@@ -82,16 +81,8 @@ class Selects {
       }
       if (isMulti)
         fieldsType = (macro: tink.sql.Dataset.MultiFields<$fieldType, $fieldsType>);
-    }*/ else {
-      wrapper = blank;
     }
-
-    var selection = macro @:pos(select.pos) 
-      (cast $call: tink.sql.Selection<$resultType, $fieldsType>);
-
-    return macro (@:pos(select.pos) @:privateAccess ${dataset}._select(
-      @:noPrivateAccess $selection
-    ): $wrapper);
+    return macro @:pos(select.pos) (cast $call: tink.sql.Selection<$resultType, $fieldsType>);
   }
 
   static function typeOfExpr(type, pos: Position)
