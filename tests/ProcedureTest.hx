@@ -10,6 +10,7 @@ class ProcedureTest extends TestWithDb {
     db.func.call(1).all().handle(function(o) switch o {
       case Success(result): 
         asserts.assert(result[0].x == 1);
+        asserts.assert(result[1].x == 2);
         asserts.done();
       case Failure(e):
         asserts.fail(e);
