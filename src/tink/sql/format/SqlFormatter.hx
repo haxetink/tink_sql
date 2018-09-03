@@ -172,7 +172,7 @@ class SqlFormatter implements Formatter {
       ident(name)
     ]);
 
-  function selection<Row:{}>(selection:Selection<Row>)
+  function selection<Row:{}>(selection:Selection<Row, Any>)
     return switch selection {
       case null: '*'; // Todo: list all fields if nested to fix #25
       case fields:

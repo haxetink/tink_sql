@@ -32,6 +32,7 @@ class Run extends TestWithDb {
       new GeometryTest(driver, db),
       new ExprTest(driver, db),
       new Run(driver, db),
+      new SubQueryTest(driver, db),
       new SchemaTest(driver, db),
     ])).handle(Runner.exit);
   }
