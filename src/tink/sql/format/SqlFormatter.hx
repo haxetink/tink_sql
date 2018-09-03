@@ -27,6 +27,7 @@ class SqlFormatter implements Formatter {
       case Union(op): union(op);
       case Update(op): update(op);
       case Delete(op): delete(op);
+      case CallProcedure(name, args): call(name, args);
       default: throw 'Query not supported in currrent formatter: $query';
     }
 
@@ -364,6 +365,10 @@ class SqlFormatter implements Formatter {
       case [name, values]: getType(name, values.substr(0, values.length - 1).split(','));
       default: throw 'Could not parse sql type: $type';
     }
+  }
+  
+  function call(name:String, args:Array<Dynamic>):String {
+    throw 'implement';
   }
 
 }

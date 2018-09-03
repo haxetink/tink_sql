@@ -141,7 +141,10 @@ class MySqlFormatter extends SqlFormatter {
       }
     return store.get();
   }
-
+  
+  override function call(name:String, args:Array<Dynamic>) {
+    return 'CALL $name(${args.map(sanitizer.value).join(',')});';
+  }
 }
 
 typedef MysqlColumnInfo = {
