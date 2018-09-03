@@ -14,7 +14,7 @@ class ProcedureBuilder {
         switch ctx.type {
           case TFun(args, _.toComplex() => ret):
             var cName = ctx.name;
-            var def = macro class $cName extends tink.sql.Procedure.ProcedureBase {}
+            var def = macro class $cName<Db> extends tink.sql.Procedure.ProcedureBase<Db> {}
             
             var i = 0;
             var args = [for(arg in args) {
@@ -30,12 +30,12 @@ class ProcedureBuilder {
               access: [APublic],
               kind: FFun({
                 args: args,
-                ret: macro:tink.sql.Procedure.Called<$ret, $ret>,
+                ret: macro:tink.sql.Procedure.Called<$ret, $ret, Db>,
                 expr: {
                   var args = [for(arg in args) macro $i{arg.name}];
                   macro return {
-                    var args = $a{args}
-                    return new tink.sql.Procedure.Called<$ret, $ret>(this.cnx, this.name, args);
+                    var args:Array<Dynamic> = $a{args}
+                    return new tink.sql.Procedure.Called<$ret, $ret, Db>(this.cnx, this.name, args);
                   }
                 },
               }),

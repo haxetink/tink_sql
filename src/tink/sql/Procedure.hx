@@ -11,7 +11,7 @@ using tink.MacroApi;
 class Procedure<T> {}
 #end
 
-class ProcedureBase {
+class ProcedureBase<Db> {
   var name:String;
   var cnx:Connection<Db>;
   public function new(cnx, name) {
@@ -20,7 +20,7 @@ class ProcedureBase {
   }
 }
 
-class Called<Fields, Result:{}> extends Dataset<Fields, Result, Db> {
+class Called<Fields, Result:{}, Db> extends Dataset<Fields, Result, Db> {
   var name:String;
   var args:Array<Dynamic>;
   public function new(cnx, name, args) {
