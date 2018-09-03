@@ -16,14 +16,20 @@ class ProcedureBuilder {
             var cName = ctx.name;
             var def = macro class $cName extends tink.sql.Procedure.ProcedureBase {}
             
+            var i = 0;
+            var args = [for(arg in args) {
+              var name = switch arg.name {
+                case null | '': '__a' + i++;
+                case v: v;
+              };
+              name.toArg(arg.t.toComplex());
+            }];
+            
             def.fields.push({
               name: 'call',
               access: [APublic],
               kind: FFun({
-                args: [for(arg in args) {
-                  name: arg.name,
-                  type: arg.t.toComplex(),
-                }],
+                args: args,
                 ret: macro:tink.sql.Procedure.Called<$ret, $ret>,
                 expr: {
                   var args = [for(arg in args) macro $i{arg.name}];

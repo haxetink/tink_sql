@@ -7,7 +7,7 @@ class ProcedureTest extends TestWithDb {
   
   public function test() {
     loadFixture('procedure');
-    db.func.call(1).all().handle(o -> {
+    db.func.call(1).all().handle(function(o) {
       switch o {
         case Success(result):
           trace(result);
