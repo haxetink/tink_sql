@@ -37,6 +37,19 @@ class SubQueryTest extends TestWithDb {
 		]);
 	}
 
+	@:include public function selectSubQuery() {
+		return db.User
+			.select({
+				name: User.name,
+				posts: db.Post.select({count: count()}).where(Post.author == User.id)
+			})
+			.first()
+			.next(function(row) {
+				trace(row);
+				return assert(true);
+			});
+	}
+
 	@:include public function selectExpr() {
 		return db.Post
 			.where(

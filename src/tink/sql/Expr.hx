@@ -236,6 +236,9 @@ enum ValueType<T> {
 
   @:from static function ofBytes(b:Bytes):Expr<Bytes>
     return EValue(b, VBytes);
+  
+  @:from static function ofScalar<T>(s:Scalar<T>):Expr<T>
+    return s.toScalarExpr();
 }
 
 class Functions {

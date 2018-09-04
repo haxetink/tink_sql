@@ -22,7 +22,10 @@ class Selects {
     var posInfo: Map<String, Position> = new Map();
     switch select {
       case {expr: EObjectDecl(fields)}:
-        for (field in fields) posInfo.set(field.field, field.expr.pos);
+        for (field in fields) {
+          trace(field);
+          posInfo.set(field.field, field.expr.pos);
+        }
         select = select.func(arguments).asExpr();
       default:
     }
@@ -49,7 +52,7 @@ class Selects {
             kind: FProp('default', 'null', typeOfExpr(field.type, pos).toComplex())
           });
         }
-      case v: trace(v);
+      case v: throw 'Expected anonymous type as selection, got: $v';
     }
     var resultType = TAnonymous(resultFields);
     var fieldsType = Context.typeof(fields).toComplex();
@@ -71,7 +74,7 @@ class Selects {
         pack: ['tink', 'sql'], name: 'ExprData'
       }, [p]):
         p;
-      default: pos.error("Expected tink.sql.Expr<T>");
+      default: pos.error('Expected tink.sql.Expr<T>, got: ${type.toComplex().toString()}');
     }
       
 }
