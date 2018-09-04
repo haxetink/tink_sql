@@ -48,7 +48,6 @@ typedef UpdateOperation<Row:{}> = {
 typedef Update<Row> = Array<FieldUpdate<Row>>;
 
 class FieldUpdate<Row> {
-
   public var field(default, null):Field<Row, Dynamic>;
   public var expr(default, null):Expr<Dynamic>;
 

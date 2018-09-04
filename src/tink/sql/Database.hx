@@ -1,7 +1,11 @@
 package tink.sql;
 
+#if macro
+import haxe.macro.Expr;
+#end
 import tink.core.Error;
 import tink.sql.Info;
+
 
 @:autoBuild(tink.sql.macros.DatabaseBuilder.build())
 class Database implements DatabaseInfo {
@@ -27,4 +31,10 @@ class Database implements DatabaseInfo {
       case null: throw new Error(NotFound, 'Table `${this.name}.$name` not found');
       case v: cast v;
     }
+
+  macro public function from(ethis:Expr, target:Expr) {
+    var dataset = tink.sql.macros.Targets.from(ethis, target);
+    return macro @:pos(target.pos) return $dataset;
+  }
+
 }

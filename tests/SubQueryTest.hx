@@ -46,7 +46,7 @@ class SubQueryTest extends TestWithDb {
 			.where(User.name == 'Alice')
 			.first()
 			.next(function(row) {
-				return assert(row.posts == 3);
+				return assert(row.name == 'Alice' && row.posts == 3);
 			});
 	}
 
@@ -70,6 +70,16 @@ class SubQueryTest extends TestWithDb {
 			});
 	}
 
+	@:include public function someFunc() {
+		return db.Post
+			.where(
+				Post.author == some(db.User.select({id: User.id}))
+			).first()
+			.next(function(row) {
+				return assert(true);
+			});
+	}
+
 	@:include public function existsFunc() {
 		return db.Post
 			.where(
@@ -79,4 +89,14 @@ class SubQueryTest extends TestWithDb {
 				return assert(true);
 			});
 	}
+
+	@:include public function fromSubquery() {
+		return db.from({myPosts: db.Post.where(Post.author == 1)})
+			.select({name: myPosts.name})
+			.first()
+			.next(function(row) {
+				return assert(row.name == 'Alice');
+			});
+	}
+
 }
