@@ -43,10 +43,10 @@ class SubQueryTest extends TestWithDb {
 				name: User.name,
 				posts: db.Post.select({count: count()}).where(Post.author == User.id)
 			})
+			.where(User.name == 'Alice')
 			.first()
 			.next(function(row) {
-				trace(row);
-				return assert(true);
+				return assert(row.posts == 3);
 			});
 	}
 

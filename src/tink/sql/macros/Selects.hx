@@ -23,8 +23,13 @@ class Selects {
     switch select {
       case {expr: EObjectDecl(fields)}:
         for (field in fields) {
-          trace(field);
-          posInfo.set(field.field, field.expr.pos);
+          // Cast to Expr here to allow selecting subqueries
+          // This is a little dirty and should probably be done another way,
+          // as it doesn't allow passing subqueries through a method call
+          var expr = field.expr; 
+          var blank = expr.pos.makeBlankType();
+          field.expr = macro @pos(field.pos) ($expr: tink.sql.Expr<$blank>);
+          posInfo.set(field.field, expr.pos);
         }
         select = select.func(arguments).asExpr();
       default:
