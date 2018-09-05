@@ -15,7 +15,7 @@ os:
 
 before_install:
   - mysql --version
-  - sudo apt-get install php-mysql
+  - sudo apt-get install php7.1-cli php7.1-mysql
       
 install:
   - yarn
