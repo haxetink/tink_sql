@@ -12,6 +12,8 @@ class Database implements DatabaseInfo {
   
   public var name(default, null):String;
   
+  // To type this correctly we'd need a self type #4474 or unnecessary macros
+  var cnx:Connection<Dynamic>; 
   var tables:Map<String, TableInfo>;
   var driver:Driver;
   
@@ -32,9 +34,7 @@ class Database implements DatabaseInfo {
       case v: cast v;
     }
 
-  macro public function from(ethis:Expr, target:Expr) {
-    var dataset = tink.sql.macros.Targets.from(ethis, target);
-    return macro @:pos(target.pos) return $dataset;
-  }
+  macro public function from(ethis:Expr, target:Expr)
+    return tink.sql.macros.Targets.from(ethis, target, macro $ethis.cnx);
 
 }

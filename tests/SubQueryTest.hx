@@ -37,7 +37,7 @@ class SubQueryTest extends TestWithDb {
 		]);
 	}
 
-	@:include public function selectSubQuery() {
+	public function selectSubQuery() {
 		return db.User
 			.select({
 				name: User.name,
@@ -50,7 +50,7 @@ class SubQueryTest extends TestWithDb {
 			});
 	}
 
-	@:include public function selectExpr() {
+	public function selectExpr() {
 		return db.Post
 			.where(
 				Post.author == db.User.select({id: User.id}).where(Post.author == User.id && User.name == 'Bob')
@@ -60,7 +60,7 @@ class SubQueryTest extends TestWithDb {
 			});
 	}
 
-	@:include public function anyFunc() {
+	public function anyFunc() {
 		return db.Post
 			.where(
 				Post.author == any(db.User.select({id: User.id}))
@@ -70,7 +70,7 @@ class SubQueryTest extends TestWithDb {
 			});
 	}
 
-	@:include public function someFunc() {
+	public function someFunc() {
 		return db.Post
 			.where(
 				Post.author == some(db.User.select({id: User.id}))
@@ -80,7 +80,7 @@ class SubQueryTest extends TestWithDb {
 			});
 	}
 
-	@:include public function existsFunc() {
+	public function existsFunc() {
 		return db.Post
 			.where(
 				exists(db.User.where(User.id == Post.author))
@@ -90,12 +90,13 @@ class SubQueryTest extends TestWithDb {
 			});
 	}
 
-	@:include public function fromSubquery() {
-		return db.from({myPosts: db.Post.where(Post.author == 1)})
-			.select({name: myPosts.name})
+	public function fromSubquery() {
+		return db
+			.from({myPosts: db.Post.where(Post.author == 1)})
+			.select({id: myPosts.id})
 			.first()
 			.next(function(row) {
-				return assert(row.name == 'Alice');
+				return assert(true);
 			});
 	}
 

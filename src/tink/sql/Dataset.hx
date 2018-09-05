@@ -8,6 +8,7 @@ using tink.CoreApi;
 
 @:forward abstract SingleField<T, Fields>(Fields) {}
 
+@:allow(tink.sql)
 class Selectable<Fields, Filter, Result: {}, Db> extends FilterableWhere<Fields, Filter, Result, Db> {
   
   macro public function select(ethis, select) {

@@ -199,6 +199,12 @@ class SqlFormatter implements Formatter {
           'ON',
           expr(cond)
         ]);
+      case TQuery(alias, query):
+        join([
+          parenthesis(format(query)),
+          ' AS ',
+          ident(alias)
+        ]);
     }
 
   function groupBy<Row:{}>(grouped:Null<Array<Field<Dynamic, Row>>>)
