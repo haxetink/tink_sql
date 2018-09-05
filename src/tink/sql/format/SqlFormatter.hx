@@ -27,7 +27,7 @@ class SqlFormatter implements Formatter {
       case Union(op): union(op);
       case Update(op): update(op);
       case Delete(op): delete(op);
-      case CallProcedure(name, args): call(name, args);
+      case CallProcedure(op): call(op);
       default: throw 'Query not supported in currrent formatter: $query';
     }
 
@@ -276,6 +276,10 @@ class SqlFormatter implements Formatter {
       where(delete.where),
       limit(delete.max)
     ]);
+  
+  function call<Row:{}>(op:CallOperation<Row>):String {
+    throw 'implement';
+  }
 
   function binOp(o:BinOp<Dynamic, Dynamic, Dynamic>)
     return switch o {
@@ -365,10 +369,6 @@ class SqlFormatter implements Formatter {
       case [name, values]: getType(name, values.substr(0, values.length - 1).split(','));
       default: throw 'Could not parse sql type: $type';
     }
-  }
-  
-  function call(name:String, args:Array<Dynamic>):String {
-    throw 'implement';
   }
 
 }

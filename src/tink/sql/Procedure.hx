@@ -30,5 +30,9 @@ class Called<Fields, Result:{}, Db> extends Dataset<Fields, Result, Db> {
   }
   
   override function toQuery(?limit):Query<Db, RealStream<Result>>
-    return CallProcedure(name, args);
+    return CallProcedure({
+      name: name,
+      arguments: args,
+      limit: limit,
+    });
 }

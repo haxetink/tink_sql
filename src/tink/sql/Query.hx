@@ -14,12 +14,12 @@ enum Query<Db, Result> {
   Insert<Row:{}>(insert:InsertOperation<Row>):Query<Db, Promise<Id<Row>>>;
   Update<Row:{}>(update:UpdateOperation<Row>):Query<Db, Promise<{rowsAffected:Int}>>;
   Delete<Row:{}>(delete:DeleteOperation<Row>):Query<Db, Promise<{rowsAffected:Int}>>;
+  CallProcedure<Row:{}>(call:CallOperation<Row>):Query<Db, RealStream<Row>>;
   CreateTable<Row:{}>(table:TableInfo, ?ifNotExists:Bool):Query<Db, Promise<Noise>>;
   DropTable<Row:{}>(table:TableInfo):Query<Db, Promise<Noise>>;
   AlterTable<Row:{}>(table:TableInfo, changes:Array<AlterTableOperation>):Query<Db, Promise<Noise>>;
   ShowColumns<Row:{}>(from:TableInfo):Query<Db, Promise<Array<Column>>>;
   ShowIndex<Row:{}>(from:TableInfo):Query<Db, Promise<Array<Key>>>;
-  CallProcedure<Row:{}>(name:String, arguments:Array<Expr<Dynamic>>):Query<Db, RealStream<Row>>;
 }
 
 typedef UnionOperation<Db, Row:{}> = {
@@ -44,6 +44,12 @@ typedef UpdateOperation<Row:{}> = {
   set:Update<Row>,
   ?where:Condition,
   ?max:Int
+}
+
+typedef CallOperation<Row:{}> = {
+  name:String,
+  arguments:Array<Expr<Dynamic>>,
+  ?limit:Limit,
 }
 
 typedef Update<Row> = Array<FieldUpdate<Row>>;
