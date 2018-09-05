@@ -15,6 +15,7 @@ os:
 
 before_install:
   - mysql --version
+  - sudo apt-get install php-mysql
       
 install:
   - yarn
