@@ -22,7 +22,8 @@ class ProcedureBuilder {
                 case null | '': '__a' + i++;
                 case v: v;
               };
-              name.toArg(arg.t.toComplex());
+              var t = arg.t.toComplex();
+              name.toArg(macro:tink.sql.Expr<$t>);
             }];
             
             def.fields.push({
