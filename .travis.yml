@@ -4,6 +4,7 @@ addons:
   apt:
     sources:
       - mysql-5.7-trusty
+      - sourceline: 'ppa:ondrej/php'
     packages:
       - mysql-server
 
