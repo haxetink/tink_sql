@@ -147,7 +147,7 @@ class MySqlFormatter extends SqlFormatter {
       'CALL',
       op.name,
       '(${[for(arg in op.arguments) expr(arg)].join(',')})',
-      limit(op.limit),
+      // limit(op.limit), // not supported by mysql
     ]);
   }
 }
