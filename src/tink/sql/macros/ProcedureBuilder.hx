@@ -34,7 +34,7 @@ class ProcedureBuilder {
                 expr: {
                   var args = [for(arg in args) macro $i{arg.name}];
                   macro return {
-                    var args:Array<Dynamic> = $a{args}
+                    var args:Array<tink.sql.Expr<Dynamic>> = $a{args}
                     return new tink.sql.Procedure.Called<$ret, $ret, Db>(this.cnx, this.name, args);
                   }
                 },

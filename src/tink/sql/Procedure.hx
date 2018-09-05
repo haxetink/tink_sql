@@ -22,7 +22,7 @@ class ProcedureBase<Db> {
 
 class Called<Fields, Result:{}, Db> extends Dataset<Fields, Result, Db> {
   var name:String;
-  var args:Array<Dynamic>;
+  var args:Array<Expr<Dynamic>>;
   public function new(cnx, name, args) {
     super(cnx);
     this.name = name;

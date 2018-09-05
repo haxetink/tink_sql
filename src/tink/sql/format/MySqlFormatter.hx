@@ -143,7 +143,7 @@ class MySqlFormatter extends SqlFormatter {
   }
   
   override function call(name:String, args:Array<Dynamic>) {
-    return 'CALL $name(${args.map(sanitizer.value).join(',')});';
+    return 'CALL $name(${args.map(expr).join(',')});';
   }
 }
 

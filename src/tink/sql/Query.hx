@@ -19,7 +19,7 @@ enum Query<Db, Result> {
   AlterTable<Row:{}>(table:TableInfo, changes:Array<AlterTableOperation>):Query<Db, Promise<Noise>>;
   ShowColumns<Row:{}>(from:TableInfo):Query<Db, Promise<Array<Column>>>;
   ShowIndex<Row:{}>(from:TableInfo):Query<Db, Promise<Array<Key>>>;
-  CallProcedure<Row:{}>(name:String, arguments:Array<Dynamic>):Query<Db, RealStream<Row>>;
+  CallProcedure<Row:{}>(name:String, arguments:Array<Expr<Dynamic>>):Query<Db, RealStream<Row>>;
 }
 
 typedef UnionOperation<Db, Row:{}> = {
