@@ -91,6 +91,9 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
 
   function queryOptions(query:Query<Db, Dynamic>): QueryOptions {
     var sql = formatter.format(query);
+    #if sql_debug
+    trace(sql);
+    #end
     return switch query {
       case Select(_) | Union(_):
         {sql: sql, typeCast: typeCast, nestTables: formatter.isNested(query)}
