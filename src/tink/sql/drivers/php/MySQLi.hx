@@ -28,6 +28,7 @@ class MySQLi implements Driver {
         settings.host, settings.user,
         settings.password, name, settings.port
     );
+    if (settings.charset != null) cnx.set_charset(settings.charset);
     return new MySQLiConnection(info, cnx);
   }
 }
@@ -166,6 +167,7 @@ private abstract ResultSet(NativeResultSet) from NativeResultSet {
 private extern class NativeConnection {
   public function new(host: String, user: String, password: String, database: String, ?port: Int);
   public function real_escape_string(input: String): String;
+  public function set_charset(charset: String): Bool;
   public function query(query: String): NativeResult;
   public var insert_id: Int;
   public var affected_rows: Int;
