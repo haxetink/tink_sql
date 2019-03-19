@@ -15,7 +15,6 @@ using tink.CoreApi;
 typedef NodeSettings = {
   > MySqlSettings,
   ?connectionLimit:Int,
-  ?charset:String,
 }
 
 class MySql implements Driver {
