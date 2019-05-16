@@ -19,11 +19,12 @@ typedef MediumText = String;
 typedef TinyText = String;
 typedef VarChar<@:const L> = String;
 
-#if geojson
 typedef Point = geojson.Point;
+typedef LineString = geojson.LineString;
 typedef Polygon = geojson.Polygon;
+typedef MultiPoint = geojson.MultiPoint;
+typedef MultiLineString = geojson.MultiLineString;
 typedef MultiPolygon = geojson.MultiPolygon;
-#end
 
 abstract Id<T>(Int) to Int {
 
