@@ -35,7 +35,12 @@ class TableBuilder {
               rowTypeFields.push({
                 pos: f.pos,
                 name: fName,
-                kind: FProp('default', 'null', fType),
+                #if haxe4
+                access: if (f.isFinal) [AFinal] else [],
+                kind: if (f.isFinal) FVar(fType) else FProp('default', 'never', fType),
+                #else
+                kind: FProp('default', 'never', fType),
+                #end
                 meta: {
                   var m = [];
                   if(f.meta.extract(':optional').length > 0) m.push({name: ':optional', pos: f.pos});
@@ -46,7 +51,7 @@ class TableBuilder {
               fieldsTypeFields.push({
                 pos: f.pos,
                 name: fName,
-                kind: FProp('default', 'null', macro : tink.sql.Expr.Field<$fType, $rowType>)
+                kind: FProp('default', 'never', macro : tink.sql.Expr.Field<$fType, $rowType>)
               });
 
               fieldsExprFields.push({

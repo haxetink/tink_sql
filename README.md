@@ -49,6 +49,17 @@ typedef PostTags = {
 class Db extends tink.sql.Database {}
 ```
 
+## Redefining table names
+
+```haxe
+class Db extends tink.sql.Database {
+  @:table("blog_users") var user:User;
+  @:table("blog_posts") var post:Post;
+  @:table("news_tags") var tag:Tag;
+  @:table("post_tags") var postTags:PostTags;
+}
+```
+
 ## Connecting to the database
 
 ```haxe

@@ -1,5 +1,6 @@
 sudo: required
 dist: trusty
+
 addons:
   apt:
     sources:
@@ -8,27 +9,48 @@ addons:
     packages:
       - mysql-server
 
+stages:
+  - test
+  # - deploy
+
 language: node_js
-node_js: 6
+node_js: 8
+
+cache:
+  directories:
+    - $HOME/haxe
 
 os:
   - linux
+  # - osx
 
-before_install:
-  - mysql --version
-      
+env:
+  - HAXE_VERSION=3.4.7
+  - HAXE_VERSION=latest
+  
 install:
-  - yarn && yarn global add switchx
+  - npm i -g lix
+  - npm install
+  - lix install haxe $HAXE_VERSION
+  - lix download
+  - if [[ "$(haxe -version)" =~ ^4.* ]]; then sudo apt-get install php7.1-cli php7.1-mysql; else sudo apt-get install php5.6-cli php5.6-mysql; fi
 
+  
 script:
-  - yarn travix node
-  - sudo apt-get install php5.6-cli php5.6-mysql
-  - yarn travix php
-  - sudo apt-get install php7.1-cli php7.1-mysql && switchx install db5a1e4
-  - yarn travix php
+  - lix run travix node
+  - lix run travix php
 
-cache:
-  yarn: true
-  directories:
-    - node_modules
-    - $HOME/haxe
+# jobs:
+#   include:
+#     # - stage: test # should uncomment this when there is no matrix above (e.g. only one os, one env, etc)
+#     - stage: deploy
+#       os: linux
+#       install:
+#         - npm i -g lix
+#         - lix download
+#       script: skip
+#       env:
+#         secure: xxxxxxxx
+#       after_success:
+#         - lix run travix install
+#         - lix run travix release
