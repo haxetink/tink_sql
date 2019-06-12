@@ -3,5 +3,11 @@
         ["dev.hxml"]
     ],
     "editor.tabSize": 2,
-    "editor.insertSpaces": true
+    "editor.insertSpaces": true,
+    "haxe.executable": {
+        "path": "node_modules/.bin/haxe",
+        "windows": {
+            "path": "node_modules/.bin/haxe.cmd"
+        }
+    }
 }

@@ -14,7 +14,6 @@ class TableBuilder {
       return
         switch ctx.type {
           case TAnonymous(_.get() => { fields: [{ kind: FVar(_, _), name: name, type: Context.followWithAbstracts(_)  => TAnonymous(_.get().fields => fields) }] } ):
-
             var cName = ctx.name;
             var names = [for (f in fields) f.name];
 
@@ -180,9 +179,25 @@ class TableBuilder {
                 }
               });
             }
-            var filterType = (macro function ($name:$fieldsType):tink.sql.Expr.Condition return tink.sql.Expr.ExprData.EValue(true, tink.sql.Expr.ValueType.VBool)).typeof().sure().toComplex({ direct: true });
 
-            macro class $cName<Db> extends tink.sql.Table.TableSource<$fieldsType, $filterType, $rowType, Db> {
+            var module = Context.getLocalModule().split('.');
+            module.pop();
+            function define(type, name) {
+              Context.defineType({
+                fields: [],
+                name: name,
+                pack: module,
+                pos: ctx.pos,
+                kind: TDAlias(type)
+              });
+              return module.concat([name]).join('.').asComplexType();
+            }
+            // Typedef fields and result so we get readable error messages
+            var fieldsAlias = define(fieldsType, '${name}_Fields');
+            var rowAlias = define(rowType, '${name}_Result');
+            var filterType = (macro function ($name:$fieldsAlias):tink.sql.Expr.Condition return tink.sql.Expr.ExprData.EValue(true, tink.sql.Expr.ValueType.VBool)).typeof().sure().toComplex({ direct: true });
+
+            macro class $cName<Db> extends tink.sql.Table.TableSource<$fieldsAlias, $filterType, $rowAlias, Db> {
 
               public function new(cnx, tableName, ?alias) {
                 super(cnx, new tink.sql.Table.TableName(tableName), alias, ${EObjectDecl(fieldsExprFields).at(ctx.pos)});
