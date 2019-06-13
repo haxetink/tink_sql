@@ -1,125 +1,76 @@
 package tink.sql.drivers.sys;
 
-import tink.sql.Connection.Update;
-import tink.sql.Format;
 import tink.sql.Info;
 import tink.sql.Expr;
-import tink.sql.Projection;
 import haxe.DynamicAccess;
 import tink.sql.Types;
+import tink.streams.Stream;
 import tink.streams.RealStream;
+import sys.db.ResultSet;
+import tink.sql.format.MySqlFormatter;
 
 using tink.CoreApi;
 
 class StdDriver implements Driver {
 
   var doOpen:String->sys.db.Connection;
-  var sanitizer:sys.db.Connection->Sanitizer;
+  var createFormatter:sys.db.Connection->MySqlFormatter;
 
-  public function new(doOpen, ?sanitizer) {
+  public function new(doOpen, createFormatter) {
     this.doOpen = doOpen;
-    this.sanitizer = if (sanitizer != null) sanitizer else NativeSanitizer.new;
+    this.createFormatter = createFormatter;
   }
 
   public function open<Db:DatabaseInfo>(name:String, info:Db):Connection<Db> {
     var cnx = doOpen(name);
-    return new StdConnection(cnx, info, sanitizer(cnx));
+    return new StdConnection(info, cnx, createFormatter(cnx));
   }
 
-}
-
-private class NativeSanitizer implements Sanitizer {
-  var cnx:sys.db.Connection;
-
-  public function new(cnx)
-    this.cnx = cnx;
-
-  public function value(v:Dynamic):String
-    return cnx.quote(Std.string(v));
-
-  public function ident(s:String):String
-    return cnx.escape(s);
 }
 
 class StdConnection<Db:DatabaseInfo> implements Connection<Db> {
 
-  var sanitizer:Sanitizer;
-  var cnx:sys.db.Connection;
   var db:Db;
+  var cnx:sys.db.Connection;
+  var formatter:MySqlFormatter;
 
-  public function new(cnx, db, sanitizer) {
-    this.cnx = cnx;
+  public function new(db, cnx, formatter) {
     this.db = db;
-    this.sanitizer = sanitizer;
+    this.cnx = cnx;
+    this.formatter = formatter;
   }
 
-  public function update<Row:{}>(table:TableInfo<Row>, ?c:Condition, ?max:Int, update:Update<Row>):Promise<{ rowsAffected: Int }> {
-    return Future.sync(
-      try Success({
-        rowsAffected:  cnx.request(Format.update(table, c, max, update, sanitizer)).length, //this is very likely neko-specific
-      })
-      //catch (e:Dynamic) {
-        //Failure(Error.withData('Failed to UPDATE ${table.getName()}', e));
-      //}
-    );
-  }
+  public function getFormatter()
+    return formatter;
 
-  function makeRequest(s:String) {
-    return cnx.request(s);
-  }
-
-  public function selectAll<A:{}>(t:Target<A, Db>, ?c:Condition, ?limit:Limit):RealStream<A>
-    return
-      switch t {
-        case TTable(_, _):
-
-          makeRequest(Format.selectAll(t, c, sanitizer, limit));
-
-        default:
-
-          function fields(t:Target<Dynamic, Db>):Array<ProjectionPart<Dynamic>>
-            return switch t {
-              case TTable(name, alias):
-
-                if (alias == null)
-                  alias = name;
-
-                [for (field in db.tableinfo(name).fieldnames()) {
-                  name: '$alias.$field', //TODO: backticks are non-standard ... double-check that they are supported
-                  expr: EField(alias, field),
-                }];
-
-              case TJoin(left, right, _, _):
-                fields(left).concat(fields(right));
-            }
-
-          var ret = makeRequest(Format.selectProjection(t, c, sanitizer, new Projection(fields(t)), limit));
-
-          {
-            hasNext: function () return ret.hasNext(),
-            next: function () {
-              var v:DynamicAccess<Dynamic> = ret.next();
-              var ret:DynamicAccess<DynamicAccess<Dynamic>> = { };
-              for (f in v.keys()) {
-                switch f.split('.') {
-                  case [prefix, name]:
-                    if (ret[prefix] == null) ret[prefix] = { };
-                    ret[prefix][name] = v[f];
-                  default: throw 'assert $f';
-                }
-              }
-              return (cast ret : A);
-            }
-          }
-      }
-
-  public function insert<Row:{}>(table:TableInfo<Row>, items:Array<Insert<Row>>):Promise<Id<Row>>
-    return Future.sync(try {
-      makeRequest(Format.insert(table, items, sanitizer));
-      Success(new Id(cnx.lastInsertId()));
+  public function execute<Result>(query:Query<Db,Result>):Result {
+    inline function fetch<T>(): Promise<T> return run(formatter.format(query));
+    return switch query {
+      case Select(_) | Union(_): 
+        Stream.promise(fetch().next(function (res:ResultSet)
+          return Stream.ofIterator(res)
+        ));
+      case CreateTable(_, _) | DropTable(_) | AlterTable(_, _):
+        fetch().next(function(_) return Noise);
+      case Insert(_):
+        fetch().next(function(_) return new Id(cnx.lastInsertId()));
+      case Update(_) | Delete(_):
+        fetch().next(function(res:ResultSet) return {rowsAffected: res.length});
+      case ShowColumns(_):
+        fetch().next(function(res:ResultSet):Array<Column>
+          return [for (row in res) formatter.parseColumn(cast row)]
+        );
+      case ShowIndex(_):
+        fetch().next(function(res:ResultSet):Array<Key>
+          return formatter.parseKeys([for (row in res) cast row])
+        );
+      default: null;
     }
-    catch (e:Dynamic) {
-      Failure(Error.withData('Failed to INSERT INTO ${table.getName()}', e));
-    });
+  }
 
+  function run<T>(query:String):Promise<T>
+    return OutcomeTools.attempt(
+      function(): T return cast cnx.request(query), 
+      function (err) return new Error('$err')
+    );
 }

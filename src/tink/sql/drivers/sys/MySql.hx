@@ -1,6 +1,8 @@
 package tink.sql.drivers.sys;
 
 import tink.sql.Driver;
+import tink.sql.format.MySqlFormatter;
+import tink.sql.drivers.sys.NativeSanitizer;
 
 @:require(neko || java || php) //making sure this is not used on nodejs ... deserves refinement
 class MySql extends StdDriver {
@@ -8,17 +10,22 @@ class MySql extends StdDriver {
   public function new(settings:MySqlSettings) {
     #if (!macro && (neko || java || php))
       check();
-      super(function (name) return sys.db.Mysql.connect({ //TODO: this fella seems to generate invalid JavaScript code
-        host: switch settings.host {
-          case null: 'localhost';
-          case v: v;
-        },
-        user: settings.user,
-        pass: settings.password,
-        database: name,
-      }), tink.sql.drivers.MySql.getSanitizer);
+      super(
+        function (name) 
+          return sys.db.Mysql.connect({
+            host: switch settings.host {
+              case null: 'localhost';
+              case v: v;
+            },
+            user: settings.user,
+            pass: settings.password,
+            database: name,
+          }), 
+        function (cnx) 
+          return new MySqlFormatter(tink.sql.drivers.MySql.getSanitizer(cnx))
+      );
     #else
-      super(null);
+      super(null, null);
     #end
   }
   

@@ -28,8 +28,8 @@ class Run extends TestWithDb {
       #if nodejs
       new FormatTest(driver, db),
       #end
-      new StringTest(driver, db),
-      new GeometryTest(driver, db),
+      //new StringTest(driver, db),
+      //new GeometryTest(driver, db),
       new ExprTest(driver, db),
       new Run(driver, db),
       new SubQueryTest(driver, db),
@@ -155,8 +155,9 @@ class Run extends TestWithDb {
 
       for (x in results)
         asserts.assert(x.isSuccess());
-
-      asserts.assert((@:await db.PostTags.join(db.Post).on(PostTags.post == Post.id && PostTags.tag == 'off-topic').all()).length == 2);
+      var res = @:await db.PostTags.join(db.Post).on(PostTags.post == Post.id && PostTags.tag == 'off-topic').all();
+      trace(res);
+      asserts.assert(res.length == 2);
       asserts.assert((@:await db.PostTags.join(db.Post).on(PostTags.post == Post.id && PostTags.tag == 'test').all()).length == 3);
 
       var update = @:await db.User.update(function (u) return [u.name.set('Donald')], { where: function (u) return u.name == 'Dave' } );

@@ -2,14 +2,15 @@ package tink.sql.drivers;
 
 import tink.sql.format.Sanitizer;
 import tink.core.Any;
+import haxe.io.Bytes;
 
 using StringTools;
 
 private typedef Impl = 
   #if nodejs
     tink.sql.drivers.node.MySql;
-  #elseif php
-    tink.sql.drivers.php.MySQLi;
+  //#elseif php
+  //  tink.sql.drivers.php.MySQLi;
   #else
     tink.sql.drivers.sys.MySql;
   #end
@@ -20,8 +21,12 @@ private class MySqlSanitizer implements Sanitizer {
   
   public function new() {}
   
-  public function value(v:Any):String 
-    return string(Std.string(v));
+  public function value(v:Any):String {
+    if (Std.is(v, Bool)) return v ? 'true' : 'false';
+    if (v == null || Std.is(v, Int)) return '$v';
+    if (Std.is(v, Bytes)) v = (cast v: Bytes).toString();
+    return string('$v');
+  }
   
   public function ident(s:String) {
     //Remarks for `string` apply to this function also

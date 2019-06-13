@@ -27,6 +27,11 @@ lix@^15.3.0-alpha.1:
   resolved "https://registry.yarnpkg.com/lix/-/lix-15.5.4.tgz#8bbcabb18ae98806b14698cfbdbdd820d25fd00b"
   integrity sha512-abOUxMKCcdoR5WUA8Sos5nE/AuXG02/aHkIwzZ7D3uckBcyvhgGOo0NLlMoZEHCLngtvvJ3QvS2KqQa/o+8Upg==
 
+lix@^15.4.1:
+  version "15.4.1"
+  resolved "https://registry.yarnpkg.com/lix/-/lix-15.4.1.tgz#c570ba5c22525e1abbf77cb91d9b8385bfa628c7"
+  integrity sha512-hJAve5Y1EmjVyO8WA/krTfsDdMqsiTI2YH2ZPUkSK0XgbeIGs1dwBup8VtJMbEHYjTON9ySWy4W0ZCgBabSnBw==
+
 mysql@^2.16.0:
   version "2.17.1"
   resolved "https://registry.yarnpkg.com/mysql/-/mysql-2.17.1.tgz#62bba4a039a9b2f73638cd1652ce50fc6f682899"
