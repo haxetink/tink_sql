@@ -14,7 +14,7 @@ class FormatTest extends TestWithDb {
 
 	var uniqueDb:UniqueDb;
 	var sanitizer:Sanitizer;
-	var formatter:SqlFormatter;
+	var formatter:SqlFormatter<{}, {}>;
 
 	public function new(driver, db) {
 		super(driver, db);

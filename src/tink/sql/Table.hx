@@ -33,7 +33,7 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
     super(
       cnx,
       fields,
-      TTable(name, alias),
+      TTable(this, alias),
       function (f:Filter) return (cast f : Fields->Condition)(fields) //TODO: raise issue on Haxe tracker and remove the cast once resolved
     );
   }

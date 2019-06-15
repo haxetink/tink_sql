@@ -6,7 +6,7 @@ import tink.sql.schema.KeyStore;
 import tink.sql.Expr;
 import tink.sql.format.SqlFormatter;
 
-class MySqlFormatter extends SqlFormatter {
+class MySqlFormatter extends SqlFormatter<MysqlColumnInfo, MysqlKeyInfo> {
 
   override public function format<Db, Result>(query:Query<Db, Result>):String
     return switch query {
@@ -121,14 +121,14 @@ class MySqlFormatter extends SqlFormatter {
       default: super.expr(e);
     }
 
-  public function parseColumn(res:MysqlColumnInfo):Column
+  override public function parseColumn(res:MysqlColumnInfo):Column
     return {  
       name: res.Field,
       nullable: res.Null == 'YES',
       type: parseType(res.Type, res.Extra.indexOf('auto_increment') > -1, res.Default)
     }
 
-  public function parseKeys(keys:Array<MysqlKeyInfo>):Array<Key> {
+  override public function parseKeys(keys:Array<MysqlKeyInfo>):Array<Key> {
     var store = new KeyStore();
     for (key in keys)
       switch key {

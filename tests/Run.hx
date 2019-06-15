@@ -155,9 +155,8 @@ class Run extends TestWithDb {
 
       for (x in results)
         asserts.assert(x.isSuccess());
-      var res = @:await db.PostTags.join(db.Post).on(PostTags.post == Post.id && PostTags.tag == 'off-topic').all();
-      trace(res);
-      asserts.assert(res.length == 2);
+
+      asserts.assert((@:await db.PostTags.join(db.Post).on(PostTags.post == Post.id && PostTags.tag == 'off-topic').all()).length == 2);
       asserts.assert((@:await db.PostTags.join(db.Post).on(PostTags.post == Post.id && PostTags.tag == 'test').all()).length == 3);
 
       var update = @:await db.User.update(function (u) return [u.name.set('Donald')], { where: function (u) return u.name == 'Dave' } );

@@ -2,6 +2,7 @@ package tink.sql;
 
 import tink.sql.Expr;
 import tink.sql.Table;
+import tink.sql.Info;
 
 using tink.CoreApi;
 
@@ -13,7 +14,7 @@ using tink.CoreApi;
 }
 
 enum Target<Result:{}, Db> {
-  TTable(name:TableName<Result>, ?alias:String);
+  TTable(table:TableInfo, ?alias:String);
   TJoin<Left:{}, Right:{}>(left:Target<Left, Db>, right:Target<Right, Db>, type:JoinType, c:Condition);
   TQuery<R>(alias:String, query:Query<Db, R>);
 }
