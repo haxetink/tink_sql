@@ -63,7 +63,7 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
   inline function nullable(isNullable:Bool):String
     return if (isNullable) 'NULL' else 'NOT NULL';
 
-  inline function autoIncrement(increment:Bool)
+  function autoIncrement(increment:Bool)
     return add(increment, 'AUTO_INCREMENT');
 
   function type(type: DataType):String

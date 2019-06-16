@@ -7,6 +7,7 @@ import tink.unit.AssertionBuffer;
 import tink.unit.*;
 import tink.testrunner.*;
 import tink.sql.drivers.MySql;
+import tink.sql.drivers.Sqlite;
 
 using tink.CoreApi;
 
@@ -16,25 +17,37 @@ using tink.CoreApi;
 class Run extends TestWithDb {
 
   static function main() {
-    var driver = new MySql({
+    var mysql = new MySql({
       user: env('DB_USERNAME', 'root'),
       password: env('DB_PASSWORD', '')
     });
-    var db = new Db('test', driver);
+    var dbMysql = new Db('test', mysql);
+    #if !nodejs
+    var sqlite = new Sqlite(function(db) return 'bin/$db.sqlite');
+    var dbSqlite = new Db('test', sqlite);
+    #end
     loadFixture('init');
     Runner.run(TestBatch.make([
-      new TypeTest(driver, db),
-      new SelectTest(driver, db),
-      //#if nodejs
-      new FormatTest(driver, db),
-      //#end
-      new StringTest(driver, db),
-      new GeometryTest(driver, db),
-      new ExprTest(driver, db),
-      new Run(driver, db),
-      new SubQueryTest(driver, db),
-      new SchemaTest(driver, db),
-      new ProcedureTest(driver, db),
+      new TypeTest(mysql, dbMysql),
+      new SelectTest(mysql, dbMysql),
+      new FormatTest(mysql, dbMysql),
+      #if !neko
+      new StringTest(mysql, dbMysql),
+      #end
+      new GeometryTest(mysql, dbMysql),
+      new ExprTest(mysql, dbMysql),
+      new Run(mysql, dbMysql),
+      new SchemaTest(mysql, dbMysql),
+      new ProcedureTest(mysql, dbMysql),
+
+      #if !nodejs
+      new TypeTest(sqlite, dbSqlite),
+      new SelectTest(sqlite, dbSqlite),
+      new FormatTest(sqlite, dbSqlite),
+      //new StringTest(sqlite, dbSqlite),
+      new ExprTest(sqlite, dbSqlite),
+      new Run(sqlite, dbSqlite),
+      #end
     ])).handle(Runner.exit);
   }
   

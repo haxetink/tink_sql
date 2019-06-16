@@ -80,6 +80,7 @@ private class MySqlSanitizer implements Sanitizer {
   }
   
 }
+
 abstract MySql(Impl) from Impl to Impl {
   public inline function new(settings) {
     this = new Impl(settings);

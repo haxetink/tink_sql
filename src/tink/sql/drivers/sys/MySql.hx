@@ -5,6 +5,7 @@ import tink.sql.format.MySqlFormatter;
 import tink.sql.drivers.sys.NativeSanitizer;
 
 @:require(neko || java || php) //making sure this is not used on nodejs ... deserves refinement
+#if php @:native('MysqlDriver') #end
 class MySql extends StdDriver {
   
   public function new(settings:MySqlSettings) {

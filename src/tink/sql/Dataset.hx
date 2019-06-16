@@ -33,21 +33,15 @@ class Selectable<Fields, Filter, Result: {}, Db> extends FilterableWhere<Fields,
 
 }
 
-class FilterableWhere<Fields, Filter, Result: {}, Db> extends FilterableHaving<Fields, Filter, Result, Db> {
+class FilterableWhere<Fields, Filter, Result: {}, Db> extends Orderable<Fields, Filter, Result, Db> {
 
   macro public function where(ethis, filter) {
     filter = tink.sql.macros.Filters.makeFilter(ethis, filter);
     return macro @:pos(ethis.pos) @:privateAccess $ethis._where(@:noPrivateAccess $filter);
   }
-  
-  function _where(filter:Filter):FilterableWhere<Fields, Filter, Result, Db>
-    return new FilterableWhere(cnx, fields, target, toCondition, {
-      where: condition.where && toCondition(filter),
-      having: condition.having
-    }, selection);
 
-  public function groupBy(groupBy:Fields->Array<Field<Dynamic, Result>>):FilterableHaving<Fields, Filter, Result, Db>
-    return new FilterableHaving(cnx, fields, target, toCondition, condition, selection, groupBy(fields));
+  public function groupBy(groupBy:Fields->Array<Field<Dynamic, Dynamic>>):FilterableHaving<Fields, Filter, Result, Db>
+    return new FilterableHaving(cnx, fields, target, toCondition, condition, selection, cast groupBy(fields));
 
 }
 
@@ -62,11 +56,18 @@ class FilterableHaving<Fields, Filter, Result: {}, Db> extends Orderable<Fields,
     return new FilterableHaving(cnx, fields, target, toCondition, {
       where: condition.where,
       having: condition.having && toCondition(filter)
-    }, selection);
+    }, selection, grouped);
 
 }
 
 class Orderable<Fields, Filter, Result: {}, Db> extends Selected<Fields, Filter, Result, Db> {
+
+  // This is used in macros.Filters so needs to be available on all results
+  function _where(filter:Filter):FilterableWhere<Fields, Filter, Result, Db>
+    return new FilterableWhere(cnx, fields, target, toCondition, {
+      where: condition.where && toCondition(filter),
+      having: condition.having
+    }, selection, grouped);
 
   public function orderBy(orderBy:Fields->OrderBy<Result>):Selected<Fields, Filter, Result, Db>
     return new Selected(cnx, fields, target, toCondition, condition, selection, grouped, orderBy(fields));

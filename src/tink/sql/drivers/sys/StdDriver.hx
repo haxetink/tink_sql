@@ -69,7 +69,7 @@ class StdConnection<Db:DatabaseInfo> implements Connection<Db> {
         fetch().next(function(res:ResultSet) 
           return {rowsAffected: 
             #if (!macro && php7)
-              php.Syntax.field(php.Syntax.field(cnx, 'db'), 'affected_rows') //haxefoundation/haxe#8433
+              untyped cnx.db.affected_rows //haxefoundation/haxe#8433
             #else res.length #end
           });
       case ShowColumns(_):
