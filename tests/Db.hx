@@ -58,7 +58,6 @@ typedef Types = {
 
 typedef Geometry = {
   public var point(default, null):Null<Point>;
-  @:optional public var multiPolygon(default, null):Null<MultiPolygon>;
 }
 
 typedef Schema = {

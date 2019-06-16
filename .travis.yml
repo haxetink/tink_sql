@@ -7,6 +7,8 @@ addons:
       - sourceline: 'ppa:ondrej/php'
     packages:
       - mysql-server
+      - php7.1-cli
+      - php7.1-mysqli
 
 services:
   - mysql
@@ -40,7 +42,7 @@ install:
 script:
   - lix run travix node
   - lix run travix neko
-  - lix run travix php
+  - lix run travix run php7
 
 # jobs:
 #   include:
