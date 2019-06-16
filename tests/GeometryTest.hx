@@ -34,7 +34,6 @@ class GeometryTest extends TestWithDb {
 				asserts.assert(point.latitude == 1.0);
 				asserts.assert(point.longitude == 2.0);
 				asserts.assert(row.multiPolygon.type == geojson.GeometryType.MultiPolygon);
-				trace(row.multiPolygon.polygons[0]);
 				asserts.assert(row.multiPolygon.polygons[0].lines[0].points[0].latitude == 1.0);
 				asserts.assert(row.multiPolygon.polygons[0].lines[0].points[0].longitude == 2.0);
 				return asserts.done();

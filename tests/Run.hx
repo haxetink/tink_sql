@@ -25,9 +25,9 @@ class Run extends TestWithDb {
     Runner.run(TestBatch.make([
       new TypeTest(driver, db),
       new SelectTest(driver, db),
-      #if nodejs
+      //#if nodejs
       new FormatTest(driver, db),
-      #end
+      //#end
       new StringTest(driver, db),
       new GeometryTest(driver, db),
       new ExprTest(driver, db),

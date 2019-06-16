@@ -91,7 +91,7 @@ class TableBuilder {
                 var defaultValue = switch meta.get(':byDefault') {
                   case null: macro null;
                   case [[value]]: value;
-                  case more: f.pos.error('@:byDefault excepts one expression');
+                  case more: f.pos.error('@:byDefault expects one expression');
                 }
 
                 function resolveType(type:haxe.macro.Type) {

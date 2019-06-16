@@ -178,7 +178,7 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
       case TTable(table, alias):
         var from = alias == null ? table.getName() : alias;
         table.columnNames().map(function (name)
-          return field('$from@@$name', EField(
+          return field('$from@@@$name', EField(
             from, name
           ))
         ).join(separate);

@@ -134,7 +134,7 @@ class MySqlFormatter extends SqlFormatter<MysqlColumnInfo, MysqlKeyInfo> {
       switch key {
         case {Key_name: _.toLowerCase() => 'primary'}:
           store.addPrimary(key.Column_name);
-        case {Non_unique: 0}:
+        case {Non_unique: 0} | {Non_unique: '0'}:
           store.addUnique(key.Key_name, key.Column_name);
         default:
           store.addIndex(key.Key_name, key.Column_name);
@@ -163,6 +163,6 @@ typedef MysqlColumnInfo = {
 
 typedef MysqlKeyInfo = {
   Key_name: String,
-  Non_unique: Int,
+  Non_unique: haxe.extern.EitherType<Int, String>,
   Column_name: String
 }

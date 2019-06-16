@@ -25,11 +25,12 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
 {
   
   public var name(default, null):TableName<Row>;
+  var columns:Array<Column>;
   
-  function new(cnx, name, alias, fields) {
+  function new(cnx, name, alias, fields, ?columns) {
     this.name = name;
     this.fields = fields;
-    
+    this.columns = columns;
     super(
       cnx,
       fields,
@@ -112,7 +113,7 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
 
   @:noCompletion 
   public function getColumns():Array<Column> 
-    throw 'not implemented';
+    return columns;
   
   @:noCompletion 
   public function columnNames():Array<String>
@@ -146,7 +147,7 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
           default: throw "assert";
         }
         var fieldObj = EObjectDecl(aliasFields).at(e.pos);
-        macro @:privateAccess new $path($e.cnx, $e.name, $v{alias}, $fieldObj);
+        macro @:privateAccess new $path($e.cnx, $e.name, $v{alias}, $fieldObj, $e.getColumns());
       default: e.reject();
     }
   }
