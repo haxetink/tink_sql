@@ -47,6 +47,9 @@ class ExprTyper {
       case EUnOp(Not | IsNull, _, _): Some(ValueType.VBool);
       case EUnOp(Neg, _, _): Some(ValueType.VBool);
       case ECall('COUNT', _): Some(ValueType.VInt);
+      case ECall('ST_Distance_Sphere', _): Some(ValueType.VFloat);
+      case ECall('IF', [_, ifTrue, _]): type(ifTrue);
+      case ECall(_, _): Some(ValueType.VBool);
       default: None;
     }
 }

@@ -1,5 +1,6 @@
 package tink.sql.drivers.sys;
 
+import geojson.GeometryCollection;
 import tink.sql.Info;
 import tink.sql.Expr;
 import haxe.DynamicAccess;
@@ -9,6 +10,8 @@ import tink.streams.RealStream;
 import sys.db.ResultSet;
 import tink.sql.format.Formatter;
 import tink.sql.expr.ExprTyper;
+import haxe.io.Bytes;
+import haxe.io.BytesInput;
 
 using tink.CoreApi;
 
@@ -46,12 +49,41 @@ class StdConnection<Db:DatabaseInfo> implements Connection<Db> {
   public function getFormatter()
     return formatter;
 
-  function getTable<Result>(query:Query<Db,Result>):String
-    return switch query {
-      case Select({from: TTable(_.getName() => name, _)}): name;
-      case Union(({left: query})): getTable(query);
-      default: null;
-    }
+  function parseGeometryValue<T, C>(bytes: Bytes): geojson.util.GeoJson<T, C> {
+    var buffer = new BytesInput(bytes, 4);
+    function parseGeometry(): geojson.util.GeoJson<Dynamic, Dynamic> {
+      inline function multi(): Dynamic
+        return [for (_ in 0 ... buffer.readInt32()) parseGeometry()];
+      inline function parsePoint(): Array<Float> {
+        var y = buffer.readDouble(), x = buffer.readDouble();
+        return [x, y];
+      }
+      inline function coordinates() {
+        var point = parsePoint();
+        return new geojson.util.Coordinates(point[0], point[1]);
+      }
+      buffer.bigEndian = buffer.readByte() == 0;
+      switch buffer.readInt32() {
+        case 1:
+          var point = parsePoint();
+          return new geojson.Point(point[0], point[1]);
+        case 2:
+          return new geojson.LineString([
+            for (_ in 0 ... buffer.readInt32()) coordinates()
+          ]);
+        case 3:
+          return new geojson.Polygon([for (_ in 0 ... buffer.readInt32())
+            [for (_ in 0 ... buffer.readInt32()) coordinates()]
+          ]);
+        case 4: return new geojson.MultiPoint(multi());
+        case 5: return new geojson.MultiLineString(multi());
+        case 6: return geojson.MultiPolygon.fromPolygons(multi());
+        case 7: return (new geojson.GeometryCollection(multi()): Dynamic);
+        case v: throw 'GeoJson type $v not supported';
+      }
+    } 
+    return parseGeometry(); 
+  }
 
   function processValue(value:Dynamic, type:Option<ValueType<Dynamic>>): Any {
     if (value == null) return null;
@@ -70,6 +102,10 @@ class StdConnection<Db:DatabaseInfo> implements Connection<Db> {
         Date.fromString(value);
       case Some(ValueType.VBytes) if (Std.is(value, String)):
         haxe.io.Bytes.ofString(value);
+      case Some(ValueType.VGeometry(_)):
+        if (Std.is(value, String)) parseGeometryValue(Bytes.ofString(value))
+        else if (Std.is(value, Bytes)) parseGeometryValue(value)
+        else value;
       default: value;
     }
   }
