@@ -42,10 +42,10 @@ class ExprTyper {
         type(selection[selection.keys()[0]]);
       case EBinOp(Add | Subt | Mult | Mod | Div, _, _): Some(ValueType.VFloat);
       case EBinOp(Greater | Equals | And | Or, _, _): Some(ValueType.VBool);
-      case EBinOp(Like, _, _): Some(ValueType.VBool);
+      case EBinOp((_: BinOp<Dynamic, Dynamic, Dynamic>) => Like, _, _): Some(ValueType.VBool);
       case EBinOp(In, _, _): Some(ValueType.VBool);
       case EUnOp(Not | IsNull, _, _): Some(ValueType.VBool);
-      case EUnOp(Neg, _, _): Some(ValueType.VBool);
+      case EUnOp((_: UnOp<Dynamic, Dynamic>) => Neg, _, _): Some(ValueType.VBool);
       case ECall('COUNT', _): Some(ValueType.VInt);
       case ECall('ST_Distance_Sphere', _): Some(ValueType.VFloat);
       case ECall('IF', [_, ifTrue, _]): type(ifTrue);
