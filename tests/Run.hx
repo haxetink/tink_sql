@@ -7,7 +7,6 @@ import tink.unit.AssertionBuffer;
 import tink.unit.*;
 import tink.testrunner.*;
 import tink.sql.drivers.MySql;
-import tink.sql.drivers.Sqlite;
 
 using tink.CoreApi;
 
@@ -22,8 +21,8 @@ class Run extends TestWithDb {
       password: env('DB_PASSWORD', '')
     });
     var dbMysql = new Db('test', mysql);
-    #if !nodejs
-    var sqlite = new Sqlite(function(db) return 'bin/$db.sqlite');
+    #if neko
+    var sqlite = new tink.sql.drivers.Sqlite(function(db) return 'bin/$db.sqlite');
     var dbSqlite = new Db('test', sqlite);
     #end
     loadFixture('init');
@@ -40,7 +39,7 @@ class Run extends TestWithDb {
       new SchemaTest(mysql, dbMysql),
       new ProcedureTest(mysql, dbMysql),
 
-      #if !nodejs
+      #if neko
       new TypeTest(sqlite, dbSqlite),
       new SelectTest(sqlite, dbSqlite),
       new FormatTest(sqlite, dbSqlite),
