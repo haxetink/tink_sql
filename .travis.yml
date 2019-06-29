@@ -45,6 +45,6 @@ install:
 script:
   - lix run travix node
   - lix run travix neko
-  - if [ $HAXE_VERSION == "4.0.0-rc.2" ]; then
-      lix run travix run php7
+  - if [[ "$(haxe -version)" =~ ^4.* ]]; then
+    lix run travix run php7;
     fi
