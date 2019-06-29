@@ -19,7 +19,6 @@ services:
 
 stages:
   - test
-  # - deploy
 
 language: node_js
 node_js: 10
@@ -46,4 +45,6 @@ install:
 script:
   - lix run travix node
   - lix run travix neko
-  - lix run travix run php7
+  - if [ $HAXE_VERSION == "4.0.0-rc.2" ]; then
+      lix run travix run php7
+    fi

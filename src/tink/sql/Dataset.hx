@@ -33,6 +33,7 @@ class Selectable<Fields, Filter, Result: {}, Db> extends FilterableWhere<Fields,
 
 }
 
+@:allow(tink.sql)
 class FilterableWhere<Fields, Filter, Result: {}, Db> extends Orderable<Fields, Filter, Result, Db> {
 
   macro public function where(ethis, filter) {
@@ -45,6 +46,7 @@ class FilterableWhere<Fields, Filter, Result: {}, Db> extends Orderable<Fields, 
 
 }
 
+@:allow(tink.sql)
 class FilterableHaving<Fields, Filter, Result: {}, Db> extends Orderable<Fields, Filter, Result, Db> {
 
   macro public function having(ethis, filter) {
@@ -74,6 +76,7 @@ class Orderable<Fields, Filter, Result: {}, Db> extends Selected<Fields, Filter,
 
 }
 
+@:allow(tink.sql)
 class Selected<Fields, Filter, Result:{}, Db> extends Limitable<Fields, Result, Db> {
   
   public var fields(default, null):Fields;
