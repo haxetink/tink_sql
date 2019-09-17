@@ -193,8 +193,9 @@ class TableBuilder {
               return module.concat([name]).join('.').asComplexType();
             }
             // Typedef fields and result so we get readable error messages
-            var fieldsAlias = define(fieldsType, '${name}_Fields');
-            var rowAlias = define(rowType, '${name}_Result');
+            var typeName = name.substr(0, 1).toUpperCase() + name.substr(1);
+            var fieldsAlias = define(fieldsType, '${typeName}_Fields');
+            var rowAlias = define(rowType, '${typeName}_Result');
             var filterType = (macro function ($name:$fieldsAlias):tink.sql.Expr.Condition return tink.sql.Expr.ExprData.EValue(true, tink.sql.Expr.ValueType.VBool)).typeof().sure().toComplex({ direct: true });
 
             macro class $cName<Db> extends tink.sql.Table.TableSource<$fieldsAlias, $filterType, $rowAlias, Db> {
