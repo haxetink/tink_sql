@@ -106,9 +106,9 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
     #end
     return switch query {
       case Select(_) | Union(_) | CallProcedure(_):
-        {sql: sql, typeCast: typeCast, nestTables: formatter.isNested(query)}
+        {sql: sql, typeCast: typeCast, nestTables: false}
       default:
-        {sql: sql}
+        {sql: sql, nestTables: false}
     }
   }
 

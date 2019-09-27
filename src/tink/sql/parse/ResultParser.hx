@@ -66,7 +66,13 @@ class ResultParser<Db> {
       case Some(ValueType.VBool) if (Std.is(value, Int)): 
         value > 0;
       case Some(ValueType.VBool): !!value;
-      case Some(ValueType.VString): '${value}';
+      case Some(ValueType.VString):
+        if (Std.is(value, Bytes)) {
+          var bytes: Bytes = value;
+          bytes.toString(); // Make this explicit so dce doesn't remove it...
+        } else {
+          '${value}';
+        }
       case Some(ValueType.VFloat) if (Std.is(value, String)):
         Std.parseFloat(value);
       case Some(ValueType.VInt) if (Std.is(value, String)):
