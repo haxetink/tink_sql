@@ -119,8 +119,9 @@ class ResultParser<Db> {
           if (!res.exists(table)) res[table] = {};
           else res[table];
       }
-      target[name] = parseField(query, name, row[name], table);
+      target[name] = parseField(query, name, row[field], table);
     }
+    trace(res);
     return cast res;
   }
 }
