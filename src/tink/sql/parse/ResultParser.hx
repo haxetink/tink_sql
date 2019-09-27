@@ -67,12 +67,7 @@ class ResultParser<Db> {
         value > 0;
       case Some(ValueType.VBool): !!value;
       case Some(ValueType.VString):
-        if (Std.is(value, Bytes)) {
-          var bytes: Bytes = value;
-          bytes.toString(); // Make this explicit so dce doesn't remove it...
-        } else {
-          '${value}';
-        }
+        '${value}';
       case Some(ValueType.VFloat) if (Std.is(value, String)):
         Std.parseFloat(value);
       case Some(ValueType.VInt) if (Std.is(value, String)):
@@ -80,6 +75,10 @@ class ResultParser<Db> {
       case Some(ValueType.VDate) if (Std.is(value, String)):
         Date.fromString(value);
       case Some(ValueType.VBytes) if (Std.is(value, String)):
+        #if js 
+          if (Std.is(value, js.node.Buffer)) 
+            return (value: js.node.Buffer).hxToBytes(); 
+        #end
         haxe.io.Bytes.ofString(value);
       case Some(ValueType.VGeometry(_)):
         if (Std.is(value, String)) parseGeometryValue(Bytes.ofString(value))

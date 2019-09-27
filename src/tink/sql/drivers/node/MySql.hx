@@ -122,11 +122,13 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
 
   function typeCast(field, next): Any {
     return switch field.type {
-      case 'BLOB' | 'GEOMETRY': 
+      case 'GEOMETRY': 
         switch (field.buffer(): Buffer) {
           case null: null;
           case v: v.hxToBytes();
         }
+      case 'BLOB':
+        return field.buffer();
       default: next();
     }
   }
