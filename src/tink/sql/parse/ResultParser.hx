@@ -121,7 +121,6 @@ class ResultParser<Db> {
       }
       target[name] = parseField(query, name, row[field], table);
     }
-    trace(res);
     return cast res;
   }
 }
