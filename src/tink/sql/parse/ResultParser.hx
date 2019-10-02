@@ -74,11 +74,11 @@ class ResultParser<Db> {
         Std.parseInt(value);
       case Some(ValueType.VDate) if (Std.is(value, String)):
         Date.fromString(value);
+      #if js 
+      case Some(ValueType.VBytes) if (Std.is(value, js.node.Buffer)):
+        (value: js.node.Buffer).hxToBytes();
+      #end
       case Some(ValueType.VBytes) if (Std.is(value, String)):
-        #if js 
-          if (Std.is(value, js.node.Buffer)) 
-            return (value: js.node.Buffer).hxToBytes(); 
-        #end
         haxe.io.Bytes.ofString(value);
       case Some(ValueType.VGeometry(_)):
         if (Std.is(value, String)) parseGeometryValue(Bytes.ofString(value))
