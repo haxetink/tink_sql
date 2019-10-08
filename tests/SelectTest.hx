@@ -3,6 +3,7 @@ package;
 import tink.unit.Assert.assert;
 import tink.sql.OrderBy;
 import Db;
+import tink.sql.Fields;
 
 using tink.CoreApi;
 
@@ -49,7 +50,7 @@ class SelectTest extends TestWithDb {
 			});
 
 	public function selectWithFunction() {
-		function getTag(p, u, t)
+		function getTag(p: Fields<Post>, u: Fields<User>, t: Fields<PostTags>)
 			return {tag: t.tag}
 		return db.Post
 			.join(db.User).on(Post.author == User.id)
