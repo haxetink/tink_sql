@@ -233,6 +233,21 @@ enum ValueType<T> {
 
   @:from static function ofPoint(p:Point):Expr<Point>
     return EValue(p, VGeometry(Point));
+    
+  @:from static function ofLineString(p:LineString):Expr<LineString>
+    return EValue(p, VGeometry(LineString));
+    
+  @:from static function ofPolygon(p:Polygon):Expr<Polygon>
+    return EValue(p, VGeometry(Polygon));
+    
+  @:from static function ofMultiPoint(p:MultiPoint):Expr<MultiPoint>
+    return EValue(p, VGeometry(MultiPoint));
+    
+  @:from static function ofMultiLineString(p:MultiLineString):Expr<MultiLineString>
+    return EValue(p, VGeometry(MultiLineString));
+    
+  @:from public static function ofMultiPolygon(p:MultiPolygon):Expr<MultiPolygon>
+    return EValue(p, VGeometry(MultiPolygon));
 
   @:from static function ofBytes(b:Bytes):Expr<Bytes>
     return EValue(b, VBytes);

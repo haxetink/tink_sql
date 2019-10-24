@@ -1,3 +1,2 @@
-bin/node/*.js
-fixture.n
-node_modules
+/bin
+/node_modules
