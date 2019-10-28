@@ -10,6 +10,8 @@ import tink.sql.format.Sanitizer;
 import tink.streams.Stream;
 import tink.sql.format.MySqlFormatter;
 
+import #if haxe3 js.lib.Error #else js.Error #end as JsError;
+
 using tink.CoreApi;
 
 typedef NodeSettings = {
@@ -61,7 +63,7 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
   public function getFormatter()
     return formatter;
   
-  function toError<A>(error:js.Error):Outcome<A, Error>
+  function toError<A>(error:JsError):Outcome<A, Error>
     return Failure(Error.withData(error.message, error));
 
   public function execute<Result>(query:Query<Db,Result>):Result {
@@ -203,6 +205,6 @@ private typedef QueryOptions = {
 }
 
 private typedef NativeConnection = {
-  function query(q: QueryOptions, cb:js.Error->Dynamic->Void):Void;
+  function query(q: QueryOptions, cb:JsError->Dynamic->Void):Void;
   //function release():Void; -- doesn't seem to work
 }
