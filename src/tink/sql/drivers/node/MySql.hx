@@ -111,23 +111,14 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
 
   function typeCast(field, next): Any {
     return switch field.type {
-      case 'BLOB':
-        switch (field.buffer():Buffer) {
-          case null: null;
-          case buf:
-            // MySQL.js sometimes returns TEXT fields as BLOB, see https://github.com/mysqljs/mysql#string
-            var columns = [for (f in db.tableInfo(field.table).getColumns()) f];
-            var column = columns.filter(function (f) return f.name == field.name)[0];
-            if (column == null) {
-              throw 'Failed to find type of ${field.table}.${field.name}';
-            }
-            switch column.type {
-              case DText(_, _), DString(_, _):
-                buf.toString();
-              case _:
-                buf.hxToBytes();
-            }
-        }
+      case 'BLOB' | 'VAR_STRING':
+        if(field.packet.charsetNr == 63) // binary = 63, see: https://dev.mysql.com/doc/internals/en/character-set.html#packet-Protocol::CharacterSet
+          switch (field.buffer():Buffer) {
+            case null: null;
+            case buf: buf.hxToBytes();
+          }
+        else
+          field.string();
       case 'TINY' if(field.length == 1):
         switch field.string() {
           case null: null;
