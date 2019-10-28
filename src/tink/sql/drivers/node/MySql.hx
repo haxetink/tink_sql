@@ -73,6 +73,10 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
         Stream.promise(fetch().next(function (res)
           return Stream.ofIterator(rowIterator(res, formatter.isNested(query)))
         ));
+      case CallProcedure(_): 
+        Stream.promise(fetch().next(function (res)
+          return Stream.ofIterator(rowIterator(res[0], formatter.isNested(query)))
+        ));
       case CreateTable(_, _) | DropTable(_) | AlterTable(_, _):
         fetch().next(function(_) return Noise);
       case Insert(_):
@@ -96,7 +100,7 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
     trace(sql);
     #end
     return switch query {
-      case Select(_) | Union(_):
+      case Select(_) | Union(_) | CallProcedure(_):
         {sql: sql, typeCast: typeCast, nestTables: formatter.isNested(query)}
       default:
         {sql: sql}

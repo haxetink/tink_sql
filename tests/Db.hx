@@ -99,7 +99,9 @@ typedef StringTypes = {
 }
 
 @:tables(User, Post, PostTags, Types, Geometry, Schema, StringTypes)
-class Db extends tink.sql.Database {}
+class Db extends tink.sql.Database {
+  @:procedure var func:Int->{x:Int};
+}
 
 abstract AInt(Int) from Int to Int {}
 abstract AFloat(Float) from Float to Float {}

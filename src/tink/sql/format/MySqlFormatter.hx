@@ -141,7 +141,15 @@ class MySqlFormatter extends SqlFormatter {
       }
     return store.get();
   }
-
+  
+  override function call<Row:{}>(op:CallOperation<Row>):String {
+    return join([
+      'CALL',
+      op.name,
+      '(${[for(arg in op.arguments) expr(arg)].join(',')})',
+      // limit(op.limit), // not supported by mysql
+    ]);
+  }
 }
 
 typedef MysqlColumnInfo = {

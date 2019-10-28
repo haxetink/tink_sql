@@ -27,6 +27,7 @@ class SqlFormatter implements Formatter {
       case Union(op): union(op);
       case Update(op): update(op);
       case Delete(op): delete(op);
+      case CallProcedure(op): call(op);
       default: throw 'Query not supported in currrent formatter: $query';
     }
 
@@ -275,6 +276,10 @@ class SqlFormatter implements Formatter {
       where(del.where),
       limit(del.max)
     ]);
+  
+  function call<Row:{}>(op:CallOperation<Row>):String {
+    throw 'implement';
+  }
 
   function binOp(o:BinOp<Dynamic, Dynamic, Dynamic>)
     return switch o {

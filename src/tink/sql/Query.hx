@@ -13,7 +13,8 @@ enum Query<Db, Result> {
   Select<Row:{}>(select:SelectOperation<Db, Row>):Query<Db, RealStream<Row>>;
   Insert<Row:{}>(insert:InsertOperation<Row>):Query<Db, Promise<Id<Row>>>;
   Update<Row:{}>(update:UpdateOperation<Row>):Query<Db, Promise<{rowsAffected:Int}>>;
-  Delete<Row:{}>(del:DeleteOperation<Row>):Query<Db, Promise<{rowsAffected:Int}>>;
+  Delete<Row:{}>(delete:DeleteOperation<Row>):Query<Db, Promise<{rowsAffected:Int}>>;
+  CallProcedure<Row:{}>(call:CallOperation<Row>):Query<Db, RealStream<Row>>;
   CreateTable<Row:{}>(table:TableInfo, ?ifNotExists:Bool):Query<Db, Promise<Noise>>;
   DropTable<Row:{}>(table:TableInfo):Query<Db, Promise<Noise>>;
   AlterTable<Row:{}>(table:TableInfo, changes:Array<AlterTableOperation>):Query<Db, Promise<Noise>>;
@@ -43,6 +44,12 @@ typedef UpdateOperation<Row:{}> = {
   set:Update<Row>,
   ?where:Condition,
   ?max:Int
+}
+
+typedef CallOperation<Row:{}> = {
+  name:String,
+  arguments:Array<Expr<Dynamic>>,
+  ?limit:Limit,
 }
 
 typedef Update<Row> = Array<FieldUpdate<Row>>;
