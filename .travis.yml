@@ -29,6 +29,7 @@ install:
   - npm install
   - lix install haxe $HAXE_VERSION
   - lix download
+  - sudo apt-get update
   - if [[ "$(haxe -version)" =~ ^4.* ]]; then sudo apt-get install php7.1-cli php7.1-mysql; else sudo apt-get install php5.6-cli php5.6-mysql; fi
 
   
