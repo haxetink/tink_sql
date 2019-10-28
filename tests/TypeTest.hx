@@ -25,6 +25,7 @@ class TypeTest extends TestWithDb {
 			float: 1.23,
 			text: 'mytext',
 			blob: haxe.io.Bytes.ofString('myblob'),
+			varbinary: haxe.io.Bytes.ofString('myvarbinary'),
 			date: mydate,
 			boolTrue: true,
 			boolFalse: false,
@@ -32,6 +33,7 @@ class TypeTest extends TestWithDb {
 			nullInt: null,
 			nullText: null,
 			nullBlob: null,
+			nullVarbinary: null,
 			nullDate: null,
 			nullBool: null,
 		})
@@ -41,6 +43,7 @@ class TypeTest extends TestWithDb {
 				asserts.assert(row.text == 'mytext');
 				asserts.assert(row.date.getTime() == mydate.getTime());
 				asserts.assert(row.blob.toHex() == '6d79626c6f62');
+				asserts.assert(row.varbinary.toHex() == haxe.io.Bytes.ofString('myvarbinary').toHex());
 				asserts.assert(row.boolTrue == true);
 				asserts.assert(row.boolFalse == false);
 				
@@ -48,12 +51,14 @@ class TypeTest extends TestWithDb {
 				asserts.assert(row.optionalText == null);
 				asserts.assert(row.optionalDate == null);
 				asserts.assert(row.optionalBlob == null);
+				asserts.assert(row.optionalVarbinary == null);
 				asserts.assert(row.optionalBool == null);
 				
 				asserts.assert(row.nullInt == null);
 				asserts.assert(row.nullText == null);
 				asserts.assert(row.nullDate == null);
 				asserts.assert(row.nullBlob == null);
+				asserts.assert(row.nullVarbinary == null);
 				asserts.assert(row.nullBool == null);
 				
 				return Noise;
