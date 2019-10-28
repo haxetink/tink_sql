@@ -3,6 +3,8 @@ dist: xenial
 
 addons:
   apt:
+    sources:
+      - sourceline: 'ppa:ondrej/php'
     packages:
       - mysql-server
 
