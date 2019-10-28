@@ -1,7 +1,7 @@
--D tink_await=0.4.0
-# @install: lix --silent download "gh://github.com/haxetink/tink_await#e29b660ef0fef49b38b918f9e58759e7b7da3ac0" into tink_await/0.4.0/github/e29b660ef0fef49b38b918f9e58759e7b7da3ac0
--lib tink_syntaxhub
--lib tink_macro
+-D tink_await=0.5.0
+# @install: lix --silent download "gh://github.com/haxetink/tink_await#72b0854655911a71976297a62c35efc950b6db59" into tink_await/0.5.0/github/72b0854655911a71976297a62c35efc950b6db59
 -lib tink_core
--cp ${HAXE_LIBCACHE}/tink_await/0.4.0/github/e29b660ef0fef49b38b918f9e58759e7b7da3ac0/src
+-lib tink_macro
+-lib tink_syntaxhub
+-cp ${HAXE_LIBCACHE}/tink_await/0.5.0/github/72b0854655911a71976297a62c35efc950b6db59/src
 --macro tink.await.Await.use()

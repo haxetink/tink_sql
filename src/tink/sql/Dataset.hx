@@ -3,6 +3,7 @@ package tink.sql;
 import tink.sql.Expr;
 import tink.streams.RealStream;
 import tink.sql.Query;
+import tink.sql.Info;
 
 using tink.CoreApi;
 
@@ -185,7 +186,12 @@ class Dataset<Fields, Result:{}, Db> {
     return cnx.execute(toQuery());
     
   public function all():Promise<Array<Result>>
+    #if php
+    return (cast cnx: tink.sql.drivers.php.MySQLi.MySQLiConnection<DatabaseInfo>)
+      .syncResult(cast toQuery());
+    #else
     return stream().collect();
+    #end
 
   public function first():Promise<Result>
     return all()

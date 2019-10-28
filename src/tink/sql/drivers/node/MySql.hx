@@ -10,6 +10,8 @@ import tink.sql.format.Sanitizer;
 import tink.streams.Stream;
 import tink.sql.format.MySqlFormatter;
 
+import #if haxe3 js.lib.Error #else js.Error #end as JsError;
+
 using tink.CoreApi;
 
 typedef NodeSettings = {
@@ -61,7 +63,7 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
   public function getFormatter()
     return formatter;
   
-  function toError<A>(error:js.Error):Outcome<A, Error>
+  function toError<A>(error:JsError):Outcome<A, Error>
     return Failure(Error.withData(error.message, error));
 
   public function execute<Result>(query:Query<Db,Result>):Result {
@@ -115,23 +117,14 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
 
   function typeCast(field, next): Any {
     return switch field.type {
-      case 'BLOB':
-        switch (field.buffer():Buffer) {
-          case null: null;
-          case buf:
-            // MySQL.js sometimes returns TEXT fields as BLOB, see https://github.com/mysqljs/mysql#string
-            var columns = [for (f in db.tableInfo(field.table).getColumns()) f];
-            var column = columns.filter(function (f) return f.name == field.name)[0];
-            if (column == null) {
-              throw 'Failed to find type of ${field.table}.${field.name}';
-            }
-            switch column.type {
-              case DText(_, _), DString(_, _):
-                buf.toString();
-              case _:
-                buf.hxToBytes();
-            }
-        }
+      case 'BLOB' | 'VAR_STRING':
+        if(field.packet.charsetNr == 63) // binary = 63, see: https://dev.mysql.com/doc/internals/en/character-set.html#packet-Protocol::CharacterSet
+          switch (field.buffer():Buffer) {
+            case null: null;
+            case buf: buf.hxToBytes();
+          }
+        else
+          field.string();
       case 'TINY' if(field.length == 1):
         switch field.string() {
           case null: null;
@@ -216,6 +209,6 @@ private typedef QueryOptions = {
 }
 
 private typedef NativeConnection = {
-  function query(q: QueryOptions, cb:js.Error->Dynamic->Void):Void;
+  function query(q: QueryOptions, cb:JsError->Dynamic->Void):Void;
   //function release():Void; -- doesn't seem to work
 }

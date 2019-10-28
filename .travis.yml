@@ -1,20 +1,22 @@
 sudo: required
-dist: trusty
+dist: xenial
 
 addons:
   apt:
     sources:
-      - mysql-5.7-trusty
       - sourceline: 'ppa:ondrej/php'
     packages:
       - mysql-server
+
+services:
+  - mysql
 
 stages:
   - test
   # - deploy
 
 language: node_js
-node_js: 8
+node_js: 10
 
 cache:
   directories:
@@ -25,20 +27,20 @@ os:
   # - osx
 
 env:
-  - HAXE_VERSION=3.4.7
   - HAXE_VERSION=latest
+  - HAXE_VERSION=nightly
   
 install:
   - npm i -g lix
   - npm install
   - lix install haxe $HAXE_VERSION
   - lix download
-  - if [[ "$(haxe -version)" =~ ^4.* ]]; then sudo apt-get install php7.1-cli php7.1-mysql; else sudo apt-get install php5.6-cli php5.6-mysql; fi
+  - if [[ "$(haxe -version)" =~ ^4.* ]]; then sudo apt-get install php7.0-cli php7.0-mysql; else sudo apt-get install php5.6-cli php5.6-mysql; fi
 
   
 script:
   - lix run travix node
-  - lix run travix php
+  # - lix run travix php
 
 # jobs:
 #   include:
