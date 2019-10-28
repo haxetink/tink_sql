@@ -1,12 +1,8 @@
 sudo: required
 dist: xenial
 
-addons:
-  apt:
-    sources:
-      - sourceline: 'ppa:ondrej/php'
-    packages:
-      - mysql-server
+services:
+  - mysql
 
 stages:
   - test
