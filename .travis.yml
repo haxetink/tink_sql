@@ -27,7 +27,6 @@ os:
   # - osx
 
 env:
-  - HAXE_VERSION=3.4.7
   - HAXE_VERSION=latest
   - HAXE_VERSION=nightly
   
@@ -41,7 +40,7 @@ install:
   
 script:
   - lix run travix node
-  - lix run travix php
+  # - lix run travix php
 
 # jobs:
 #   include:
