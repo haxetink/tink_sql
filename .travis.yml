@@ -1,6 +1,11 @@
 sudo: required
 dist: xenial
 
+addons:
+  apt:
+    packages:
+      - mysql-server
+
 services:
   - mysql
 
