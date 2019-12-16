@@ -260,6 +260,12 @@ class Functions {
   // Todo: count can also take an Expr<Bool>
   public static function count<D,O>(?e:Field<D,O>):Expr<Int> 
     return ECall('COUNT', if (e == null) cast [EValue(true, VBool)] else cast [e]);
+    
+  public static function max<D,O>(e:Field<D,O>):Expr<D> 
+    return ECall('MAX', cast [e]);
+  
+  public static function min<D,O>(e:Field<D,O>):Expr<D> 
+    return ECall('MIN', cast [e]);
 
   public static function stContains<T>(g1:Expr<Geometry>, g2:Expr<Geometry>):Expr<Bool>
     return ECall('ST_Contains', cast [g1, g2]);
