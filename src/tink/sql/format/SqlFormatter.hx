@@ -173,7 +173,7 @@ class SqlFormatter implements Formatter {
       ident(name)
     ]);
 
-  function selection<Row:{}>(selection:Selection<Row>)
+  function selection<Row:{}>(selection:Selection<Row, Any>)
     return switch selection {
       case null: '*'; // Todo: list all fields if nested to fix #25
       case fields:
@@ -199,6 +199,12 @@ class SqlFormatter implements Formatter {
           target(right),
           'ON',
           expr(cond)
+        ]);
+      case TQuery(alias, query):
+        join([
+          parenthesis(format(query)),
+          ' AS ',
+          ident(alias)
         ]);
     }
 
@@ -319,8 +325,11 @@ class SqlFormatter implements Formatter {
         value(false);
       case EBinOp(op, a, b):
         '(${expr(a)} ${binOp(op)} ${expr(b)})';
-      case ECall(name, args):
-        '$name(${[for(arg in args) expr(arg)].join(',')})';
+      case ECall(name, args, wrap):
+        var params = [for(arg in args) expr(arg)].join(',');
+        name + 
+          if (wrap == null || wrap) parenthesis(params)
+          else params;
       case EField(table, name):
         (table == null ? '' : ident(table) + '.') + ident(name);
       case EValue(v, VBool):

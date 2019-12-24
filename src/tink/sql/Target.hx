@@ -15,4 +15,5 @@ using tink.CoreApi;
 enum Target<Result:{}, Db> {
   TTable(name:TableName<Result>, ?alias:String);
   TJoin<Left:{}, Right:{}>(left:Target<Left, Db>, right:Target<Right, Db>, type:JoinType, c:Condition);
+  TQuery<R>(alias:String, query:Query<Db, R>);
 }

@@ -7,6 +7,9 @@ import tink.sql.Info;
 
 using tink.CoreApi;
 
+@:forward abstract SingleField<T, Fields>(Fields) {}
+
+@:allow(tink.sql)
 class Selectable<Fields, Filter, Result: {}, Db> extends FilterableWhere<Fields, Filter, Result, Db> {
   
   macro public function select(ethis, select) {
@@ -16,8 +19,8 @@ class Selectable<Fields, Filter, Result: {}, Db> extends FilterableWhere<Fields,
     );
   }
 
-  function _select<Row: {}>(selection: Selection<Row>):FilterableWhere<Fields, Filter, Row, Db>
-    return new FilterableWhere(cnx, fields, cast target, toCondition, condition, selection);
+  function _select<Row: {}, F>(selection: Selection<Row, F>):FilterableWhere<F, Filter, Row, Db>
+    return new FilterableWhere(cnx, cast fields, cast target, toCondition, condition, selection);
     
   macro public function leftJoin(ethis, ethat)
     return tink.sql.macros.Joins.perform(Left, ethis, ethat);
@@ -76,7 +79,7 @@ class Selected<Fields, Filter, Result:{}, Db> extends Limitable<Fields, Result, 
   
   var target:Target<Result, Db>;
   var toCondition:Filter->Condition;
-  var selection:Null<Selection<Result>>;
+  var selection:Null<Selection<Result, Fields>>;
   var condition:{?where:Condition, ?having:Condition} = {}
   var grouped:Null<Array<Field<Dynamic, Result>>>;
   var order:Null<OrderBy<Result>>;
@@ -168,16 +171,22 @@ class Limited<Fields, Result:{}, Db> extends Dataset<Fields, Result, Db> {
 
 }
 
+@:allow(tink.sql)
 class Dataset<Fields, Result:{}, Db> {
 
   var cnx:Connection<Db>;
 
-  function new(cnx) { 
+  function new(cnx)
     this.cnx = cnx;
-  }
 
   function toQuery(?limit:Limit):Query<Db, RealStream<Result>>
     throw 'implement';
+
+  inline function toScalarExpr<T>(): Expr<T>
+    return EQuery(toQuery(1));
+
+  inline function toExpr<T>(): Expr<T>
+    return EQuery(toQuery());
 
   public function union(other:Dataset<Fields, Result, Db>, distinct = true):Union<Fields, Result, Db>
     return new Union(cnx, this, other, distinct);

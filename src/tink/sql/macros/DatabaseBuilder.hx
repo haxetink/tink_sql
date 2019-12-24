@@ -87,6 +87,7 @@ class DatabaseBuilder {
       var cnx = driver.open(name, this);
       $b{init};
       super(name, driver, $a{tables});
+      this.cnx = cnx;
     }).getFunction().sure());
     
     ctor.publish();

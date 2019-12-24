@@ -12,7 +12,7 @@ enum ExprData<T> {
   EUnOp<A, Ret>(op:UnOp<A, Ret>, a:Expr<A>, postfix:Bool):ExprData<Ret>;
   EBinOp<A, B, Ret>(op:BinOp<A, B, Ret>, a:Expr<A>, b:Expr<B>):ExprData<Ret>;
   EField(table:String, name:String):ExprData<T>;
-  ECall(name:String, args:Array<Expr<Any>>):ExprData<T>;
+  ECall(name:String, args:Array<Expr<Any>>, ?parenthesis: Bool):ExprData<T>;
   EValue<T>(value:T, type:ValueType<T>):ExprData<T>;
   EQuery<T, Db, Result>(query:Query<Db, Result>):ExprData<T>;
 }
@@ -197,7 +197,7 @@ enum ValueType<T> {
   public function isNull<T>():Condition
     return EUnOp(IsNull, this, true);
 
-  // @:op(a in b) // https://github.com/HaxeFoundation/haxe/issues/6224
+  @:op(a in b)
   public function inArray<T>(b:Expr<Array<T>>):Condition
     return EBinOp(In, this, b);
 
@@ -251,6 +251,9 @@ enum ValueType<T> {
 
   @:from static function ofBytes(b:Bytes):Expr<Bytes>
     return EValue(b, VBytes);
+  
+  @:from static function ofScalar<T>(s:Scalar<T>):Expr<T>
+    return s.toScalarExpr();
 }
 
 class Functions {
@@ -275,6 +278,15 @@ class Functions {
 
   public static function stDistanceSphere(g1:Expr<Point>, g2:Expr<Point>):Expr<Float>
     return ECall('ST_Distance_Sphere', cast [g1, g2]);
+
+  public static function any<T>(q:Scalar<T>):Expr<T>
+    return ECall('ANY ', cast [q.toExpr()], false);
+    
+  public static function some<T>(q:Scalar<T>):Expr<T>
+    return ECall('SOME ', cast [q.toExpr()], false);
+
+  public static function exists(q:Dataset<Dynamic, Dynamic, Dynamic>):Condition
+    return ECall('EXISTS ', cast [q.toExpr()], false);
 }
 
 enum BinOp<A, B, Ret> {
@@ -463,4 +475,40 @@ abstract Field<Data, Owner>(Expr<Data>) to Expr<Data> {
     @:op(a || b) static function or<X, Y>(a:Field<Bool, X>, b:Field<Bool, Y>):Condition
       return EBinOp(Or, a, b);
   //} endregion
+
+  //{ region relations for queries
+    @:commutative
+    @:op(a == b) static function eqQuery<T, S>(a:Field<T, S>, b:Scalar<T>):Condition
+      return (a:Expr<T>) == b.toScalarExpr();
+    
+    @:commutative
+    @:op(a == b) static function neqQuery<T, S>(a:Field<T, S>, b:Scalar<T>):Condition
+      return (a:Expr<T>) != b.toScalarExpr();
+
+    @:op(a > b) static function gtQuery<T:Float, S>(a:Field<T, S>, b:Scalar<T>):Condition
+      return (a:Expr<T>) > b.toScalarExpr();
+
+    @:op(a < b) static function ltQuery<T:Float, S>(a:Field<T, S>, b:Scalar<T>):Condition
+      return (a:Expr<T>) < b.toScalarExpr();
+
+    @:op(a >= b) static function gteQuery<T:Float, S>(a:Field<T, S>, b:Scalar<T>):Condition
+      return (a:Expr<T>) >= b.toScalarExpr();
+
+    @:op(a <= b) static function lteQuery<T:Float, S>(a:Field<T, S>, b:Scalar<T>):Condition
+      return (a:Expr<T>) <= b.toScalarExpr();
+
+    @:op(a > b) static function gtDateQuery<S>(a:Field<Date, S>, b:Scalar<Date>):Condition
+      return (a:Expr<Date>) > b.toScalarExpr();
+
+    @:op(a < b) static function ltDateQuery<S>(a:Field<Date, S>, b:Scalar<Date>):Condition
+      return (a:Expr<Date>) < b.toScalarExpr();
+
+    @:op(a >= b) static function gteDateQuery<S>(a:Field<Date, S>, b:Scalar<Date>):Condition
+      return (a:Expr<Date>) >= b.toScalarExpr();
+
+    @:op(a <= b) static function lteDateQuery<S>(a:Field<Date, S>, b:Scalar<Date>):Condition
+      return (a:Expr<Date>) <= b.toScalarExpr();
+  //} endregion
 }
+
+private typedef Scalar<T> = Dataset<SingleField<T, Dynamic>, Dynamic, Dynamic>;

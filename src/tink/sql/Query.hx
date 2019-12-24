@@ -31,7 +31,7 @@ typedef UnionOperation<Db, Row:{}> = {
 
 typedef SelectOperation<Db, Row:{}> = {
   from:Target<Row, Db>,
-  ?selection:Selection<Row>,
+  ?selection:Selection<Row, Any>,
   ?where:Condition,
   ?limit:Limit,
   ?orderBy:OrderBy<Row>,
@@ -55,7 +55,6 @@ typedef CallOperation<Row:{}> = {
 typedef Update<Row> = Array<FieldUpdate<Row>>;
 
 class FieldUpdate<Row> {
-
   public var field(default, null):Field<Row, Dynamic>;
   public var expr(default, null):Expr<Dynamic>;
 

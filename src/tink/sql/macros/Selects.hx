@@ -22,7 +22,15 @@ class Selects {
     var posInfo: Map<String, Position> = new Map();
     switch select {
       case {expr: EObjectDecl(fields)}:
-        for (field in fields) posInfo.set(field.field, field.expr.pos);
+        for (field in fields) {
+          // Cast to Expr here to allow selecting subqueries
+          // This is a little dirty and should probably be done another way,
+          // as it doesn't allow passing subqueries through a method call
+          var expr = field.expr; 
+          var blank = expr.pos.makeBlankType();
+          field.expr = macro @pos(field.pos) ($expr: tink.sql.Expr<$blank>);
+          posInfo.set(field.field, expr.pos);
+        }
         select = select.func(arguments).asExpr();
       default:
     }
@@ -49,10 +57,20 @@ class Selects {
             kind: FProp('default', 'null', typeOfExpr(field.type, pos).toComplex())
           });
         }
-      case v: trace(v);
+      case v: throw 'Expected anonymous type as selection, got: $v';
     }
     var resultType = TAnonymous(resultFields);
-    return macro @:pos(select.pos) (cast $call: tink.sql.Selection<$resultType>);
+    var fieldsType = Context.typeof(fields).toComplex();
+    
+    if (resultFields.length == 1) {
+      var fieldType = switch resultFields[0].kind {
+        case FProp(_, _, type): type;
+        default: throw 'assert';
+      }
+      fieldsType = (macro: tink.sql.Dataset.SingleField<$fieldType, $fieldsType>);
+    }
+
+    return macro @:pos(select.pos) (cast $call: tink.sql.Selection<$resultType, $fieldsType>);
   }
 
   static function typeOfExpr(type, pos: Position)
@@ -61,7 +79,7 @@ class Selects {
         pack: ['tink', 'sql'], name: 'ExprData'
       }, [p]):
         p;
-      default: pos.error("Expected tink.sql.Expr<T>");
+      default: pos.error('Expected tink.sql.Expr<T>, got: ${type.toComplex().toString()}');
     }
       
 }
