@@ -25,6 +25,7 @@ typedef Types = {
   public var float(default, null):Float;
   public var text(default, null):VarChar<40>;
   public var blob(default, null):Blob<1000000>;
+  public var varbinary(default, null):Blob<10000>;
   public var date(default, null):DateTime;
   public var boolTrue(default, null):Bool;
   public var boolFalse(default, null):Bool;
@@ -32,12 +33,14 @@ typedef Types = {
   @:optional public var optionalInt(default, null):Int;
   @:optional public var optionalText(default, null):VarChar<40>;
   @:optional public var optionalBlob(default, null):Blob<1000000>;
+  @:optional public var optionalVarbinary(default, null):Blob<10000>;
   @:optional public var optionalDate(default, null):DateTime;
   @:optional public var optionalBool(default, null):Bool;
 
   public var nullInt(default, null):Null<Int>;
   public var nullText(default, null):Null<VarChar<40>>;
   public var nullBlob(default, null):Null<Blob<1000000>>;
+  public var nullVarbinary(default, null):Null<Blob<10000>>;
   public var nullDate(default, null):Null<DateTime>;
   public var nullBool(default, null):Null<Bool>;
 
@@ -96,7 +99,9 @@ typedef StringTypes = {
 }
 
 @:tables(User, Post, PostTags, Types, Geometry, Schema, StringTypes)
-class Db extends tink.sql.Database {}
+class Db extends tink.sql.Database {
+  @:procedure var func:Int->{x:Int};
+}
 
 abstract AInt(Int) from Int to Int {}
 abstract AFloat(Float) from Float to Float {}

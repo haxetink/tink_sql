@@ -34,6 +34,7 @@ class Run extends TestWithDb {
       new Run(driver, db),
       new SubQueryTest(driver, db),
       new SchemaTest(driver, db),
+      new ProcedureTest(driver, db),
     ])).handle(Runner.exit);
   }
   

@@ -28,6 +28,7 @@ class MySQLi implements Driver {
         settings.host, settings.user,
         settings.password, name, settings.port
     );
+    if (settings.charset != null) cnx.set_charset(settings.charset);
     return new MySQLiConnection(info, cnx);
   }
 }
@@ -57,12 +58,27 @@ class MySQLiConnection<Db:DatabaseInfo> implements Connection<Db> implements San
   public function getFormatter()
     return formatter;
 
+	public function syncResult<R, T>(query:Query<Db,R>): Outcome<Array<T>, Error> {
+    return switch query {
+      case Select(_) | Union(_): 
+        switch cnx.query(formatter.format(query)) {
+          case false: Failure(new Error(cnx.errno, cnx.error));
+          case (cast _: ResultSet) => res:
+            Success([
+              for (row in res.nestedIterator(formatter.isNested(query)))
+                row
+            ]);
+        }
+      default: throw 'Cannot iterate this query';
+    }
+  }
+
   public function execute<Result>(query:Query<Db,Result>):Result {
     inline function fetch<T>(): Promise<T> return run(formatter.format(query));
     return switch query {
       case Select(_) | Union(_): 
         Stream.promise(fetch().next(function (res:ResultSet)
-          return Stream.ofIterator(res.nestedIterator(formatter.isNested(query)))
+          return Stream.ofIterator(cast res.nestedIterator(formatter.isNested(query)))
         ));
       case CreateTable(_, _) | DropTable(_) | AlterTable(_, _):
         fetch().next(function(_) return Noise);
@@ -86,7 +102,6 @@ class MySQLiConnection<Db:DatabaseInfo> implements Connection<Db> implements San
       case false: new Error(cnx.errno, cnx.error);
       case v: (cast v: T);
     }
-
 }
 
 private abstract ResultSet(NativeResultSet) from NativeResultSet {
@@ -166,6 +181,7 @@ private abstract ResultSet(NativeResultSet) from NativeResultSet {
 private extern class NativeConnection {
   public function new(host: String, user: String, password: String, database: String, ?port: Int);
   public function real_escape_string(input: String): String;
+  public function set_charset(charset: String): Bool;
   public function query(query: String): NativeResult;
   public var insert_id: Int;
   public var affected_rows: Int;

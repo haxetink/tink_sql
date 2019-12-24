@@ -233,6 +233,21 @@ enum ValueType<T> {
 
   @:from static function ofPoint(p:Point):Expr<Point>
     return EValue(p, VGeometry(Point));
+    
+  @:from static function ofLineString(p:LineString):Expr<LineString>
+    return EValue(p, VGeometry(LineString));
+    
+  @:from static function ofPolygon(p:Polygon):Expr<Polygon>
+    return EValue(p, VGeometry(Polygon));
+    
+  @:from static function ofMultiPoint(p:MultiPoint):Expr<MultiPoint>
+    return EValue(p, VGeometry(MultiPoint));
+    
+  @:from static function ofMultiLineString(p:MultiLineString):Expr<MultiLineString>
+    return EValue(p, VGeometry(MultiLineString));
+    
+  @:from public static function ofMultiPolygon(p:MultiPolygon):Expr<MultiPolygon>
+    return EValue(p, VGeometry(MultiPolygon));
 
   @:from static function ofBytes(b:Bytes):Expr<Bytes>
     return EValue(b, VBytes);
@@ -248,6 +263,12 @@ class Functions {
   // Todo: count can also take an Expr<Bool>
   public static function count<D,O>(?e:Field<D,O>):Expr<Int> 
     return ECall('COUNT', if (e == null) cast [EValue(true, VBool)] else cast [e]);
+    
+  public static function max<D,O>(e:Field<D,O>):Expr<D> 
+    return ECall('MAX', cast [e]);
+  
+  public static function min<D,O>(e:Field<D,O>):Expr<D> 
+    return ECall('MIN', cast [e]);
 
   public static function stContains<T>(g1:Expr<Geometry>, g2:Expr<Geometry>):Expr<Bool>
     return ECall('ST_Contains', cast [g1, g2]);
