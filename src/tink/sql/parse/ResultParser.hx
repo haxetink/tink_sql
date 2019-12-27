@@ -1,14 +1,9 @@
 package tink.sql.parse;
 
 import geojson.GeometryCollection;
-import tink.sql.Info;
 import tink.sql.Expr;
 import haxe.DynamicAccess;
-import tink.sql.Types;
-import tink.streams.Stream;
-import tink.streams.RealStream;
-import sys.db.ResultSet;
-import tink.sql.format.Formatter;
+import tink.sql.format.SqlFormatter;
 import tink.sql.expr.ExprTyper;
 import haxe.io.Bytes;
 import haxe.io.BytesInput;
@@ -88,24 +83,6 @@ class ResultParser<Db> {
     }
   }
 
-  public function parseField<Result>(
-    query:Query<Db,Result>, 
-    name:String, 
-    value:Any, 
-    table:String = null
-  ): Any
-    return switch query {
-      case Select({from: TTable(table, _), selection: null}): 
-        parseValue(value, typer.type(EField(table.getName(), name)));
-      case Select({selection: null}) if (table != null):
-        parseValue(value, typer.type(EField(table, name)));
-      case Select({selection: selection}):
-        parseValue(value, typer.type(selection[name]));
-      case Union({left: left}):
-        parseField(left, name, value);
-      default: value;
-    }
-
   public function parseResult<Row:{}>(
     query:Query<Db, Dynamic>, 
     row:DynamicAccess<Any>, 
@@ -113,18 +90,24 @@ class ResultParser<Db> {
   ):Row {
     var res: DynamicAccess<Any> = {}
     var target = res;
-    var table = null;
+    var types = typer.typeQuery(query);
     for (field in row.keys()) {
       var name = field;
+      var table = null;
       if (nest) {
-        var parts = field.split('@@@');
+        var parts = field.split(SqlFormatter.FIELD_DELIMITER);
         table = parts[0];
         name = parts[1];
         target =
           if (!res.exists(table)) res[table] = {};
           else res[table];
       }
-      target[name] = parseField(query, name, row[field], table);
+      target[name] = parseValue(row[field], 
+        switch types.get(field) {
+          case null: None;
+          case v: v;
+        }
+      );
     }
     return cast res;
   }

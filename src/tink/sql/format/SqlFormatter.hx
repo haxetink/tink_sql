@@ -11,6 +11,7 @@ import haxe.DynamicAccess;
 using Lambda;
 
 class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
+  public static inline var FIELD_DELIMITER = '@@@';
   var sanitizer:Sanitizer;
   var separate = ', ';
 
@@ -178,7 +179,7 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
       case TTable(table, alias):
         var from = alias == null ? table.getName() : alias;
         table.columnNames().map(function (name)
-          return field('$from@@@$name', EField(
+          return field(from + FIELD_DELIMITER + name, EField(
             from, name
           ))
         ).join(separate);

@@ -2,8 +2,11 @@ package tink.sql.expr;
 
 import tink.sql.Info;
 import tink.sql.Expr;
+import tink.sql.format.SqlFormatter;
 
 using tink.CoreApi;
+
+typedef TypeMap = Map<String, Option<ValueType<Dynamic>>>;
 
 class ExprTyper {
   var db:DatabaseInfo;
@@ -32,6 +35,40 @@ class ExprTyper {
             }
         ]
     ];
+  }
+
+  function nameField(table:String, field:String, ?alias): String
+    return (if (alias != null) alias else field) + SqlFormatter.FIELD_DELIMITER + field;
+
+  function typeTarget<Result:{}, Db>(target:Target<Result, Db>, nest = false):TypeMap
+    return switch target {
+      case TTable(_.getName() => table, alias):
+        [
+          for (field in tables[table].keys())
+            (if (nest) nameField(table, field, alias) else field) => Some(tables[table][field])
+        ];
+      case TJoin(left, right, _, _):
+        var res = typeTarget(left, true);
+        var add = typeTarget(right, true);
+        for (field in add.keys())
+          res[field] = add[field];
+        res;
+    }
+
+  public function typeQuery<Db, Result>(query:Query<Db, Result>):TypeMap {
+    return switch query {
+      case Select({selection: selection}) if (selection != null):
+        [
+          for (key in selection.keys())
+            key => type(selection[key])
+        ];
+      case Select({from: target}): 
+        typeTarget(target);
+      case Union({left: left}):
+        typeQuery(left);
+      default:
+        throw 'cannot type non selection: $query';
+    }
   }
 
   public function type<T>(expr:Expr<Dynamic>):Option<ValueType<Dynamic>>
