@@ -211,7 +211,7 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
     return switch from {
       case TTable(_.getName() => name, alias):
         ident(name) + 
-        if (alias != null) ' AS ' + ident(alias) else '';
+        if (alias != null && alias != name) ' AS ' + ident(alias) else '';
       case TJoin(left, right, type, cond):
         join([
           target(left),

@@ -82,7 +82,7 @@ class TableBuilder {
 
               fieldsExprFields.push({
                 field: f.name,
-                expr: macro new tink.sql.Expr.Field(tableName, $v{f.name}),
+                expr: macro new tink.sql.Expr.Field(alias, $v{f.name}),
               });
 
               fieldsValues.push({

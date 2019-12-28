@@ -73,6 +73,7 @@ class Run extends TestWithDb {
     return Future.ofMany([
       db.User.create(),
       db.Post.create(),
+      db.PostAlias.create(),
       db.PostTags.create(),
     ]).map(function(o) {
       // for(o in o) trace(Std.string(o));
@@ -85,6 +86,7 @@ class Run extends TestWithDb {
     return Future.ofMany([
       db.User.drop(),
       db.Post.drop(),
+      db.PostAlias.drop(),
       db.PostTags.drop(),
     ]).map(function(o) {
       // for(o in o) trace(Std.string(o));
@@ -95,7 +97,7 @@ class Run extends TestWithDb {
 
   public function info() {
     asserts.assert(db.name == 'test');
-    asserts.assert(sorted(db.tableNames()).join(',') == 'Geometry,Post,PostTags,Schema,StringTypes,Types,User');
+    asserts.assert(sorted(db.tableNames()).join(',') == 'Geometry,Post,PostTags,Schema,StringTypes,Types,User,alias');
     asserts.assert(sorted(db.tableInfo('Post').columnNames()).join(',') == 'author,content,id,title');
     return asserts.done();
   }
@@ -149,6 +151,30 @@ class Run extends TestWithDb {
     ).next(function (res)
       return assert(res.id == 1)
     );
+  }
+
+  public function aliasTest() {
+    return insertUsers()
+      .next(function (_)
+        return db.PostAlias.insertOne({
+          id: cast null,
+          title: 'alias',
+          author: 1,
+          content: 'content',
+        })
+      ).next(function (_)
+        return db.Post.insertOne({
+          id: cast null,
+          title: 'regular',
+          author: 1,
+          content: 'content',
+        })
+      ).next(function (_) 
+        return db.PostAlias.join(db.Post)
+          .on(PostAlias.id == Post.id).first()
+      ).next(function (res)
+        return assert(res.PostAlias.title == 'alias' && res.Post.title == 'regular')
+      );
   }
 
   function await(run:AssertionBuffer->Promise<Noise>, asserts:AssertionBuffer)

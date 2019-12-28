@@ -54,7 +54,7 @@ class DatabaseBuilder {
           
           m.kind = FProp('default', 'null', macro : tink.sql.Table<$type>);
 
-          init.push(macro @:pos(m.pos) this.$fieldName.init(cnx, $v{table}));
+          init.push(macro @:pos(m.pos) this.$fieldName.init(cnx, $v{table}, $v{fieldName}));
           
           tables.push(macro @:pos(m.pos) $v{table} => this.$fieldName); 
       }
