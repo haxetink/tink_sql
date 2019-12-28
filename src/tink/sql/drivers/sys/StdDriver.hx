@@ -54,13 +54,13 @@ class StdConnection<Db:DatabaseInfo> implements Connection<Db> {
     inline function fetch<T>(): Promise<T> return run(formatter.format(query));
     return switch query {
       case Select(_) | Union(_) | CallProcedure(_): 
-        Stream.promise(fetch().next(function (res:ResultSet)
+        Stream.promise(fetch().next(function (res:ResultSet) {
+          var parse = parser.queryParser(query, formatter.isNested(query));
           return Stream.ofIterator({
             hasNext: function() return res.hasNext(),
-            next: function ()
-              return parser.parseResult(query, res.next(), formatter.isNested(query))
-          })
-        ));
+            next: function () return parse(res.next())
+          });
+        }));
       case CreateTable(_, _) | DropTable(_) | AlterTable(_, _):
         fetch().next(function(_) return Noise);
       case Insert(_):
