@@ -49,6 +49,7 @@ class PDOConnection<Db:DatabaseInfo> implements Connection<Db> implements Saniti
   public function new(db, cnx) {
     this.db = db;
     this.cnx = cnx;
+    cnx.setAttribute(PDO.ATTR_ERRMODE, PDO.ERRMODE_EXCEPTION);
     this.formatter = new MySqlFormatter(this);
     this.parser = new ResultParser(new ExprTyper(db));
   }
@@ -74,7 +75,6 @@ class PDOConnection<Db:DatabaseInfo> implements Connection<Db> implements Saniti
           var row: Any;
           return Stream.ofIterator({
             hasNext: function() {
-              if ((cast res) == false) return false;
               row = res.fetchObject();
               return row != false;
             },
