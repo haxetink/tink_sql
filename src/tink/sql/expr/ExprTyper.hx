@@ -38,7 +38,7 @@ class ExprTyper {
   }
 
   function nameField(table:String, field:String, ?alias): String
-    return (if (alias != null) alias else field) + SqlFormatter.FIELD_DELIMITER + field;
+    return (if (alias != null) alias else table) + SqlFormatter.FIELD_DELIMITER + field;
 
   function typeTarget<Result:{}, Db>(target:Target<Result, Db>, nest = false):TypeMap
     return switch target {
