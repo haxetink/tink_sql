@@ -76,20 +76,20 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
       case Select(_) | Union(_): 
         Stream.promise(fetch().next(function (res:Array<Any>) {
           var iterator = res.iterator();
+          var parse = parser.queryParser(query, formatter.isNested(query));
           return Stream.ofIterator({
             hasNext: function() return iterator.hasNext(),
-            next: function ()
-              return parser.parseResult(query, iterator.next(), formatter.isNested(query))
+            next: function () return parse(iterator.next())
           });
         }));
       
       case CallProcedure(_): 
         Stream.promise(fetch().next(function (res:Array<Array<Any>>) {
           var iterator = res[0].iterator();
+          var parse = parser.queryParser(query, formatter.isNested(query));
           return Stream.ofIterator({
             hasNext: function() return iterator.hasNext(),
-            next: function ()
-              return parser.parseResult(query, iterator.next(), formatter.isNested(query))
+            next: function () return parse(iterator.next())
           });
         }));
       case CreateTable(_, _) | DropTable(_) | AlterTable(_, _):

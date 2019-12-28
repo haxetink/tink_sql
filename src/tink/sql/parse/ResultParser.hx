@@ -83,32 +83,33 @@ class ResultParser<Db> {
     }
   }
 
-  public function parseResult<Row:{}>(
-    query:Query<Db, Dynamic>, 
-    row:DynamicAccess<Any>, 
+  public function queryParser<Row:{}>(
+    query:Query<Db, Dynamic>,
     nest:Bool
-  ):Row {
-    var res: DynamicAccess<Any> = {}
-    var target = res;
+  ): DynamicAccess<Any> -> Row {
     var types = typer.typeQuery(query);
-    for (field in row.keys()) {
-      var name = field;
-      var table = null;
-      if (nest) {
-        var parts = field.split(SqlFormatter.FIELD_DELIMITER);
-        table = parts[0];
-        name = parts[1];
-        target =
-          if (!res.exists(table)) res[table] = {};
-          else res[table];
-      }
-      target[name] = parseValue(row[field], 
-        switch types.get(field) {
-          case null: None;
-          case v: v;
+    return function (row: DynamicAccess<Any>) {
+      var res: DynamicAccess<Any> = {}
+      var target = res;
+      for (field in row.keys()) {
+        var name = field;
+        var table = null;
+        if (nest) {
+          var parts = field.split(SqlFormatter.FIELD_DELIMITER);
+          table = parts[0];
+          name = parts[1];
+          target =
+            if (!res.exists(table)) res[table] = {};
+            else res[table];
         }
-      );
+        target[name] = parseValue(row[field], 
+          switch types.get(field) {
+            case null: None;
+            case v: v;
+          }
+        );
+      }
+      return cast res;
     }
-    return cast res;
   }
 }

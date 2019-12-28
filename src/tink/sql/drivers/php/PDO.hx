@@ -73,14 +73,13 @@ class PDOConnection<Db:DatabaseInfo> implements Connection<Db> implements Saniti
       case Select(_) | Union(_) | CallProcedure(_): 
         Stream.promise(fetch().next(function (res:PDOStatement) {
           var row: Any;
+          var parse = parser.queryParser(query, formatter.isNested(query));
           return Stream.ofIterator({
             hasNext: function() {
               row = res.fetchObject();
               return row != false;
             },
-            next: function () {
-              return parser.parseResult(query, row, formatter.isNested(query));
-            }
+            next: function () return parse(row)
           });
         }));
       case CreateTable(_, _) | DropTable(_) | AlterTable(_, _):
@@ -105,4 +104,18 @@ class PDOConnection<Db:DatabaseInfo> implements Connection<Db> implements Saniti
       try cnx.query(query) 
       catch (e: PDOException) 
         new Error(e.getCode(), e.getMessage());
+
+  // haxetink/tink_streams#20
+  public function syncResult<R, T: {}>(query:Query<Db,R>): Outcome<Array<T>, Error> {
+    return switch query {
+      case Select(_) | Union(_) | CallProcedure(_): 
+        var parse = parser.queryParser(query, formatter.isNested(query));
+        try Success([
+          for (row in cnx.query(formatter.format(query)).fetchAll(PDO.FETCH_OBJ))
+            parse(row)
+        ]) catch (e: PDOException)
+          Failure(new Error(e.getCode(), e.getMessage()));
+      default: throw 'Cannot iterate this query';
+    }
+  }
 }

@@ -199,7 +199,12 @@ class Dataset<Fields, Result:{}, Db> {
     return cnx.execute(toQuery());
     
   public function all():Promise<Array<Result>>
+    #if php
+    return (cast cnx: tink.sql.drivers.php.PDO.PDOConnection<DatabaseInfo>)
+      .syncResult(cast toQuery());
+    #else
     return stream().collect();
+    #end
 
   public function first():Promise<Result>
     return all()
