@@ -37,7 +37,9 @@ class Run extends TestWithDb {
       new ExprTest(mysql, dbMysql),
       new Run(mysql, dbMysql),
       new SchemaTest(mysql, dbMysql),
+      #if node
       new ProcedureTest(mysql, dbMysql),
+      #end
 
       #if neko
       new TypeTest(sqlite, dbSqlite),

@@ -206,4 +206,3 @@ abstract Field<Data, Owner>(Expr<Data>) to Expr<Data> {
   //} endregion
 }
 
-private typedef Scalar<T> = Dataset<SingleField<T, Dynamic>, Dynamic, Dynamic>;

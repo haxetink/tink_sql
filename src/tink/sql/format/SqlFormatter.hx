@@ -176,6 +176,12 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
 
   function prefixFields<Row:{}, Db>(target:Target<Row, Db>)
     return switch target {
+      case TQuery(alias, Select({selection: selection})):
+        selection.keys().map(function (name) 
+          return field(alias + FIELD_DELIMITER + name, EField(
+            alias, name
+          ))
+        ).join(separate);
       case TTable(table, alias):
         var from = alias == null ? table.getName() : alias;
         table.columnNames().map(function (name)
@@ -185,9 +191,11 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
         ).join(separate);
       case TJoin(left, right, type, c):
         [prefixFields(left), prefixFields(right)].join(separate);
+      case TQuery(_, _):
+        throw 'Can\'t get field information for target: $target';
     }
 
-  function selection<Row:{}, Db>(target:Target<Row, Db>, selection:Selection<Row>)
+  function selection<Row:{}, Db, Fields>(target:Target<Row, Db>, selection:Selection<Row, Fields>)
     return switch selection {
       case null: switch target {
         case TTable(_, _): '*';

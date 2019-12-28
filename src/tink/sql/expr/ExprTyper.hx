@@ -42,6 +42,12 @@ class ExprTyper {
 
   function typeTarget<Result:{}, Db>(target:Target<Result, Db>, nest = false):TypeMap
     return switch target {
+      case TQuery(alias, query):
+        var types = typeQuery(query);
+        [
+          for (field in types.keys())
+            nameField(alias, field) => types[field]
+        ];
       case TTable(_.getName() => table, alias):
         [
           for (field in tables[table].keys())
@@ -66,6 +72,8 @@ class ExprTyper {
         typeTarget(target);
       case Union({left: left}):
         typeQuery(left);
+      case CallProcedure(_):
+        new Map();
       default:
         throw 'cannot type non selection: $query';
     }

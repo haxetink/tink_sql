@@ -3,6 +3,7 @@ package tink.sql;
 import haxe.io.Bytes;
 import tink.sql.Types;
 import tink.sql.Query;
+import tink.sql.Dataset;
 
 typedef Condition = Expr<Bool>;
 typedef Field<Data, Owner> = tink.sql.expr.Field<Data, Owner>; 
@@ -48,6 +49,8 @@ enum UnOp<A, Ret> {
   IsNull<T>:UnOp<T, Bool>;
   Neg<T:Float>:UnOp<T, T>;
 }
+
+typedef Scalar<T> = Dataset<SingleField<T, Dynamic>, Dynamic, Dynamic>;
 
 @:notNull abstract Expr<T>(ExprData<T>) {
 
@@ -275,25 +278,4 @@ enum UnOp<A, Ret> {
   
   @:from static function ofScalar<T>(s:Scalar<T>):Expr<T>
     return s.toScalarExpr();
-}
-
-enum BinOp<A, B, Ret> {
-  Add<T:Float>:BinOp<T, T, T>;
-  Subt<T:Float>:BinOp<T, T, T>;
-  Mult<T:Float>:BinOp<T, T, T>;
-  Mod<T:Float>:BinOp<T, T, T>;
-  Div<T:Float>:BinOp<T, T, Float>;
-
-  Greater<T>:BinOp<T, T, Bool>;
-  Equals<T>:BinOp<T, T, Bool>;
-  And:BinOp<Bool, Bool, Bool>;
-  Or:BinOp<Bool, Bool, Bool>;
-  Like<T:String>:BinOp<T, T, Bool>;
-  In<T>:BinOp<T, Array<T>, Bool>;
-}
-
-enum UnOp<A, Ret> {
-  Not:UnOp<Bool, Bool>;
-  IsNull<T>:UnOp<T, Bool>;
-  Neg<T:Float>:UnOp<T, T>;
 }

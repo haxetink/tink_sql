@@ -76,7 +76,7 @@ class MySQLiConnection<Db:DatabaseInfo> implements Connection<Db> implements San
   public function execute<Result>(query:Query<Db,Result>):Result {
     inline function fetch<T>(): Promise<T> return run(formatter.format(query));
     return switch query {
-      case Select(_) | Union(_): 
+      case Select(_) | Union(_) | CallProcedure(_): 
         Stream.promise(fetch().next(function (res:ResultSet)
           return Stream.ofIterator(cast res.nestedIterator(formatter.isNested(query)))
         ));

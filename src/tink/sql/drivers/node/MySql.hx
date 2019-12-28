@@ -73,9 +73,19 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
   public function execute<Result>(query:Query<Db,Result>):Result {
     inline function fetch<T>(): Promise<T> return run(queryOptions(query));
     return switch query {
-      case Select(_) | Union(_) | CallProcedure(_): 
+      case Select(_) | Union(_): 
         Stream.promise(fetch().next(function (res:Array<Any>) {
           var iterator = res.iterator();
+          return Stream.ofIterator({
+            hasNext: function() return iterator.hasNext(),
+            next: function ()
+              return parser.parseResult(query, iterator.next(), formatter.isNested(query))
+          });
+        }));
+      
+      case CallProcedure(_): 
+        Stream.promise(fetch().next(function (res:Array<Array<Any>>) {
+          var iterator = res[0].iterator();
           return Stream.ofIterator({
             hasNext: function() return iterator.hasNext(),
             next: function ()

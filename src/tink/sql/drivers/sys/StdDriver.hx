@@ -53,7 +53,7 @@ class StdConnection<Db:DatabaseInfo> implements Connection<Db> {
   public function execute<Result>(query:Query<Db,Result>):Result {
     inline function fetch<T>(): Promise<T> return run(formatter.format(query));
     return switch query {
-      case Select(_) | Union(_): 
+      case Select(_) | Union(_) | CallProcedure(_): 
         Stream.promise(fetch().next(function (res:ResultSet)
           return Stream.ofIterator({
             hasNext: function() return res.hasNext(),
