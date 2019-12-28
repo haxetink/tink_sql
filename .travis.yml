@@ -4,8 +4,15 @@ dist: xenial
 services:
   - mysql
 
-services:
-  - mysql
+addons:
+  apt:
+    sources:
+      - sourceline: 'ppa:ondrej/php'
+    packages:
+      - php7.1-cli
+      - php7.1-mysql
+      - php7.1-sqlite3
+      - php7.1-mbstring
 
 stages:
   - test
