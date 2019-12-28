@@ -16,25 +16,39 @@ using tink.CoreApi;
 class Run extends TestWithDb {
 
   static function main() {
-    var driver = new MySql({
+    var mysql = new MySql({
       user: env('DB_USERNAME', 'root'),
       password: env('DB_PASSWORD', '')
     });
-    var db = new Db('test', driver);
+    var dbMysql = new Db('test', mysql);
+    #if neko
+    var sqlite = new tink.sql.drivers.Sqlite(function(db) return 'bin/$db.sqlite');
+    var dbSqlite = new Db('test', sqlite);
+    #end
     loadFixture('init');
     Runner.run(TestBatch.make([
-      new TypeTest(driver, db),
-      new SelectTest(driver, db),
-      #if nodejs
-      new FormatTest(driver, db),
+      new TypeTest(mysql, dbMysql),
+      new SelectTest(mysql, dbMysql),
+      new FormatTest(mysql, dbMysql),
+      #if !neko
+      new StringTest(mysql, dbMysql),
       #end
-      new StringTest(driver, db),
-      new GeometryTest(driver, db),
-      new ExprTest(driver, db),
-      new Run(driver, db),
-      new SubQueryTest(driver, db),
-      new SchemaTest(driver, db),
-      new ProcedureTest(driver, db),
+      new GeometryTest(mysql, dbMysql),
+      new ExprTest(mysql, dbMysql),
+      new Run(mysql, dbMysql),
+      new SchemaTest(mysql, dbMysql),
+      #if node
+      new ProcedureTest(mysql, dbMysql),
+      #end
+
+      #if neko
+      new TypeTest(sqlite, dbSqlite),
+      new SelectTest(sqlite, dbSqlite),
+      new FormatTest(sqlite, dbSqlite),
+      //new StringTest(sqlite, dbSqlite),
+      new ExprTest(sqlite, dbSqlite),
+      new Run(sqlite, dbSqlite),
+      #end
     ])).handle(Runner.exit);
   }
   
@@ -59,6 +73,7 @@ class Run extends TestWithDb {
     return Future.ofMany([
       db.User.create(),
       db.Post.create(),
+      db.PostAlias.create(),
       db.PostTags.create(),
     ]).map(function(o) {
       // for(o in o) trace(Std.string(o));
@@ -71,6 +86,7 @@ class Run extends TestWithDb {
     return Future.ofMany([
       db.User.drop(),
       db.Post.drop(),
+      db.PostAlias.drop(),
       db.PostTags.drop(),
     ]).map(function(o) {
       // for(o in o) trace(Std.string(o));
@@ -81,7 +97,7 @@ class Run extends TestWithDb {
 
   public function info() {
     asserts.assert(db.name == 'test');
-    asserts.assert(sorted(db.tableNames()).join(',') == 'Geometry,Post,PostTags,Schema,StringTypes,Types,User');
+    asserts.assert(sorted(db.tableNames()).join(',') == 'Geometry,Post,PostTags,Schema,StringTypes,Types,User,alias');
     asserts.assert(sorted(db.tableInfo('Post').columnNames()).join(',') == 'author,content,id,title');
     return asserts.done();
   }
@@ -135,6 +151,30 @@ class Run extends TestWithDb {
     ).next(function (res)
       return assert(res.id == 1)
     );
+  }
+
+  public function aliasTest() {
+    return insertUsers()
+      .next(function (_)
+        return db.PostAlias.insertOne({
+          id: cast null,
+          title: 'alias',
+          author: 1,
+          content: 'content',
+        })
+      ).next(function (_)
+        return db.Post.insertOne({
+          id: cast null,
+          title: 'regular',
+          author: 1,
+          content: 'content',
+        })
+      ).next(function (_) 
+        return db.PostAlias.join(db.Post)
+          .on(PostAlias.id == Post.id).first()
+      ).next(function (res)
+        return assert(res.PostAlias.title == 'alias' && res.Post.title == 'regular')
+      );
   }
 
   function await(run:AssertionBuffer->Promise<Noise>, asserts:AssertionBuffer)

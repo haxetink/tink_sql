@@ -41,7 +41,7 @@ class Schema {
       default: column;
     }
 
-  public function diff(that: Schema, formatter:Formatter):Array<AlterTableOperation> {
+  public function diff(that: Schema, formatter:Formatter<{}, {}>):Array<AlterTableOperation> {
     var changes = [], post = [];
 
     for (key in mergeKeys(this.columns, that.columns))

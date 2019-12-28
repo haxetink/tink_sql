@@ -1,19 +1,21 @@
 sudo: required
 dist: xenial
 
+services:
+  - mysql
+
 addons:
   apt:
     sources:
       - sourceline: 'ppa:ondrej/php'
     packages:
-      - mysql-server
-
-services:
-  - mysql
+      - php7.1-cli
+      - php7.1-mysql
+      - php7.1-sqlite3
+      - php7.1-mbstring
 
 stages:
   - test
-  # - deploy
 
 language: node_js
 node_js: 10
@@ -35,24 +37,9 @@ install:
   - npm install
   - lix install haxe $HAXE_VERSION
   - lix download
-  - if [[ "$(haxe -version)" =~ ^4.* ]]; then sudo apt-get install php7.0-cli php7.0-mysql; else sudo apt-get install php5.6-cli php5.6-mysql; fi
 
   
 script:
   - lix run travix node
-  # - lix run travix php
-
-# jobs:
-#   include:
-#     # - stage: test # should uncomment this when there is no matrix above (e.g. only one os, one env, etc)
-#     - stage: deploy
-#       os: linux
-#       install:
-#         - npm i -g lix
-#         - lix download
-#       script: skip
-#       env:
-#         secure: xxxxxxxx
-#       after_success:
-#         - lix run travix install
-#         - lix run travix release
+  - lix run travix neko
+  - lix run travix php7

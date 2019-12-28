@@ -43,6 +43,7 @@ class SelectTest extends TestWithDb {
 				name: User.name
 			})
 			.where(Post.title == 'test')
+			.groupBy(function (fields) return [fields.Post.id])
 			.having(User.name == 'Alice')
 			.first()
 			.next(function(row) {

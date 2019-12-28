@@ -82,7 +82,7 @@ class TableBuilder {
 
               fieldsExprFields.push({
                 field: f.name,
-                expr: macro new tink.sql.Expr.Field(tableName, $v{f.name}),
+                expr: macro new tink.sql.Expr.Field(alias, $v{f.name}),
               });
 
               fieldsValues.push({
@@ -91,7 +91,7 @@ class TableBuilder {
                 var defaultValue = switch meta.get(':byDefault') {
                   case null: macro null;
                   case [[value]]: value;
-                  case more: f.pos.error('@:byDefault excepts one expression');
+                  case more: f.pos.error('@:byDefault expects one expression');
                 }
 
                 function resolveType(type:haxe.macro.Type) {

@@ -1,5 +1,7 @@
 package;
 
+import geojson.util.Lines;
+import geojson.util.Line;
 import tink.sql.Expr;
 import tink.unit.Assert.assert;
 
@@ -19,7 +21,9 @@ class GeometryTest extends TestWithDb {
 	}
 	
 	public function retrieve() {
-		return db.Geometry.insertOne({point: new geojson.Point(1.0, 2.0)})
+		return db.Geometry.insertOne({
+				point: new geojson.Point(1.0, 2.0)
+			})
 			.next(function(_) return db.Geometry.first())
 			.next(function(row) {
 				var point:geojson.Point = row.point;

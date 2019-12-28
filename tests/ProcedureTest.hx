@@ -5,10 +5,10 @@ import Run.loadFixture;
 @:asserts
 class ProcedureTest extends TestWithDb {
   
-  public function test() {
+  @:include public function test() {
     loadFixture('procedure');
     db.func.call(1).all().handle(function(o) switch o {
-      case Success(result): 
+      case Success(result):
         asserts.assert(result.length == 2);
         asserts.assert(result[0].x == 1);
         asserts.assert(result[1].x == 2);

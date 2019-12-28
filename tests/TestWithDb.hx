@@ -1,10 +1,10 @@
 package;
 
-import tink.sql.drivers.MySql;
+import tink.sql.Driver;
 
 class TestWithDb {
 	
-	var driver:MySql;
+	var driver:Driver;
 	var db:Db;
 	
 	public function new(driver, db) {

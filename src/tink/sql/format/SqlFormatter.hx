@@ -10,7 +10,8 @@ import haxe.DynamicAccess;
 
 using Lambda;
 
-class SqlFormatter implements Formatter {
+class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
+  public static inline var FIELD_DELIMITER = '@@@';
   var sanitizer:Sanitizer;
   var separate = ', ';
 
@@ -63,7 +64,7 @@ class SqlFormatter implements Formatter {
   inline function nullable(isNullable:Bool):String
     return if (isNullable) 'NULL' else 'NOT NULL';
 
-  inline function autoIncrement(increment:Bool)
+  function autoIncrement(increment:Bool)
     return add(increment, 'AUTO_INCREMENT');
 
   function type(type: DataType):String
@@ -173,9 +174,33 @@ class SqlFormatter implements Formatter {
       ident(name)
     ]);
 
-  function selection<Row:{}>(selection:Selection<Row, Any>)
+  function prefixFields<Row:{}, Db>(target:Target<Row, Db>)
+    return switch target {
+      case TQuery(alias, Select({selection: selection})):
+        selection.keys().map(function (name) 
+          return field(alias + FIELD_DELIMITER + name, EField(
+            alias, name
+          ))
+        ).join(separate);
+      case TTable(table, alias):
+        var from = alias == null ? table.getName() : alias;
+        table.columnNames().map(function (name)
+          return field(from + FIELD_DELIMITER + name, EField(
+            from, name
+          ))
+        ).join(separate);
+      case TJoin(left, right, type, c):
+        [prefixFields(left), prefixFields(right)].join(separate);
+      case TQuery(_, _):
+        throw 'Can\'t get field information for target: $target';
+    }
+
+  function selection<Row:{}, Db, Fields>(target:Target<Row, Db>, selection:Selection<Row, Fields>)
     return switch selection {
-      case null: '*'; // Todo: list all fields if nested to fix #25
+      case null: switch target {
+        case TTable(_, _): '*';
+        default: prefixFields(target);
+      }
       case fields:
         fields.keys().map(function(name)
           return field(name, fields[name])
@@ -184,9 +209,9 @@ class SqlFormatter implements Formatter {
 
   function target<Row:{}, Db>(from:Target<Row, Db>)
     return switch from {
-      case TTable(name, alias):
+      case TTable(_.getName() => name, alias):
         ident(name) + 
-        if (alias != null) ' AS ' + ident(alias) else '';
+        if (alias != null && alias != name) ' AS ' + ident(alias) else '';
       case TJoin(left, right, type, cond):
         join([
           target(left),
@@ -244,7 +269,7 @@ class SqlFormatter implements Formatter {
   function select<Db, Row:{}>(select:SelectOperation<Db, Row>)
     return join([
       'SELECT',
-      selection(select.selection),
+      selection(select.from, select.selection),
       'FROM',
       target(select.from),
       where(select.where),
@@ -379,6 +404,12 @@ class SqlFormatter implements Formatter {
       default: throw 'Could not parse sql type: $type';
     }
   }
+
+  public function parseColumn(col:ColInfo):Column
+    throw 'implement';
+
+  public function parseKeys(keys:Array<KeyInfo>):Array<Key>
+    throw 'implement';
 
 }
 

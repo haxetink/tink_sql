@@ -9,6 +9,8 @@ import tink.sql.Types;
 import tink.sql.format.Sanitizer;
 import tink.streams.Stream;
 import tink.sql.format.MySqlFormatter;
+import tink.sql.expr.ExprTyper;
+import tink.sql.parse.ResultParser;
 
 import #if haxe3 js.lib.Error #else js.Error #end as JsError;
 
@@ -47,11 +49,13 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
   var cnx:NativeConnection;
   var db:Db;
   var formatter:MySqlFormatter;
+  var parser:ResultParser<Db>;
 
   public function new(db, cnx) {
     this.db = db;
     this.cnx = cnx;
     this.formatter = new MySqlFormatter(this);
+    this.parser = new ResultParser(new ExprTyper(db));
   }
 
   public function value(v:Any):String
@@ -70,13 +74,24 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
     inline function fetch<T>(): Promise<T> return run(queryOptions(query));
     return switch query {
       case Select(_) | Union(_): 
-        Stream.promise(fetch().next(function (res)
-          return Stream.ofIterator(rowIterator(res, formatter.isNested(query)))
-        ));
+        Stream.promise(fetch().next(function (res:Array<Any>) {
+          var iterator = res.iterator();
+          return Stream.ofIterator({
+            hasNext: function() return iterator.hasNext(),
+            next: function ()
+              return parser.parseResult(query, iterator.next(), formatter.isNested(query))
+          });
+        }));
+      
       case CallProcedure(_): 
-        Stream.promise(fetch().next(function (res)
-          return Stream.ofIterator(rowIterator(res[0], formatter.isNested(query)))
-        ));
+        Stream.promise(fetch().next(function (res:Array<Array<Any>>) {
+          var iterator = res[0].iterator();
+          return Stream.ofIterator({
+            hasNext: function() return iterator.hasNext(),
+            next: function ()
+              return parser.parseResult(query, iterator.next(), formatter.isNested(query))
+          });
+        }));
       case CreateTable(_, _) | DropTable(_) | AlterTable(_, _):
         fetch().next(function(_) return Noise);
       case Insert(_):
@@ -101,9 +116,9 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
     #end
     return switch query {
       case Select(_) | Union(_) | CallProcedure(_):
-        {sql: sql, typeCast: typeCast, nestTables: formatter.isNested(query)}
+        {sql: sql, typeCast: typeCast, nestTables: false}
       default:
-        {sql: sql}
+        {sql: sql, nestTables: false}
     }
   }
 
@@ -117,74 +132,15 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
 
   function typeCast(field, next): Any {
     return switch field.type {
-      case 'BLOB' | 'VAR_STRING':
-        if(field.packet.charsetNr == 63) // binary = 63, see: https://dev.mysql.com/doc/internals/en/character-set.html#packet-Protocol::CharacterSet
-          switch (field.buffer():Buffer) {
-            case null: null;
-            case buf: buf.hxToBytes();
-          }
-        else
-          field.string();
-      case 'TINY' if(field.length == 1):
-        switch field.string() {
+      case 'GEOMETRY': 
+        switch (field.buffer(): Buffer) {
           case null: null;
-          case v: v != '0';
+          case v: v.hxToBytes();
         }
-      case 'GEOMETRY':
-        var v:Dynamic = field.geometry();
-        // https://github.com/mysqljs/mysql/blob/310c6a7d1b2e14b63b572dbfbfa10128f20c6d52/lib/protocol/Parser.js#L342-L389
-        if(v == null) {
-          null;
-        } else {
-            if(Std.is(v, Array)) {
-              if(Std.is(v[0], Array)) {
-                if(Std.is(v[0][0], Array)) {
-                  new geojson.MultiPolygon(
-                    [for(polygon in (v:Array<Dynamic>))
-                      [for(line in (polygon:Array<Dynamic>))
-                        [for(point in (line:Array<Dynamic>))
-                          new geojson.util.Coordinates(point.y, point.x)
-                        ]
-                      ]
-                    ]
-                  );
-                } else {
-                  // Polygon
-                  throw 'Polygon parsing not implemented';
-                }
-              } else {
-                // Line
-                throw 'Line parsing not implemented';
-              }
-            } else {
-              // Point
-              new geojson.Point(v.y, v.x);
-            }
-        }
-      default:
-        next();
+      case 'BLOB':
+        return field.buffer();
+      default: next();
     }
-  }
-
-  function rowIterator<A>(result:Array<DynamicAccess<DynamicAccess<Any>>>, nest = false):Iterator<A> {
-    var result:Array<A> =
-      if (!nest) cast result
-      else [for (row in result) {
-        var rowCopy: DynamicAccess<DynamicAccess<Any>> = {};
-        for (partName in row.keys()) {
-          var part = row[partName],
-              notNull = false;
-          for (name in part.keys())
-            if (part[name] != null) {
-              notNull = true;
-              break;
-            }
-          if (notNull)
-            rowCopy[partName] = part;
-        }
-        (cast rowCopy : A);
-      }];
-    return result.iterator();
   }
 
 }
