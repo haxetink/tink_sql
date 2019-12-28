@@ -1,6 +1,7 @@
 {
-    "haxe.displayConfigurations": [
-        ["dev.hxml"]
+    "haxe.configurations": [
+        ["dev.hxml", "-lib", "hxnodejs", "-js", "bin/node/tests.js"],
+        ["dev.hxml", "-php", "bin/php"]
     ],
     "editor.tabSize": 2,
     "editor.insertSpaces": true

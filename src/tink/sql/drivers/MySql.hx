@@ -9,8 +9,8 @@ using StringTools;
 private typedef Impl = 
   #if nodejs
     tink.sql.drivers.node.MySql;
-  //#elseif php
-  //  tink.sql.drivers.php.MySQLi;
+  #elseif php
+    tink.sql.drivers.php.PDO.PDOMysql;
   #else
     tink.sql.drivers.sys.MySql;
   #end
