@@ -9,7 +9,7 @@ class Functions {
 
   // Todo: count can also take an Expr<Bool>
   public static function count<D,O>(?e:Field<D,O>):Expr<Int> 
-    return ECall('COUNT', if (e == null) cast [EValue(true, VBool)] else cast [e]);
+    return ECall('COUNT', if (e == null) cast [EValue(1, VInt)] else cast [e]);
     
   public static function max<D,O>(e:Field<D,O>):Expr<D> 
     return ECall('MAX', cast [e]);
