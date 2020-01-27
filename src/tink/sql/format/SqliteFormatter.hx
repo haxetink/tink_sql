@@ -5,37 +5,35 @@ import tink.sql.Query;
 import tink.sql.schema.KeyStore;
 import tink.sql.Expr;
 import tink.sql.format.SqlFormatter;
+import tink.sql.format.Statement.StatementFactory.*;
 
 class SqliteFormatter extends SqlFormatter<{}, {}> {
 
-  override public function format<Db, Result>(query:Query<Db, Result>):String
+  override public function format<Db, Result>(query:Query<Db, Result>):Statement
     return switch query {
       default: super.format(query);
     }
 
-  override public function defineColumn(column:Column):String {
+  override public function defineColumn(column:Column):Statement {
     var autoIncrement = column.type.match(DInt(_, _, true));
-    return join([
-      ident(column.name),
+    return ident(column.name).add(
       if (autoIncrement) 'INTEGER'
-      else join([type(column.type), nullable(column.nullable)])
-    ]);
+      else type(column.type).add(nullable(column.nullable))
+    );
   }
 
-  override function type(type: DataType): String
+  override function type(type: DataType):Statement
     return switch type {
       case DText(size, d):
-        'TEXT' + addDefault(d);
+        sql('TEXT').add(addDefault(d));
       default: super.type(type);
     }
 
   override function union<Db, Row:{}>(union:UnionOperation<Db, Row>)
-    return join([
-      format(union.left),
-      'UNION',
-      add(!union.distinct, 'ALL'),
-      format(union.right),
-      limit(union.limit)
-    ]);
+    return format(union.left)
+      .add('UNION')
+      .add('ALL', !union.distinct)
+      .add(format(union.right))
+      .add(limit(union.limit));
 
 }

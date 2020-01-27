@@ -54,7 +54,7 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
   public function new(db, cnx) {
     this.db = db;
     this.cnx = cnx;
-    this.formatter = new MySqlFormatter(this);
+    this.formatter = new MySqlFormatter();
     this.parser = new ResultParser(new ExprTyper(db));
   }
 
@@ -110,7 +110,7 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
   }
 
   function queryOptions(query:Query<Db, Dynamic>): QueryOptions {
-    var sql = formatter.format(query);
+    var sql = formatter.format(query).toString(this);
     #if sql_debug
     trace(sql);
     #end

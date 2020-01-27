@@ -25,15 +25,20 @@ private class SqliteSanitizer implements Sanitizer {
   
 }
 
-class Sqlite extends StdDriver {
-
+class Sqlite implements Driver {
+  var fileForName: String->String;
+  
   public function new(?fileForName:String->String)
-    super(function (name) {
-      if (fileForName != null)
-        name = fileForName(name);
-      return sys.db.Sqlite.open(name);
-    }, function (cnx) 
-      return new SqliteFormatter(new SqliteSanitizer(cnx))
+    this.fileForName = fileForName;
+  
+  public function open<Db:DatabaseInfo>(name:String, info:Db):Connection<Db> {
+    var cnx = sys.db.Sqlite.open(
+      switch fileForName {
+        case null: name;
+        case f: f(name);
+      }
     );
+    return new StdConnection(info, cnx, new SqliteFormatter(), new SqliteSanitizer(cnx));
+  }
   
 }

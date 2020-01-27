@@ -21,7 +21,7 @@ class FormatTest extends TestWithDb {
 		super(driver, db);
 		uniqueDb = new UniqueDb('test', driver);
 		sanitizer = MySql.getSanitizer(null);
-		formatter = new SqlFormatter(sanitizer);
+		formatter = new SqlFormatter();
 	}
 
 	@:variant(new FormatTest.FakeTable1(), 'CREATE TABLE `fake` (`id` INT UNSIGNED NOT NULL AUTO_INCREMENT, `username` VARCHAR(50) NOT NULL, `admin` TINYINT NOT NULL, `age` INT UNSIGNED NULL)')
@@ -30,7 +30,7 @@ class FormatTest extends TestWithDb {
 	@:variant(this.uniqueDb.UniqueTable, 'CREATE TABLE `UniqueTable` (`u1` VARCHAR(123) NOT NULL, `u2` VARCHAR(123) NOT NULL, `u3` VARCHAR(123) NOT NULL, UNIQUE KEY `u1` (`u1`), UNIQUE KEY `index_name1` (`u2`, `u3`))')
 	public function createTable(table:TableInfo, sql:String) {
 		// TODO: should separate out the sanitizer
-		return assert(formatter.createTable(table, false) == sql);
+		return assert(formatter.createTable(table, false).toString(sanitizer) == sql);
 	}
 
 	@:variant(true, 'INSERT IGNORE INTO `PostTags` (`post`, `tag`) VALUES (1, "haxe")')
@@ -40,7 +40,7 @@ class FormatTest extends TestWithDb {
 			table: db.PostTags, 
 			rows: [{post: 1, tag: 'haxe'}],
 			ignore: ignore
-		}) == result);
+		}).toString(sanitizer) == result);
 	}
 
 	public function like() {
@@ -48,7 +48,7 @@ class FormatTest extends TestWithDb {
 		return assert(formatter.select({
 			from: @:privateAccess dataset.target, 
 			where: @:privateAccess dataset.condition.where
-		}) == 'SELECT * FROM `Types` WHERE (`Types`.`text` LIKE "mystring")');
+		}).toString(sanitizer) == 'SELECT * FROM `Types` WHERE (`Types`.`text` LIKE "mystring")');
 	}
 
 	public function inArray() {
@@ -56,7 +56,7 @@ class FormatTest extends TestWithDb {
 		return assert(formatter.select({
 			from: @:privateAccess dataset.target, 
 			where: @:privateAccess dataset.condition.where
-		}) == 'SELECT * FROM `Types` WHERE (`Types`.`int` IN (1, 2, 3))');
+		}).toString(sanitizer) == 'SELECT * FROM `Types` WHERE (`Types`.`int` IN (1, 2, 3))');
 	}
 
 	public function inEmptyArray() {
@@ -64,7 +64,7 @@ class FormatTest extends TestWithDb {
 		return assert(formatter.select({
 			from: @:privateAccess dataset.target, 
 			where: @:privateAccess dataset.condition.where
-		}) == 'SELECT * FROM `Types` WHERE false');
+		}).toString(sanitizer) == 'SELECT * FROM `Types` WHERE false');
 	}
 
 	public function tableAlias() {
@@ -72,7 +72,7 @@ class FormatTest extends TestWithDb {
 		return assert(formatter.select({
 			from: @:privateAccess dataset.target, 
 			where: @:privateAccess dataset.condition.where
-		}) == 'SELECT * FROM `Types` AS `alias`');
+		}).toString(sanitizer) == 'SELECT * FROM `Types` AS `alias`');
 	}
 
 	// Fields are prefixed here now
@@ -91,7 +91,7 @@ class FormatTest extends TestWithDb {
 			where: @:privateAccess dataset.condition.where, 
 			limit: {limit: 1, offset: 0}, 
 			orderBy: [{field: db.Types.fields.int, order: Desc}]
-		}) == 'SELECT * FROM `Types` ORDER BY `Types`.`int` DESC LIMIT 1');
+		}).toString(sanitizer) == 'SELECT * FROM `Types` ORDER BY `Types`.`int` DESC LIMIT 1');
 	}
 
 	// https://github.com/haxetink/tink_sql/issues/10
