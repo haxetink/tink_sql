@@ -327,14 +327,11 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
       case EBinOp(op, a, b):
         parenthesis(expr(a).add(binOp(op)).add(expr(b)));
       case ECall(name, args, wrap):
-        var params = separated(args.map(function (arg) return expr(arg)));
-        sql(name)
-          .add(
-            if (wrap == null || wrap)
-              parenthesis(params)
-            else 
-              params
-          );
+        var params = args.map(function (arg) return expr(arg));
+        if (wrap == null || wrap)
+          sql(name).parenthesis(separated(params));
+        else 
+          sql(name).separated(params);
       case EField(table, name):
         (table == null ? empty() : ident(table).sql('.')).ident(name);
       case EValue(v, VBool):

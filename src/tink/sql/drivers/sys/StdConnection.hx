@@ -1,17 +1,11 @@
 package tink.sql.drivers.sys;
 
-import geojson.GeometryCollection;
 import tink.sql.Info;
-import tink.sql.Expr;
-import haxe.DynamicAccess;
 import tink.sql.Types;
 import tink.streams.Stream;
-import tink.streams.RealStream;
 import sys.db.ResultSet;
 import tink.sql.format.Formatter;
 import tink.sql.expr.ExprTyper;
-import haxe.io.Bytes;
-import haxe.io.BytesInput;
 import tink.sql.parse.ResultParser;
 import tink.sql.format.Sanitizer;
 

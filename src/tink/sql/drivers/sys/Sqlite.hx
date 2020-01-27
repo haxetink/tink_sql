@@ -3,8 +3,7 @@ package tink.sql.drivers.sys;
 import tink.sql.format.SqliteFormatter;
 import tink.sql.format.Sanitizer;
 import haxe.io.Bytes;
-
-using StringTools;
+import tink.sql.Info;
 
 private class SqliteSanitizer implements Sanitizer {
 

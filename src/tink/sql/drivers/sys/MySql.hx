@@ -25,7 +25,7 @@ class MySql implements Driver {
       info, 
       cnx, 
       new MySqlFormatter(), 
-      new NativeSanitizer(cnx)
+      tink.sql.drivers.MySql.getSanitizer(null)
     );
   }
   

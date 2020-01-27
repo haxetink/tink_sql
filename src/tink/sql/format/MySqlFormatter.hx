@@ -149,7 +149,9 @@ class MySqlFormatter extends SqlFormatter<MysqlColumnInfo, MysqlKeyInfo> {
       .add(op.name)
       .parenthesis(
         separated(
-          op.arguments.map(function (arg) return expr(arg))
+          op.arguments.map(function (arg) 
+            return expr(arg)
+          )
         )
       );
 }
