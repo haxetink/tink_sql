@@ -1,5 +1,7 @@
 package tink.sql.format;
 
+import haxe.io.Bytes;
+
 private enum StatementMember {
   Sql(query:String);
   Ident(name:String);
@@ -81,14 +83,32 @@ abstract Statement(Array<StatementMember>) from Array<StatementMember> to Array<
       case v: [Sql(query)];
     }
 
-  public function toString(sanitizer: Sanitizer) {
+  public function toString(sanitizer:Sanitizer) {
     var res = new StringBuf();
     for (member in this) 
       switch member {
         case Sql(query): res.add(query);
         case Ident(ident): res.add(sanitizer.ident(ident));
-        case Value(value): res.add(sanitizer.value(value));
+        case Value(v):
+          res.add(sanitizer.value(v));
       }
     return res.toString();
+  }
+
+  public function prepare(ident:String->String) {
+    var query = new StringBuf();
+    var values = [];
+    for (member in this)
+      switch member {
+        case Sql(sql): query.add(sql);
+        case Ident(i): query.add(ident(i));
+        case Value(v):
+          query.add('?');
+          #if nodejs
+          if (Std.is(v, Bytes)) v = js.node.Buffer.hxFromBytes(cast v);
+          #end
+          values.push(v);
+      }
+    return {query: query.toString(), values: values}
   }
 }
