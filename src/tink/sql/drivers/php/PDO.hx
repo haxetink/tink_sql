@@ -1,5 +1,6 @@
 package tink.sql.drivers.php;
 
+import tink.sql.format.Formatter;
 import haxe.DynamicAccess;
 import haxe.io.Bytes;
 import tink.sql.Query;
@@ -8,6 +9,7 @@ import tink.sql.Types;
 import tink.sql.format.Sanitizer;
 import tink.streams.Stream;
 import tink.sql.format.MySqlFormatter;
+import tink.sql.format.SqliteFormatter;
 import tink.sql.expr.ExprTyper;
 import tink.sql.parse.ResultParser;
 import tink.sql.drivers.MySqlSettings;
@@ -27,7 +29,9 @@ class PDOMysql implements Driver {
     return value == null ? byDefault : value;
 
   public function open<Db:DatabaseInfo>(name:String, info:Db):Connection<Db> {
-    return new PDOConnection(info,
+    return new PDOConnection(
+      info,
+      MySqlFormatter.new, 
       new PDO(
         'mysql:host=${or(settings.host, 'localhost')};'
         + 'port=${or(settings.port, 3306)};'
@@ -39,18 +43,38 @@ class PDOMysql implements Driver {
   }
 }
 
+class PDOSqlite implements Driver {
+  var fileForName: String->String;
+  
+  public function new(?fileForName:String->String)
+    this.fileForName = fileForName;
+
+  public function open<Db:DatabaseInfo>(name:String, info:Db):Connection<Db> {
+    return new PDOConnection(
+      info,
+      SqliteFormatter.new, 
+      new PDO(
+        'sqlite:' + switch fileForName {
+          case null: name;
+          case f: f(name);
+        }
+      )
+    );
+  }
+}
+
 class PDOConnection<Db:DatabaseInfo> implements Connection<Db> implements Sanitizer {
 
   var db:Db;
   var cnx:PDO;
-  var formatter:MySqlFormatter;
+  var formatter:Formatter<{}, {}>;
   var parser:ResultParser<Db>;
 
-  public function new(db, cnx) {
+  public function new(db, createFormatter, cnx) {
     this.db = db;
     this.cnx = cnx;
     cnx.setAttribute(PDO.ATTR_ERRMODE, PDO.ERRMODE_EXCEPTION);
-    this.formatter = new MySqlFormatter(this);
+    this.formatter = createFormatter(this);
     this.parser = new ResultParser(new ExprTyper(db));
   }
 

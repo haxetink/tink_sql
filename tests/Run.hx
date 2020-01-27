@@ -21,7 +21,7 @@ class Run extends TestWithDb {
       password: env('DB_PASSWORD', '')
     });
     var dbMysql = new Db('test', mysql);
-    #if neko
+    #if !nodejs
     var sqlite = new tink.sql.drivers.Sqlite(function(db) return 'bin/$db.sqlite');
     var dbSqlite = new Db('test', sqlite);
     #end
@@ -41,7 +41,7 @@ class Run extends TestWithDb {
       new ProcedureTest(mysql, dbMysql),
       #end
 
-      #if neko
+      #if !nodejs
       new TypeTest(sqlite, dbSqlite),
       new SelectTest(sqlite, dbSqlite),
       new FormatTest(sqlite, dbSqlite),
