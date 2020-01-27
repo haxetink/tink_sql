@@ -251,7 +251,7 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
     return if (limit != null && limit.limit != null) join([
       'LIMIT',
       value(limit.limit),
-      if (limit.offset != null)
+      if (limit.offset != null && limit.offset != 0)
         'OFFSET ' + value(limit.offset)
       else ''
     ]) else '';
