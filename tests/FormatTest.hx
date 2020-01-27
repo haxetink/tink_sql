@@ -91,7 +91,7 @@ class FormatTest extends TestWithDb {
 			where: @:privateAccess dataset.condition.where, 
 			limit: {limit: 1, offset: 0}, 
 			orderBy: [{field: db.Types.fields.int, order: Desc}]
-		}) == 'SELECT * FROM `Types` ORDER BY `Types`.`int` DESC LIMIT 1 OFFSET 0');
+		}) == 'SELECT * FROM `Types` ORDER BY `Types`.`int` DESC LIMIT 1');
 	}
 
 	// https://github.com/haxetink/tink_sql/issues/10

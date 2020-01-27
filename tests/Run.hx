@@ -135,7 +135,7 @@ class Run extends TestWithDb {
   @:asserts
   public function deleteUser() {
     return insertUsers().next(function (_)
-      return db.User.delete({where: function (u) return u.id == 1, max: 1})
+      return db.User.delete({where: function (u) return u.id == 1 #if !neko , max: 1 #end})
     ).next(function (res) {
       asserts.assert(res.rowsAffected == 1);
       return db.User.count();
