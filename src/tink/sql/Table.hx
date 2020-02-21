@@ -78,7 +78,7 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
       else cnx.execute(Insert({
         table: this, 
         rows: rows, 
-        ignore: if (options == null) null else options.ignore
+        ignore: if (options == null) false else options.ignore
       }));
     
   public function insertOne(row:Insert<Row>, ?options)

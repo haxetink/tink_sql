@@ -69,6 +69,8 @@ class ResultParser<Db> {
         Std.parseInt(value);
       case Some(ValueType.VDate) if (Std.is(value, String)):
         Date.fromString(value);
+      case Some(ValueType.VDate) if (Std.is(value, Float)):
+        Date.fromTime(value);
       #if js 
       case Some(ValueType.VBytes) if (Std.is(value, js.node.Buffer)):
         (value: js.node.Buffer).hxToBytes();

@@ -2,7 +2,6 @@ package;
 
 import Db;
 import tink.sql.Info;
-import tink.sql.drivers.MySql;
 import tink.unit.Assert.assert;
 
 using tink.CoreApi;

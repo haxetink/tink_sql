@@ -7,19 +7,16 @@ import tink.sql.Target;
 import tink.sql.OrderBy;
 import tink.sql.Expr;
 import haxe.DynamicAccess;
+import tink.sql.format.Statement.StatementFactory.*;
 
 using Lambda;
 
 class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
   public static inline var FIELD_DELIMITER = '@@@';
-  var sanitizer:Sanitizer;
-  var separate = ', ';
 
-  public function new(sanitizer) {
-    this.sanitizer = sanitizer;
-  }
+  public function new() {}
 
-  public function format<Db, Result>(query:Query<Db, Result>):String
+  public function format<Db, Result>(query:Query<Db, Result>):Statement
     return switch query {
       case CreateTable(table, ifNotExists): createTable(table, ifNotExists);
       case DropTable(table): dropTable(table);
@@ -32,7 +29,7 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
       default: throw 'Query not supported in currrent formatter: $query';
     }
 
-  public function isNested<Db, Result>(query:Query<Db,Result>)
+  public function isNested<Db, Result>(query:Query<Db,Result>):Bool
     return switch query {
       case Select({from: TJoin(_, _, _, _), selection: null}): true;
       case Select(_): false;
@@ -40,69 +37,52 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
       default: false;
     }
 
-  inline function ident(name:String):String
-    return sanitizer.ident(name);
-
-  inline function value(value:Any):String
-    return sanitizer.value(value);
-
-  inline function parenthesis(statement:String)
-    return '($statement)';
-
-  inline function add(condition:Bool, addition:String)
-    return if (condition) addition else '';
-
-  inline function join(parts:Array<String>):String
-    return parts.filter(function (part) return part != '').join(' ');
-
-  inline function addDefault(defaultValue:Any)
+  inline function addDefault(defaultValue:Any):Statement
     return switch defaultValue {
-      case null: '';
-      case v: ' DEFAULT ' + value(defaultValue);
+      case null: empty();
+      case v: sql('DEFAULT').addValue(defaultValue);
     }
   
   inline function nullable(isNullable:Bool):String
     return if (isNullable) 'NULL' else 'NOT NULL';
 
-  function autoIncrement(increment:Bool)
-    return add(increment, 'AUTO_INCREMENT');
+  function autoIncrement(increment:Bool):Statement
+    return if (increment) sql('AUTO_INCREMENT') else empty();
 
-  function type(type: DataType):String
+  function type(type: DataType):Statement
     return switch type {
       case DBool(d):
-        'TINYINT' + addDefault(d);
+        sql('TINYINT').add(addDefault(d));
       case DDouble(d):
-        'DOUBLE' + addDefault(d);
+        sql('DOUBLE').add(addDefault(d));
       case DInt(Tiny, signed, _, d):
-        'TINYINT' + add(!signed, ' UNSIGNED') + addDefault(d);
+        sql('TINYINT').add('UNSIGNED', !signed).add(addDefault(d));
       case DInt(Small, signed, _, d):
-        'SMALLINT' + add(!signed, ' UNSIGNED') + addDefault(d);
+        sql('SMALLINT').add('UNSIGNED', !signed).add(addDefault(d));
       case DInt(Medium, signed, _, d):
-        'MEDIUMINT' + add(!signed, ' UNSIGNED') + addDefault(d);
+        sql('MEDIUMINT').add('UNSIGNED', !signed).add(addDefault(d));
       case DInt(Default, signed, _, d):
-        'INT' + add(!signed, ' UNSIGNED') + addDefault(d);
+        sql('INT').add('UNSIGNED', !signed).add(addDefault(d));
       case DString(maxLength, d):
-        (if (maxLength < 65536) 'VARCHAR($maxLength)'
-        else 'TEXT') + addDefault(d);
+        sql(if (maxLength < 65536) 'VARCHAR($maxLength)'
+        else 'TEXT').add(addDefault(d));
       case DBlob(maxLength):
         if (maxLength < 65536) 'VARBINARY($maxLength)'
         else 'BLOB';
       case DDateTime(d):
-        'DATETIME' + addDefault(d);
+        sql('DATETIME').add(addDefault(d));
       case DTimestamp(d):
-        'Timestamp' + addDefault(d);
+        sql('TIMESTAMP').add(addDefault(d));
       case DUnknown(type, d):
-        type + addDefault(d);
+        sql(type).add(addDefault(d));
       default: throw 'Type not support in current formatter: $type';
     }
 
-  public function defineColumn(column:Column):String
-    return join([
-      ident(column.name),
-      type(column.type),
-      nullable(column.nullable),
-      autoIncrement(column.type.match(DInt(_, _, true)))
-    ]);
+  public function defineColumn(column:Column):Statement
+    return ident(column.name)
+      .add(type(column.type))
+      .add(nullable(column.nullable))
+      .add(autoIncrement(column.type.match(DInt(_, _, true))));
 
   function keyFields(key:Key)
     return switch key {
@@ -111,86 +91,92 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
         | Index(_, fields): fields;
     }
 
-  public function defineKey(key:Key)
-    return join([switch key {
-      case Primary(_): 'PRIMARY KEY';
-      case Unique(name, _): 'UNIQUE KEY ' + ident(name);
-      case Index(name, _): 'INDEX ' + ident(name);
-    }, parenthesis(
-      keyFields(key).map(ident).join(separate)
-    )]);
+  function keyType(key:Key):Statement
+    return switch key {
+      case Primary(_): sql('PRIMARY KEY');
+      case Unique(name, _): sql('UNIQUE KEY').addIdent(name);
+      case Index(name, _): sql('INDEX').addIdent(name);
+    }
+
+  public function defineKey(key:Key):Statement
+    return keyType(key)
+      .addParenthesis(
+        separated(
+          keyFields(key)
+            .map(ident)
+        )
+      );
 
   function createTable(table:TableInfo, ifNotExists:Bool)
-    return join([
-      'CREATE TABLE', 
-      add(ifNotExists, 'IF NOT EXISTS'), 
-      ident(table.getName()), 
-      parenthesis(
-        table.getColumns()
-          .map(defineColumn)
-          .concat(table.getKeys().map(defineKey))
-          .join(separate)
-      )
-    ]);
+    return sql('CREATE TABLE')
+      .add('IF NOT EXISTS', ifNotExists)
+      .addIdent(table.getName())
+      .addParenthesis(
+        separated(
+          table.getColumns()
+            .map(defineColumn)
+            .concat(
+              table.getKeys().map(defineKey))
+        )
+      );
 
   function dropTable(table:TableInfo)
-    return 'DROP TABLE ' + ident(table.getName());
+    return sql('DROP TABLE').addIdent(table.getName());
 
-  function insertRow(columns:Iterable<Column>, row:DynamicAccess<Any>)
+  function insertRow(columns:Iterable<Column>, row:DynamicAccess<Any>):Statement
     return parenthesis(
-      columns.map(function (column) 
-        return switch row[column.name] {
-          case null: value(null);
-          case v: switch column.type {
-            case DPoint | DPolygon | DMultiPolygon:
-              'ST_GeomFromGeoJSON(\'${haxe.Json.stringify(v)}\')';
-            default: value(v);
+      separated(columns.map(
+        function (column):Statement
+          return switch row[column.name] {
+            case null: value(null);
+            case v: switch column.type {
+              case DPoint | DPolygon | DMultiPolygon:
+                'ST_GeomFromGeoJSON(\'${haxe.Json.stringify(v)}\')';
+              default: value(v);
+            }
           }
-        }  
-      ).join(separate)
+      ))
     );
 
   function insert<Row:{}>(insert:InsertOperation<Row>)
-    return join([
-      'INSERT',
-      add(insert.ignore, 'IGNORE'),
-      'INTO',
-      ident(insert.table.getName()),
-      parenthesis(
-        insert.table.columnNames()
-          .map(ident)
-          .join(separate)
-      ),
-      'VALUES',
-      insert.rows
-        .map(insertRow.bind(insert.table.getColumns()))
-        .join(separate)
-    ]);
+    return sql('INSERT')
+      .add('IGNORE', insert.ignore)
+      .add('INTO')
+      .addIdent(insert.table.getName())
+      .addParenthesis(
+        separated(
+          insert.table.columnNames()
+            .map(ident)
+        )
+      )
+      .add('VALUES')
+      .add(
+        separated(
+          insert.rows
+            .map(insertRow.bind(insert.table.getColumns()))
+        )
+      );
 
   function field(name, value)
-    return join([
-      expr(value),
-      'AS',
-      ident(name)
-    ]);
+    return expr(value).add('AS').addIdent(name);
 
-  function prefixFields<Row:{}, Db>(target:Target<Row, Db>)
+  function prefixFields<Row:{}, Db>(target:Target<Row, Db>):Statement
     return switch target {
       case TQuery(alias, Select({selection: selection})):
-        selection.keys().map(function (name) 
+        separated(selection.keys().map(function (name) 
           return field(alias + FIELD_DELIMITER + name, EField(
             alias, name
           ))
-        ).join(separate);
+        ));
       case TTable(table, alias):
         var from = alias == null ? table.getName() : alias;
-        table.columnNames().map(function (name)
+        separated(table.columnNames().map(function (name)
           return field(from + FIELD_DELIMITER + name, EField(
             from, name
           ))
-        ).join(separate);
+        ));
       case TJoin(left, right, type, c):
-        [prefixFields(left), prefixFields(right)].join(separate);
+        separated([prefixFields(left), prefixFields(right)]);
       case TQuery(_, _):
         throw 'Can\'t get field information for target: $target';
     }
@@ -198,121 +184,111 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
   function selection<Row:{}, Db, Fields>(target:Target<Row, Db>, selection:Selection<Row, Fields>)
     return switch selection {
       case null: switch target {
-        case TTable(_, _): '*';
+        case TTable(_, _): sql('*');
         default: prefixFields(target);
       }
       case fields:
-        fields.keys().map(function(name)
+        separated(fields.keys().map(function(name)
           return field(name, fields[name])
-        ).join(separate);
+        ));
     }
 
-  function target<Row:{}, Db>(from:Target<Row, Db>)
+  function target<Row:{}, Db>(from:Target<Row, Db>):Statement
     return switch from {
       case TTable(_.getName() => name, alias):
-        ident(name) + 
-        if (alias != null && alias != name) ' AS ' + ident(alias) else '';
+        ident(name)
+          .add(
+            sql('AS').addIdent(alias),
+            alias != null && alias != name
+          );
       case TJoin(left, right, type, cond):
-        join([
-          target(left),
-          switch type {
+        target(left)
+          .add(switch type {
             case Inner: 'INNER';
             case Right: 'RIGHT';
             case Left:  'LEFT';
-          },
-          'JOIN',
-          target(right),
-          'ON',
-          expr(cond)
-        ]);
+          })
+          .add('JOIN')
+          .add(target(right))
+          .add('ON')
+          .add(expr(cond));
       case TQuery(alias, query):
-        join([
-          parenthesis(format(query)),
-          ' AS ',
-          ident(alias)
-        ]);
+        parenthesis(format(query))
+          .add('AS')
+          .addIdent(alias);
     }
 
   function groupBy<Row:{}>(grouped:Null<Array<Field<Dynamic, Row>>>)
-    return if (grouped != null)
-      'GROUP BY ' +
-      grouped.map(function (field) return expr(field.data)).join(separate)
-    else '';
+    return if (grouped == null) empty() else
+      sql('GROUP BY')
+        .addSeparated(grouped.map(function (field) 
+          return expr(field.data)
+        ));
 
   function orderBy<Row:{}>(orderBy:Null<OrderBy<Row>>)
-    return if (orderBy != null)
-      'ORDER BY ' +
-      orderBy.map(function (by)
-        return join([expr(by.field), by.order.getName().toUpperCase()])
-      ).join(separate)
-    else '';
+    return if (orderBy == null) empty() else
+      sql('ORDER BY')
+        .addSeparated(
+          orderBy.map(function (by)
+            return expr(by.field).add(by.order.getName().toUpperCase())
+          )
+        );
 
   function limit(limit:Limit)
-    return if (limit != null && limit.limit != null) join([
-      'LIMIT',
-      value(limit.limit),
-      if (limit.offset != null && limit.offset != 0)
-        'OFFSET ' + value(limit.offset)
-      else ''
-    ]) else '';
+    return if (limit == null || limit.limit == null) empty() else
+      sql('LIMIT')
+        .addValue(limit.limit)
+        .add(
+          sql('OFFSET').addValue(limit.offset),
+          limit.offset != null && limit.offset != 0
+        );
   
   function where(condition:Null<Condition>)
-    return if (condition != null) 
-      'WHERE ' + expr(condition) 
-    else '';
+    return if (condition == null) empty() else 
+      sql('WHERE').add(expr(condition));
 
   function having(condition:Null<Condition>)
-    return if (condition != null) 
-      'HAVING ' + expr(condition) 
-    else '';
+    return if (condition == null) empty() else 
+      sql('HAVING').add(expr(condition));
 
   function select<Db, Row:{}>(select:SelectOperation<Db, Row>)
-    return join([
-      'SELECT',
-      selection(select.from, select.selection),
-      'FROM',
-      target(select.from),
-      where(select.where),
-      groupBy(select.groupBy),
-      having(select.having),
-      orderBy(select.orderBy),
-      limit(select.limit)
-    ]);
+    return sql('SELECT')
+      .add(selection(select.from, select.selection))
+      .add('FROM')
+      .add(target(select.from))
+      .add(where(select.where))
+      .add(groupBy(select.groupBy))
+      .add(having(select.having))
+      .add(orderBy(select.orderBy))
+      .add(limit(select.limit));
 
   function union<Db, Row:{}>(union:UnionOperation<Db, Row>)
-    return join([
-      parenthesis(format(union.left)),
-      'UNION',
-      add(!union.distinct, 'ALL'),
-      parenthesis(format(union.right)),
-      limit(union.limit)
-    ]);
+    return parenthesis(format(union.left))
+      .add('UNION')
+      .add('ALL', !union.distinct)
+      .parenthesis(format(union.right))
+      .add(limit(union.limit));
 
   function update<Row:{}>(update:UpdateOperation<Row>)
-    return join([
-      'UPDATE',
-      ident(update.table.getName()),
-      'SET',
-      update.set.map(function (set)
-        return ident(set.field.name) + '=' + expr(set.expr)
-      ).join(separate),
-      where(update.where),
-      if (update.max != null) limit(update.max) else ''
-    ]);
+    return sql('UPDATE')
+      .addIdent(update.table.getName())
+      .add('SET')
+      .separated(update.set.map(function (set)
+        return ident(set.field.name).add('=').add(expr(set.expr))
+      ))
+      .add(where(update.where))
+      .add(limit(update.max), update.max != null);
 
   function delete<Row:{}>(del:DeleteOperation<Row>)
-    return join([
-      'DELETE FROM',
-      ident(del.from.getName()),
-      where(del.where),
-      limit(del.max)
-    ]);
-  
-  function call<Row:{}>(op:CallOperation<Row>):String {
-    throw 'implement';
-  }
+    return sql('DELETE FROM')
+      .addIdent(del.from.getName())
+      .add(where(del.where))
+      .add(limit(del.max));
 
-  function binOp(o:BinOp<Dynamic, Dynamic, Dynamic>)
+  function call<Row:{}>(op:CallOperation<Row>):Statement
+    throw 'implement';
+
+  function binOp(o:BinOp<Dynamic, Dynamic, Dynamic>):Statement
     return switch o {
       case Add: '+';
       case Subt: '-';
@@ -320,14 +296,14 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
       case Div: '/';
       case Mod: 'MOD';
       case Or: 'OR';
-      case And: 'AND ';
+      case And: 'AND';
       case Equals: '=';
       case Greater: '>';
       case Like: 'LIKE';
       case In: 'IN';
     }
 
-  function unOp(o:UnOp<Dynamic, Dynamic>)
+  function unOp(o:UnOp<Dynamic, Dynamic>):Statement
     return switch o {
       case IsNull: 'IS NULL';
       case Not: 'NOT';
@@ -338,25 +314,26 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
     return e.match(EValue([], VArray(_)));
 
   inline function values(values:Array<Dynamic>)
-    return parenthesis(values.map(value).join(separate));
+    return parenthesis(separated(values.map(value)));
 
-  function expr(e:ExprData<Dynamic>):String
+  function expr(e:ExprData<Dynamic>):Statement
     return switch e {
       case EUnOp(op, a, false):
-        unOp(op) + ' ' + expr(a);
+        unOp(op).add(expr(a));
       case EUnOp(op, a, true):
-        expr(a) + ' ' + unOp(op);
+        expr(a).add(unOp(op));
       case EBinOp(In, a, b) if (emptyArray(b)):
         value(false);
       case EBinOp(op, a, b):
-        '(${expr(a)} ${binOp(op)} ${expr(b)})';
+        parenthesis(expr(a).add(binOp(op)).add(expr(b)));
       case ECall(name, args, wrap):
-        var params = [for(arg in args) expr(arg)].join(',');
-        name + 
-          if (wrap == null || wrap) parenthesis(params)
-          else params;
+        var params = args.map(function (arg) return expr(arg));
+        if (wrap == null || wrap)
+          sql(name).parenthesis(separated(params));
+        else 
+          sql(name).separated(params);
       case EField(table, name):
-        (table == null ? '' : ident(table) + '.') + ident(name);
+        (table == null ? empty() : ident(table).sql('.')).ident(name);
       case EValue(v, VBool):
         value(v);
       case EValue(v, VString):

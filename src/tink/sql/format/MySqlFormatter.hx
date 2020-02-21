@@ -5,10 +5,11 @@ import tink.sql.Query;
 import tink.sql.schema.KeyStore;
 import tink.sql.Expr;
 import tink.sql.format.SqlFormatter;
+import tink.sql.format.Statement.StatementFactory.*;
 
 class MySqlFormatter extends SqlFormatter<MysqlColumnInfo, MysqlKeyInfo> {
 
-  override public function format<Db, Result>(query:Query<Db, Result>):String
+  override public function format<Db, Result>(query:Query<Db, Result>):Statement
     return switch query {
       case ShowColumns(from): showColumns(from);
       case ShowIndex(from): showIndex(from);
@@ -16,15 +17,15 @@ class MySqlFormatter extends SqlFormatter<MysqlColumnInfo, MysqlKeyInfo> {
       default: super.format(query);
     }
 
-  override function type(type: DataType): String
+  override function type(type: DataType):Statement
     return switch type {
       case DText(size, d):
-        (switch size {
+        sql(switch size {
           case Tiny: 'TINYTEXT';
           case Default: 'TEXT';
           case Medium: 'MEDIUMTEXT';
           case Long: 'LONGTEXT';
-        }) + addDefault(d);
+        }).add(addDefault(d));
       case DPoint:
         'POINT';
       case DPolygon:
@@ -85,36 +86,37 @@ class MySqlFormatter extends SqlFormatter<MysqlColumnInfo, MysqlKeyInfo> {
   }
 
   function showColumns(from:TableInfo)
-    return 'SHOW COLUMNS FROM ' + ident(from.getName());
+    return sql('SHOW COLUMNS FROM').addIdent(from.getName());
 
   function showIndex(from:TableInfo)
-    return 'SHOW INDEX FROM ' + ident(from.getName());
+    return sql('SHOW INDEX FROM').addIdent(from.getName());
 
   function alterTable(table:TableInfo, changes:Array<AlterTableOperation>)
-    return join([
-      'ALTER TABLE',
-      ident(table.getName()),
-      changes.map(alteration).join(separate)
-    ]);
+    return sql('ALTER TABLE')
+      .addIdent(table.getName())
+      .addSeparated(changes.map(alteration));
 
   function alteration(change:AlterTableOperation)
-    return join(switch change {
+    return switch change {
       case AddColumn(col):
-        ['ADD COLUMN', defineColumn(col)];
+        sql('ADD COLUMN').add(defineColumn(col));
       case AlterColumn(to, _):
-        ['MODIFY COLUMN', defineColumn(to)];
+        sql('MODIFY COLUMN').add(defineColumn(to));
       case DropColumn(col):
-        ['DROP COLUMN', ident(col.name)];
+        sql('DROP COLUMN').add(ident(col.name));
       case DropKey(key):
-        ['DROP', switch key {
-          case Unique(name, _) | Index(name, _): 'INDEX ' + ident(name);
-          case Primary(_): 'PRIMARY KEY';
-        }];
+        sql('DROP')
+          .add(
+            switch key {
+              case Unique(name, _) | Index(name, _): sql('INDEX').addIdent(name);
+              case Primary(_): 'PRIMARY KEY';
+            }
+          );
       case AddKey(key):
-        ['ADD', defineKey(key)];
-    });
+        sql('ADD').add(defineKey(key));
+    }
 
-  override function expr(e:ExprData<Dynamic>):String
+  override function expr(e:ExprData<Dynamic>):Statement
    return switch e {
       case EValue(geom, VGeometry(_)):
         'ST_GeomFromGeoJSON(\'${haxe.Json.stringify(geom)}\')';
@@ -142,14 +144,16 @@ class MySqlFormatter extends SqlFormatter<MysqlColumnInfo, MysqlKeyInfo> {
     return store.get();
   }
   
-  override function call<Row:{}>(op:CallOperation<Row>):String {
-    return join([
-      'CALL',
-      op.name,
-      '(${[for(arg in op.arguments) expr(arg)].join(',')})',
-      // limit(op.limit), // not supported by mysql
-    ]);
-  }
+  override function call<Row:{}>(op:CallOperation<Row>):Statement
+    return sql('CALL')
+      .add(op.name)
+      .parenthesis(
+        separated(
+          op.arguments.map(function (arg) 
+            return expr(arg)
+          )
+        )
+      );
 }
 
 typedef MysqlColumnInfo = {

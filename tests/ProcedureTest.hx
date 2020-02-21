@@ -5,7 +5,7 @@ import Run.loadFixture;
 @:asserts
 class ProcedureTest extends TestWithDb {
   
-  @:include public function test() {
+  public function test() {
     loadFixture('procedure');
     db.func.call(1).all().handle(function(o) switch o {
       case Success(result):

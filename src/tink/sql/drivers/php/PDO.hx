@@ -31,7 +31,7 @@ class PDOMysql implements Driver {
   public function open<Db:DatabaseInfo>(name:String, info:Db):Connection<Db> {
     return new PDOConnection(
       info,
-      MySqlFormatter.new, 
+      new MySqlFormatter(), 
       new PDO(
         'mysql:host=${or(settings.host, 'localhost')};'
         + 'port=${or(settings.port, 3306)};'
@@ -52,7 +52,7 @@ class PDOSqlite implements Driver {
   public function open<Db:DatabaseInfo>(name:String, info:Db):Connection<Db> {
     return new PDOConnection(
       info,
-      SqliteFormatter.new, 
+      new SqliteFormatter(), 
       new PDO(
         'sqlite:' + switch fileForName {
           case null: name;
@@ -70,11 +70,11 @@ class PDOConnection<Db:DatabaseInfo> implements Connection<Db> implements Saniti
   var formatter:Formatter<{}, {}>;
   var parser:ResultParser<Db>;
 
-  public function new(db, createFormatter, cnx) {
+  public function new(db, formatter, cnx) {
     this.db = db;
     this.cnx = cnx;
     cnx.setAttribute(PDO.ATTR_ERRMODE, PDO.ERRMODE_EXCEPTION);
-    this.formatter = createFormatter(this);
+    this.formatter = formatter;
     this.parser = new ResultParser(new ExprTyper(db));
   }
 
@@ -92,7 +92,8 @@ class PDOConnection<Db:DatabaseInfo> implements Connection<Db> implements Saniti
     return formatter;
 
   public function execute<Result>(query:Query<Db,Result>):Result {
-    inline function fetch(): Promise<PDOStatement> return run(formatter.format(query));
+    inline function fetch(): Promise<PDOStatement> 
+      return run(formatter.format(query).toString(this));
     return switch query {
       case Select(_) | Union(_) | CallProcedure(_): 
         Stream.promise(fetch().next(function (res:PDOStatement) {
@@ -135,7 +136,12 @@ class PDOConnection<Db:DatabaseInfo> implements Connection<Db> implements Saniti
       case Select(_) | Union(_) | CallProcedure(_): 
         var parse = parser.queryParser(query, formatter.isNested(query));
         try Success([
-          for (row in cnx.query(formatter.format(query)).fetchAll(PDO.FETCH_OBJ))
+          for (
+            row in 
+            cnx
+              .query(formatter.format(query).toString(this))
+              .fetchAll(PDO.FETCH_OBJ)
+          )
             parse(row)
         ]) catch (e: PDOException)
           Failure(new Error(e.getCode(), e.getMessage()));

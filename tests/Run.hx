@@ -21,10 +21,8 @@ class Run extends TestWithDb {
       password: env('DB_PASSWORD', '')
     });
     var dbMysql = new Db('test', mysql);
-    #if !nodejs
     var sqlite = new tink.sql.drivers.Sqlite(function(db) return 'bin/$db.sqlite');
     var dbSqlite = new Db('test', sqlite);
-    #end
     loadFixture('init');
     Runner.run(TestBatch.make([
       new TypeTest(mysql, dbMysql),
@@ -37,18 +35,16 @@ class Run extends TestWithDb {
       new ExprTest(mysql, dbMysql),
       new Run(mysql, dbMysql),
       new SchemaTest(mysql, dbMysql),
-      #if node
+      #if nodejs
       new ProcedureTest(mysql, dbMysql),
       #end
 
-      #if !nodejs
       new TypeTest(sqlite, dbSqlite),
       new SelectTest(sqlite, dbSqlite),
       new FormatTest(sqlite, dbSqlite),
       //new StringTest(sqlite, dbSqlite),
       new ExprTest(sqlite, dbSqlite),
       new Run(sqlite, dbSqlite),
-      #end
     ])).handle(Runner.exit);
   }
   
@@ -135,7 +131,7 @@ class Run extends TestWithDb {
   @:asserts
   public function deleteUser() {
     return insertUsers().next(function (_)
-      return db.User.delete({where: function (u) return u.id == 1 #if !neko , max: 1 #end})
+      return db.User.delete({where: function (u) return u.id == 1})
     ).next(function (res) {
       asserts.assert(res.rowsAffected == 1);
       return db.User.count();

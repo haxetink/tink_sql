@@ -43,7 +43,9 @@ class Schema {
 
   public function diff(that: Schema, formatter:Formatter<{}, {}>):Array<AlterTableOperation> {
     var changes = [], post = [];
-
+    // The sanitizer will not actually be used to form sql queries, only to
+    // compare potential output
+    var sanitizer = tink.sql.drivers.MySql.getSanitizer(null);
     for (key in mergeKeys(this.columns, that.columns))
       switch [this.columns[key], that.columns[key]] {
         case [null, added]:
@@ -56,11 +58,11 @@ class Schema {
           }
         case [removed, null]: changes.push(DropColumn(removed));
         case [a, b]:
-          if (formatter.defineColumn(a) == formatter.defineColumn(b))
+          if (formatter.defineColumn(a).toString(sanitizer) == formatter.defineColumn(b).toString(sanitizer))
             continue;
           if (hasAutoIncrement(b)) {
             var without = withoutAutoIncrement(b);
-            if (formatter.defineColumn(a) != formatter.defineColumn(without))
+            if (formatter.defineColumn(a).toString(sanitizer) != formatter.defineColumn(without).toString(sanitizer))
               changes.unshift(AlterColumn(without, a));
             post.push(AlterColumn(b, without));
           } else {
@@ -73,7 +75,7 @@ class Schema {
         case [removed, null]:
           changes.unshift(DropKey(removed));
         case [a, b]:
-          if (formatter.defineKey(a) == formatter.defineKey(b))
+          if (formatter.defineKey(a).toString(sanitizer) == formatter.defineKey(b).toString(sanitizer))
             continue;
           changes.unshift(DropKey(a));
           changes.push(AddKey(b));

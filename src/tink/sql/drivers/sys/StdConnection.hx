@@ -1,49 +1,29 @@
 package tink.sql.drivers.sys;
 
-import geojson.GeometryCollection;
 import tink.sql.Info;
-import tink.sql.Expr;
-import haxe.DynamicAccess;
 import tink.sql.Types;
 import tink.streams.Stream;
-import tink.streams.RealStream;
 import sys.db.ResultSet;
 import tink.sql.format.Formatter;
 import tink.sql.expr.ExprTyper;
-import haxe.io.Bytes;
-import haxe.io.BytesInput;
 import tink.sql.parse.ResultParser;
+import tink.sql.format.Sanitizer;
 
 using tink.CoreApi;
-
-class StdDriver implements Driver {
-
-  var doOpen:String->sys.db.Connection;
-  var createFormatter:sys.db.Connection->Formatter<{}, {}>;
-
-  public function new(doOpen, createFormatter) {
-    this.doOpen = doOpen;
-    this.createFormatter = createFormatter;
-  }
-
-  public function open<Db:DatabaseInfo>(name:String, info:Db):Connection<Db> {
-    var cnx = doOpen(name);
-    return new StdConnection(info, cnx, createFormatter(cnx));
-  }
-
-}
 
 class StdConnection<Db:DatabaseInfo> implements Connection<Db> {
 
   var db:Db;
   var cnx:sys.db.Connection;
   var formatter:Formatter<{}, {}>;
+  var sanitizer:Sanitizer;
   var parser:ResultParser<Db>;
 
-  public function new(db, cnx, formatter) {
+  public function new(db, cnx, formatter, sanitizer) {
     this.db = db;
     this.cnx = cnx;
     this.formatter = formatter;
+    this.sanitizer = sanitizer;
     this.parser = new ResultParser(new ExprTyper(db));
   }
 
@@ -51,7 +31,8 @@ class StdConnection<Db:DatabaseInfo> implements Connection<Db> {
     return formatter;
 
   public function execute<Result>(query:Query<Db,Result>):Result {
-    inline function fetch<T>(): Promise<T> return run(formatter.format(query));
+    inline function fetch<T>(): Promise<T> 
+      return run(formatter.format(query).toString(sanitizer));
     return switch query {
       case Select(_) | Union(_) | CallProcedure(_): 
         Stream.promise(fetch().next(function (res:ResultSet) {
