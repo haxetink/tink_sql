@@ -326,7 +326,7 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
         value(false);
       case EBinOp(op, a, b):
         parenthesis(expr(a).add(binOp(op)).add(expr(b)));
-      case ECall(name, args, wrap):
+      case ECall(name, args, _, wrap):
         var params = args.map(function (arg) return expr(arg));
         if (wrap == null || wrap)
           sql(name).parenthesis(separated(params));

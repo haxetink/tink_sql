@@ -13,9 +13,14 @@ enum ExprData<T> {
   EUnOp<A, Ret>(op:UnOp<A, Ret>, a:Expr<A>, postfix:Bool):ExprData<Ret>;
   EBinOp<A, B, Ret>(op:BinOp<A, B, Ret>, a:Expr<A>, b:Expr<B>):ExprData<Ret>;
   EField(table:String, name:String):ExprData<T>;
-  ECall(name:String, args:Array<Expr<Any>>, ?parenthesis: Bool):ExprData<T>;
+  ECall(name:String, args:Array<Expr<Any>>, type:FunctionType<T>, ?parenthesis: Bool):ExprData<T>;
   EValue<T>(value:T, type:ValueType<T>):ExprData<T>;
   EQuery<T, Db, Result>(query:Query<Db, Result>):ExprData<T>;
+}
+
+enum FunctionType<T> {
+  FType(type:ValueType<T>): FunctionType<T>;
+  FTypeOf(expr:Expr<T>): FunctionType<T>;
 }
 
 enum ValueType<T> {
