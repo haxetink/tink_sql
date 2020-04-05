@@ -2,6 +2,7 @@ package tink.sql.expr;
 
 import tink.sql.Expr;
 import tink.sql.Query;
+import tink.sql.Types;
 import haxe.io.Bytes;
 import tink.sql.Dataset;
 
@@ -204,5 +205,23 @@ abstract Field<Data, Owner>(Expr<Data>) to Expr<Data> {
     @:op(a <= b) static function lteDateQuery<S>(a:Field<Date, S>, b:Scalar<Date>):Condition
       return (a:Expr<Date>) <= b.toScalarExpr();
   //} endregion
+  
+  @:to inline static function pointToGemetryExpr<O>(f:Expr<Point>):Expr<Geometry>
+    return cast f;
+  
+  @:to inline static function lineStringToGemetryExpr<O>(f:Expr<LineString>):Expr<Geometry>
+    return cast f;
+  
+  @:to inline static function polygonToGemetryExpr<O>(f:Expr<Polygon>):Expr<Geometry>
+    return cast f;
+  
+  @:to inline static function multiPointToGemetryExpr<O>(f:Expr<MultiPoint>):Expr<Geometry>
+    return cast f;
+  
+  @:to inline static function multiLineStringToGemetryExpr<O>(f:Expr<MultiLineString>):Expr<Geometry>
+    return cast f;
+  
+  @:to inline static function multiPolygonToGemetryExpr<O>(f:Expr<MultiPolygon>):Expr<Geometry>
+    return cast f;
 }
 

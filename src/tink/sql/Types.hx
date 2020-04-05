@@ -25,6 +25,7 @@ typedef Polygon = geojson.Polygon;
 typedef MultiPoint = geojson.MultiPoint;
 typedef MultiLineString = geojson.MultiLineString;
 typedef MultiPolygon = geojson.MultiPolygon;
+typedef Geometry = geojson.Geometry;
 
 abstract Id<T>(Int) to Int {
 

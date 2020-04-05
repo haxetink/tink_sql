@@ -278,6 +278,24 @@ typedef Scalar<T> = Dataset<SingleField<T, Dynamic>, Dynamic, Dynamic>;
   @:from public static function ofMultiPolygon(p:MultiPolygon):Expr<MultiPolygon>
     return EValue(p, VGeometry(MultiPolygon));
 
+  @:from inline static function ofPointAsGeometry(p:Point):Expr<Geometry>
+    return cast EValue(p, VGeometry(Point));
+    
+  @:from inline static function ofLineStringAsGeometry(p:LineString):Expr<Geometry>
+    return cast EValue(p, VGeometry(LineString));
+    
+  @:from inline static function ofPolygonAsGeometry(p:Polygon):Expr<Geometry>
+    return cast EValue(p, VGeometry(Polygon));
+    
+  @:from inline static function ofMultiPointAsGeometry(p:MultiPoint):Expr<Geometry>
+    return cast EValue(p, VGeometry(MultiPoint));
+    
+  @:from inline static function ofMultiLineStringAsGeometry(p:MultiLineString):Expr<Geometry>
+    return cast EValue(p, VGeometry(MultiLineString));
+    
+  @:from inline static function ofMultiPolygonAsGeometry(p:MultiPolygon):Expr<Geometry>
+    return cast EValue(p, VGeometry(MultiPolygon));
+
   @:from static function ofBytes(b:Bytes):Expr<Bytes>
     return EValue(b, VBytes);
   
