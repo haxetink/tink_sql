@@ -233,49 +233,49 @@ typedef Scalar<T> = Dataset<SingleField<T, Dynamic>, Dynamic, Dynamic>;
   public function like(b:Expr<String>):Condition
     return EBinOp(Like, this, b);
 
-  @:from static function ofIdArray<T>(v:Array<Id<T>>):Expr<Array<Id<T>>>
+  @:from inline static function ofIdArray<T>(v:Array<Id<T>>):Expr<Array<Id<T>>>
     return EValue(v, cast VArray(VInt));
 
-  @:from static function ofIntArray<T:Int>(v:Array<T>):Expr<Array<T>>
+  @:from inline static function ofIntArray<T:Int>(v:Array<T>):Expr<Array<T>>
     return EValue(v, VArray(cast VInt));
 
-  @:from static function ofFloatArray<T:Float>(v:Array<T>):Expr<Array<T>>
+  @:from inline static function ofFloatArray<T:Float>(v:Array<T>):Expr<Array<T>>
     return EValue(v, VArray(cast VFloat));
 
-  @:from static function ofStringArray<T:String>(v:Array<T>):Expr<Array<T>>
+  @:from inline static function ofStringArray<T:String>(v:Array<T>):Expr<Array<T>>
     return EValue(v, VArray(cast VString));
 
-  @:from static function ofBool<S:Bool>(b:S):Expr<S>
+  @:from inline static function ofBool<S:Bool>(b:S):Expr<S>
     return cast EValue(b, cast VBool);
 
-  @:from static function ofDate<S:Date>(s:S):Expr<S>
+  @:from inline static function ofDate<S:Date>(s:S):Expr<S>
     return EValue(s, cast VDate);
 
-  @:from static function ofString<S:String>(s:S):Expr<S>
+  @:from inline static function ofString<S:String>(s:S):Expr<S>
     return EValue(s, cast VString);
 
-  @:from static function ofInt(s:Int):Expr<Int>
+  @:from inline static function ofInt(s:Int):Expr<Int>
     return EValue(s, VInt);
 
-  @:from static function ofFloat(s:Float):Expr<Float>
+  @:from inline static function ofFloat(s:Float):Expr<Float>
     return EValue(s, VFloat);
 
-  @:from static function ofPoint(p:Point):Expr<Point>
+  @:from inline static function ofPoint(p:Point):Expr<Point>
     return EValue(p, VGeometry(Point));
     
-  @:from static function ofLineString(p:LineString):Expr<LineString>
+  @:from inline static function ofLineString(p:LineString):Expr<LineString>
     return EValue(p, VGeometry(LineString));
     
-  @:from static function ofPolygon(p:Polygon):Expr<Polygon>
+  @:from inline static function ofPolygon(p:Polygon):Expr<Polygon>
     return EValue(p, VGeometry(Polygon));
     
-  @:from static function ofMultiPoint(p:MultiPoint):Expr<MultiPoint>
+  @:from inline static function ofMultiPoint(p:MultiPoint):Expr<MultiPoint>
     return EValue(p, VGeometry(MultiPoint));
     
-  @:from static function ofMultiLineString(p:MultiLineString):Expr<MultiLineString>
+  @:from inline static function ofMultiLineString(p:MultiLineString):Expr<MultiLineString>
     return EValue(p, VGeometry(MultiLineString));
     
-  @:from public static function ofMultiPolygon(p:MultiPolygon):Expr<MultiPolygon>
+  @:from inline static function ofMultiPolygon(p:MultiPolygon):Expr<MultiPolygon>
     return EValue(p, VGeometry(MultiPolygon));
 
   @:from inline static function ofPointAsGeometry(p:Point):Expr<Geometry>
@@ -296,9 +296,9 @@ typedef Scalar<T> = Dataset<SingleField<T, Dynamic>, Dynamic, Dynamic>;
   @:from inline static function ofMultiPolygonAsGeometry(p:MultiPolygon):Expr<Geometry>
     return cast EValue(p, VGeometry(MultiPolygon));
 
-  @:from static function ofBytes(b:Bytes):Expr<Bytes>
+  @:from inline static function ofBytes(b:Bytes):Expr<Bytes>
     return EValue(b, VBytes);
   
-  @:from static function ofScalar<T>(s:Scalar<T>):Expr<T>
+  @:from inline static function ofScalar<T>(s:Scalar<T>):Expr<T>
     return s.toScalarExpr();
 }
