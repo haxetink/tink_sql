@@ -48,7 +48,7 @@ abstract Id<T>(Int) to Int {
     return new Id(r.get());
 
   @:to inline function toRep():tink.json.Representation<Int>
-    return new Representation(this);
+    return new tink.json.Representation(this);
   #end
 
   @:op(A>B) static function gt<T>(a:Id<T>, b:Id<T>):Bool;
