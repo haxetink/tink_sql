@@ -1,7 +1,6 @@
 package tink.sql;
 
 import tink.sql.Expr;
-import tink.json.Representation;
 
 typedef Blob<@:const L> = haxe.io.Bytes;
 
@@ -44,11 +43,13 @@ abstract Id<T>(Int) to Int {
   @:to public function toExpr():Expr<Id<T>>
     return Expr.ExprData.EValue(new Id(this), cast VInt);
 
-  @:from static inline function ofRe<T>(r:Representation<Int>):Id<T>
+  #if tink_json
+  @:from static inline function ofRep<T>(r:tink.json.Representation<Int>):Id<T>
     return new Id(r.get());
 
-  @:to inline function toRep():Representation<Int>
+  @:to inline function toRep():tink.json.Representation<Int>
     return new Representation(this);
+  #end
 
   @:op(A>B) static function gt<T>(a:Id<T>, b:Id<T>):Bool;
   @:op(A<B) static function lt<T>(a:Id<T>, b:Id<T>):Bool;
