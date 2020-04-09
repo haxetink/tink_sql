@@ -41,7 +41,7 @@ abstract Id<T>(Int) to Int {
     return Std.string(this);
 
   @:to public function toExpr():Expr<Id<T>>
-    return Expr.ExprData.EValue(new Id(this), cast VInt);
+    return tink.sql.Expr.ExprData.EValue(new Id(this), cast VInt);
 
   #if tink_json
   @:from static inline function ofRep<T>(r:tink.json.Representation<Int>):Id<T>
