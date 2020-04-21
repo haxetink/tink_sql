@@ -81,7 +81,7 @@ class ExprTyper {
 
   public function type<T>(expr:Expr<Dynamic>):Option<ValueType<Dynamic>>
     return switch expr.data {
-      case EField(table, name): Some(tables[table][name]);
+      case EField(table, name) if(tables.exists(table)): Some(tables[table][name]);
       case EValue(_, t): Some(t);
       case EQuery(Select({selection: selection})) if (selection != null):
         type(selection[selection.keys()[0]]);
