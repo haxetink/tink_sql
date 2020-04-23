@@ -149,6 +149,14 @@ class Run extends TestWithDb {
     );
   }
 
+  public function leftJoinTest() {
+    return insertUsers().next(function (_)
+      return db.User.leftJoin(db.Post).on(User.id == Post.author).first()
+    ).next(function (res)
+      return assert(res.User.id == 1 && res.Post == null)
+    );
+  }
+
   public function aliasTest() {
     return insertUsers()
       .next(function (_)

@@ -92,24 +92,32 @@ class ResultParser<Db> {
     var types = typer.typeQuery(query);
     return function (row: DynamicAccess<Any>) {
       var res: DynamicAccess<Any> = {}
-      var target = res;
+      var nonNull = new Map();
       for (field in row.keys()) {
-        var name = field;
-        var table = null;
-        if (nest) {
-          var parts = field.split(SqlFormatter.FIELD_DELIMITER);
-          table = parts[0];
-          name = parts[1];
-          target =
-            if (!res.exists(table)) res[table] = {};
-            else res[table];
-        }
-        target[name] = parseValue(row[field], 
+        var value = parseValue(
+          row[field], 
           switch types.get(field) {
             case null: None;
             case v: v;
           }
         );
+        if (nest) {
+          var parts = field.split(SqlFormatter.FIELD_DELIMITER);
+          var table = parts[0];
+          var name = parts[1];
+          var target: DynamicAccess<Any> =
+            if (!res.exists(table)) res[table] = {};
+            else res[table];
+          target[name] = value;
+          if (value != null) nonNull.set(table, true);
+        } else {
+          res[field] = value;
+        }
+      }
+      if (nest) {
+        for (table in res.keys())
+          if (!nonNull.exists(table))
+            res.remove(table);
       }
       return cast res;
     }
