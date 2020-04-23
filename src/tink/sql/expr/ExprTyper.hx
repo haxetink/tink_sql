@@ -48,10 +48,11 @@ class ExprTyper {
           for (field in types.keys())
             nameField(alias, field) => types[field]
         ];
-      case TTable(_.getName() => table, alias):
+      case TTable(table):
         [
-          for (field in tables[table].keys())
-            (if (nest) nameField(table, field, alias) else field) => Some(tables[table][field])
+          for (field in tables[table.getName()].keys())
+            (if (nest) nameField(table.getName(), field, table.getAlias()) else field) 
+              => Some(tables[table.getName()][field])
         ];
       case TJoin(left, right, _, _):
         var res = typeTarget(left, true);

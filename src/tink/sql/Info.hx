@@ -7,6 +7,7 @@ interface DatabaseInfo {
 
 interface TableInfo {
   function getName():String;
+  function getAlias():Null<String>;
   function getColumns():Iterable<Column>;
   function columnNames():Iterable<String>;
   function getKeys():Iterable<Key>;

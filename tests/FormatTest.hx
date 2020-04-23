@@ -121,6 +121,9 @@ class FakeTable implements TableInfo {
 	public function getName():String
 		throw 'abstract';
 
+	public function getAlias():String
+		throw 'abstract';
+
 	public function getColumns():Iterable<Column>
 		throw 'abstract';
 
