@@ -11,11 +11,7 @@ import haxe.io.BytesInput;
 using tink.CoreApi;
 
 class ResultParser<Db> {
-
-  var typer:ExprTyper;
-
-  public function new(typer)
-    this.typer = typer;
+  public function new() {}
   
   function parseGeometryValue<T, C>(bytes: Bytes): geojson.util.GeoJson<T, C> {
     var buffer = new BytesInput(bytes, 4);
@@ -53,31 +49,31 @@ class ResultParser<Db> {
     return parseGeometry(); 
   }
 
-  function parseValue(value:Dynamic, type:Option<ValueType<Dynamic>>): Any {
+  function parseValue(value:Dynamic, type:Option<ExprType<Dynamic>>): Any {
     if (value == null) return null;
     return switch type {
-      case Some(ValueType.VBool) if (Std.is(value, String)): 
+      case Some(ExprType.VBool) if (Std.is(value, String)): 
         value == '1';
-      case Some(ValueType.VBool) if (Std.is(value, Int)): 
+      case Some(ExprType.VBool) if (Std.is(value, Int)): 
         value > 0;
-      case Some(ValueType.VBool): !!value;
-      case Some(ValueType.VString):
+      case Some(ExprType.VBool): !!value;
+      case Some(ExprType.VString):
         '${value}';
-      case Some(ValueType.VFloat) if (Std.is(value, String)):
+      case Some(ExprType.VFloat) if (Std.is(value, String)):
         Std.parseFloat(value);
-      case Some(ValueType.VInt) if (Std.is(value, String)):
+      case Some(ExprType.VInt) if (Std.is(value, String)):
         Std.parseInt(value);
-      case Some(ValueType.VDate) if (Std.is(value, String)):
+      case Some(ExprType.VDate) if (Std.is(value, String)):
         Date.fromString(value);
-      case Some(ValueType.VDate) if (Std.is(value, Float)):
+      case Some(ExprType.VDate) if (Std.is(value, Float)):
         Date.fromTime(value);
       #if js 
-      case Some(ValueType.VBytes) if (Std.is(value, js.node.Buffer)):
+      case Some(ExprType.VBytes) if (Std.is(value, js.node.Buffer)):
         (value: js.node.Buffer).hxToBytes();
       #end
-      case Some(ValueType.VBytes) if (Std.is(value, String)):
+      case Some(ExprType.VBytes) if (Std.is(value, String)):
         haxe.io.Bytes.ofString(value);
-      case Some(ValueType.VGeometry(_)):
+      case Some(ExprType.VGeometry(_)):
         if (Std.is(value, String)) parseGeometryValue(Bytes.ofString(value))
         else if (Std.is(value, Bytes)) parseGeometryValue(value)
         else value;
@@ -89,7 +85,7 @@ class ResultParser<Db> {
     query:Query<Db, Dynamic>,
     nest:Bool
   ): DynamicAccess<Any> -> Row {
-    var types = typer.typeQuery(query);
+    var types = ExprTyper.typeQuery(query);
     return function (row: DynamicAccess<Any>) {
       var res: DynamicAccess<Any> = {}
       var target = res;

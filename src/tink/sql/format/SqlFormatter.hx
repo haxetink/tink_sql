@@ -165,14 +165,14 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
       case TQuery(alias, Select({selection: selection})):
         separated(selection.keys().map(function (name) 
           return field(alias + FIELD_DELIMITER + name, EField(
-            alias, name
+            alias, name, null
           ))
         ));
       case TTable(table, alias):
         var from = alias == null ? table.getName() : alias;
         separated(table.columnNames().map(function (name)
           return field(from + FIELD_DELIMITER + name, EField(
-            from, name
+            from, name, null
           ))
         ));
       case TJoin(left, right, type, c):
@@ -332,7 +332,7 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
           sql(name).parenthesis(separated(params));
         else 
           sql(name).separated(params);
-      case EField(table, name):
+      case EField(table, name, _):
         (table == null ? empty() : ident(table).sql('.')).ident(name);
       case EValue(v, VBool):
         value(v);

@@ -12,7 +12,7 @@ abstract Field<Data, Owner>(Expr<Data>) to Expr<Data> {
 
     function get_name()
       return switch this.data {
-        case EField(_, v): v;
+        case EField(_, v, _): v;
         case v: throw 'assert: invalid field $v';
       }
 
@@ -20,15 +20,15 @@ abstract Field<Data, Owner>(Expr<Data>) to Expr<Data> {
 
     function get_table()
       return switch this.data {
-        case EField(v, _): v;
+        case EField(v, _, _): v;
         case v: throw 'assert: invalid field $v';
       }
 
   public function set(e:Expr<Data>):FieldUpdate<Owner>
     return new FieldUpdate(cast this, e);
 
-  public inline function new(table, name)
-    this = EField(table, name);
+  public inline function new(table, name, type)
+    this = EField(table, name, type);
   //TODO: it feels pretty sad to have to do this below:
   //{ region arithmetics
     @:op(a + b) static function add<T:Float, X, Y>(a:Field<T, X>, b:Field<T, Y>):Expr<T>

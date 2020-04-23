@@ -24,7 +24,7 @@ class StdConnection<Db:DatabaseInfo> implements Connection<Db> {
     this.cnx = cnx;
     this.formatter = formatter;
     this.sanitizer = sanitizer;
-    this.parser = new ResultParser(new ExprTyper(db));
+    this.parser = new ResultParser();
   }
 
   public function getFormatter()

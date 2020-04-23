@@ -186,8 +186,14 @@ class Dataset<Fields, Result:{}, Db> {
   function toQuery(?limit:Limit):Query<Db, RealStream<Result>>
     throw 'implement';
 
-  inline function toScalarExpr<T>(): Expr<T>
-    return EQuery(toQuery(1));
+  inline function toScalarExpr<T>(): Expr<T> {
+    var query = toQuery(1);
+    return EQuery(query, switch query {
+      case Select({selection: selection}) if (selection != null):
+        cast VTypeOf(selection[selection.keys()[0]]);
+      default: null;
+    });
+  }
 
   inline function toExpr<T>(): Expr<T>
     return EQuery(toQuery());
