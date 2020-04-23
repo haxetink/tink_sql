@@ -145,11 +145,13 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
         var aliasFields = [];
         switch haxe.macro.Context.follow(fields) {
           case TAnonymous(_.get().fields => originalFields):
-            for (field in originalFields) 
+            for (field in originalFields) {
+              var name = field.name;
               aliasFields.push({
                 field: field.name, 
-                expr: macro new tink.sql.Expr.Field($v{alias}, $v{field.name})
+                expr: macro new tink.sql.Expr.Field($v{alias}, $v{field.name}, $e.fields.$name.type)
               });
+            }
           default: throw "assert";
         }
         var fieldObj = EObjectDecl(aliasFields).at(e.pos);

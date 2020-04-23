@@ -75,7 +75,7 @@ class PDOConnection<Db:DatabaseInfo> implements Connection<Db> implements Saniti
     this.cnx = cnx;
     cnx.setAttribute(PDO.ATTR_ERRMODE, PDO.ERRMODE_EXCEPTION);
     this.formatter = formatter;
-    this.parser = new ResultParser(new ExprTyper(db));
+    this.parser = new ResultParser();
   }
 
   public function value(v:Any):String {
@@ -124,11 +124,15 @@ class PDOConnection<Db:DatabaseInfo> implements Connection<Db> implements Saniti
     }
   }
 
-  function run(query:String):Promise<PDOStatement>
+  function run(query:String):Promise<PDOStatement> {
+    #if sql_debug
+    trace(query);
+    #end
     return 
       try cnx.query(query) 
       catch (e: PDOException) 
         new Error(e.getCode(), e.getMessage());
+  }
 
   // haxetink/tink_streams#20
   public function syncResult<R, T: {}>(query:Query<Db,R>): Outcome<Array<T>, Error> {

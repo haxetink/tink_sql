@@ -24,6 +24,14 @@ abstract Field<Data, Owner>(Expr<Data>) to Expr<Data> {
         case v: throw 'assert: invalid field $v';
       }
 
+  public var type(get, never):ExprType<Data>;
+
+    function get_type()
+      return switch this.data {
+        case EField(_, _, v): v;
+        case v: throw 'assert: invalid field $v';
+      }
+
   public function set(e:Expr<Data>):FieldUpdate<Owner>
     return new FieldUpdate(cast this, e);
 

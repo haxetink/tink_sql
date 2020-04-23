@@ -80,11 +80,6 @@ class TableBuilder {
                   fName = f.name,
                   meta = f.meta.get().toMap();
 
-              fieldsExprFields.push({
-                field: f.name,
-                expr: macro new tink.sql.Expr.Field(alias, $v{f.name}),
-              });
-
               fieldsValues.push({
                 var name = macro $v{fName};
                 var nullable = f.meta.has(':optional');
@@ -204,6 +199,17 @@ class TableBuilder {
                   nullable: $v{nullable},
                   type: ${type}
                 }
+              });
+
+              fieldsExprFields.push({
+                field: f.name,
+                expr: macro new tink.sql.Expr.Field(
+                  alias, 
+                  $v{f.name}, 
+                  @:privateAccess tink.sql.expr.ExprTyper.typeColumn(
+                    ${fieldsValues[fieldsValues.length - 1]}.type
+                  )
+                ),
               });
             }
 

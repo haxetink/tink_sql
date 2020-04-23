@@ -4,32 +4,22 @@ import tink.sql.Info;
 import tink.sql.Expr;
 import tink.sql.format.SqlFormatter;
 
-using tink.CoreApi;
-
 typedef TypeMap = Map<String, ExprType<Dynamic>>;
 
-class ExprTyper {  
-  /*function get_tables() {
-    if (tables != null) return tables;
-    return tables = [
-      for (table in db.tableNames())
-        table => [
-          for (column in db.tableInfo(table).getColumns())
-            column.name => switch column.type {
-              case DBool(_): (ExprType.VBool: ExprType<Dynamic>);
-              case DInt(_, _, _, _): ExprType.VInt;
-              case DDouble(_): ExprType.VFloat;
-              case DString(_, _) | DText(_, _): ExprType.VString;
-              case DBlob(_): ExprType.VBytes;
-              case DDate(_) | DDateTime(_) | DTimestamp(_): ExprType.VDate;
-              case DPoint: ExprType.VGeometry(Point);
-              case DPolygon: ExprType.VGeometry(Polygon);
-              case DMultiPolygon: ExprType.VGeometry(MultiPolygon);
-              default: throw 'Unknown type for column ${column.name}';
-            }
-        ]
-    ];
-  }*/
+class ExprTyper {
+  static function typeColumn(type:DataType)
+    return switch type {
+      case DBool(_): (ExprType.VBool: ExprType<Dynamic>);
+      case DInt(_, _, _, _): ExprType.VInt;
+      case DDouble(_): ExprType.VFloat;
+      case DString(_, _) | DText(_, _): ExprType.VString;
+      case DBlob(_): ExprType.VBytes;
+      case DDate(_) | DDateTime(_) | DTimestamp(_): ExprType.VDate;
+      case DPoint: ExprType.VGeometry(Point);
+      case DPolygon: ExprType.VGeometry(Polygon);
+      case DMultiPolygon: ExprType.VGeometry(MultiPolygon);
+      case DUnknown(_, _): null;
+    }
 
   static function nameField(table:String, field:String, ?alias): String
     return (if (alias != null) alias else table) + SqlFormatter.FIELD_DELIMITER + field;
@@ -44,9 +34,11 @@ class ExprTyper {
         ];
       case TTable(table):
         [
-          for (field in tables[table.getName()].keys())
-            (if (nest) nameField(table, field, table.getAlias()) else field) 
-              => type(field)
+          for (column in table.getColumns())
+            (
+              if (nest) nameField(table.getName(), column.name, table.getAlias()) 
+              else column.name
+            ) => typeColumn(column.type)
         ];
       case TJoin(left, right, _, _):
         var res = typeTarget(left, true);

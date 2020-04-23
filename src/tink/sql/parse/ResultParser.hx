@@ -49,31 +49,32 @@ class ResultParser<Db> {
     return parseGeometry(); 
   }
 
-  function parseValue(value:Dynamic, type:Option<ExprType<Dynamic>>): Any {
+  function parseValue(value:Dynamic, type:ExprType<Dynamic>): Any {
     if (value == null) return null;
     return switch type {
-      case Some(ExprType.VBool) if (Std.is(value, String)): 
+      case null: value;
+      case ExprType.VBool if (Std.is(value, String)): 
         value == '1';
-      case Some(ExprType.VBool) if (Std.is(value, Int)): 
+      case ExprType.VBool if (Std.is(value, Int)): 
         value > 0;
-      case Some(ExprType.VBool): !!value;
-      case Some(ExprType.VString):
+      case ExprType.VBool: !!value;
+      case ExprType.VString:
         '${value}';
-      case Some(ExprType.VFloat) if (Std.is(value, String)):
+      case ExprType.VFloat if (Std.is(value, String)):
         Std.parseFloat(value);
-      case Some(ExprType.VInt) if (Std.is(value, String)):
+      case ExprType.VInt if (Std.is(value, String)):
         Std.parseInt(value);
-      case Some(ExprType.VDate) if (Std.is(value, String)):
+      case ExprType.VDate if (Std.is(value, String)):
         Date.fromString(value);
-      case Some(ExprType.VDate) if (Std.is(value, Float)):
+      case ExprType.VDate if (Std.is(value, Float)):
         Date.fromTime(value);
       #if js 
-      case Some(ExprType.VBytes) if (Std.is(value, js.node.Buffer)):
+      case ExprType.VBytes if (Std.is(value, js.node.Buffer)):
         (value: js.node.Buffer).hxToBytes();
       #end
-      case Some(ExprType.VBytes) if (Std.is(value, String)):
+      case ExprType.VBytes if (Std.is(value, String)):
         haxe.io.Bytes.ofString(value);
-      case Some(ExprType.VGeometry(_)):
+      case ExprType.VGeometry(_):
         if (Std.is(value, String)) parseGeometryValue(Bytes.ofString(value))
         else if (Std.is(value, Bytes)) parseGeometryValue(value)
         else value;
@@ -92,10 +93,7 @@ class ResultParser<Db> {
       for (field in row.keys()) {
         var value = parseValue(
           row[field], 
-          switch types.get(field) {
-            case null: None;
-            case v: v;
-          }
+          types.get(field)
         );
         if (nest) {
           var parts = field.split(SqlFormatter.FIELD_DELIMITER);
