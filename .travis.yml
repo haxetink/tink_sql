@@ -41,5 +41,5 @@ install:
   
 script:
   - lix run travix node
-  - lix run travix neko
+  # - lix run travix neko
   - lix run travix php7
