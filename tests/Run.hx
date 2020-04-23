@@ -149,6 +149,14 @@ class Run extends TestWithDb {
     );
   }
 
+  public function leftJoinTest() {
+    return insertUsers().next(function (_)
+      return db.User.leftJoin(db.Post).on(User.id == Post.author).first()
+    ).next(function (res)
+      return assert(res.User.id == 1 && res.Post == null)
+    );
+  }
+
   public function aliasTest() {
     return insertUsers()
       .next(function (_)
@@ -166,10 +174,18 @@ class Run extends TestWithDb {
           content: 'content',
         })
       ).next(function (_) 
+        return db.PostAlias.update(
+          function (fields) {
+            return [fields.title.set('update')];
+          },
+          {where: function (alias) return alias.id == 1}
+        )  
+      ).next(function (_) 
         return db.PostAlias.join(db.Post)
           .on(PostAlias.id == Post.id).first()
-      ).next(function (res)
-        return assert(res.PostAlias.title == 'alias' && res.Post.title == 'regular')
+      )
+      .next(function (res)
+        return assert(res.PostAlias.title == 'update' && res.Post.title == 'regular')
       );
   }
 

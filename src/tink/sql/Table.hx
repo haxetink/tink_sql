@@ -25,16 +25,18 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
 {
   
   public var name(default, null):TableName<Row>;
+  var alias:Null<String>;
   var columns:Array<Column>;
   
   function new(cnx, name, alias, fields, ?columns) {
     this.name = name;
+    this.alias = alias;
     this.fields = fields;
     this.columns = columns;
     super(
       cnx,
       fields,
-      TTable(this, alias),
+      TTable(this),
       function (f:Filter) return (cast f : Fields->Condition)(fields) //TODO: raise issue on Haxe tracker and remove the cast once resolved
     );
   }
@@ -110,6 +112,10 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
   @:noCompletion 
   public function getName():String 
     return name;
+
+  @:noCompletion
+  public function getAlias():Null<String>
+    return alias;
 
   @:noCompletion 
   public function getColumns():Array<Column> 

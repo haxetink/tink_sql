@@ -168,7 +168,8 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
             alias, name, null
           ))
         ));
-      case TTable(table, alias):
+      case TTable(table):
+        var alias = table.getAlias();
         var from = alias == null ? table.getName() : alias;
         separated(table.columnNames().map(function (name)
           return field(from + FIELD_DELIMITER + name, EField(
@@ -184,7 +185,7 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
   function selection<Row:{}, Db, Fields>(target:Target<Row, Db>, selection:Selection<Row, Fields>)
     return switch selection {
       case null: switch target {
-        case TTable(_, _): sql('*');
+        case TTable(_): sql('*');
         default: prefixFields(target);
       }
       case fields:
@@ -193,14 +194,20 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
         ));
     }
 
+  function table(info:TableInfo) {
+    var name = info.getName();
+    var alias = info.getAlias();
+    return ident(name)
+      .add(
+        sql('AS').addIdent(alias), 
+        alias != null && alias != name
+      );
+  }
+
   function target<Row:{}, Db>(from:Target<Row, Db>):Statement
     return switch from {
-      case TTable(_.getName() => name, alias):
-        ident(name)
-          .add(
-            sql('AS').addIdent(alias),
-            alias != null && alias != name
-          );
+      case TTable(info):
+        table(info);
       case TJoin(left, right, type, cond):
         target(left)
           .add(switch type {
@@ -271,7 +278,7 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
 
   function update<Row:{}>(update:UpdateOperation<Row>)
     return sql('UPDATE')
-      .addIdent(update.table.getName())
+      .add(table(update.table))
       .add('SET')
       .separated(update.set.map(function (set)
         return ident(set.field.name).add('=').add(expr(set.expr))
