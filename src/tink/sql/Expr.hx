@@ -12,26 +12,22 @@ typedef Functions = tink.sql.expr.Functions;
 enum ExprData<T> {
   EUnOp<A, Ret>(op:UnOp<A, Ret>, a:Expr<A>, postfix:Bool):ExprData<Ret>;
   EBinOp<A, B, Ret>(op:BinOp<A, B, Ret>, a:Expr<A>, b:Expr<B>):ExprData<Ret>;
-  EField(table:String, name:String):ExprData<T>;
-  ECall(name:String, args:Array<Expr<Any>>, type:FunctionType<T>, ?parenthesis: Bool):ExprData<T>;
-  EValue<T>(value:T, type:ValueType<T>):ExprData<T>;
-  EQuery<T, Db, Result>(query:Query<Db, Result>):ExprData<T>;
+  EField(table:String, name:String, type:ExprType<T>):ExprData<T>;
+  ECall(name:String, args:Array<Expr<Any>>, type:ExprType<T>, ?parenthesis: Bool):ExprData<T>;
+  EValue<T>(value:T, type:ExprType<T>):ExprData<T>;
+  EQuery<T, Db, Result>(query:Query<Db, Result>, ?type:ExprType<T>):ExprData<T>;
 }
 
-enum FunctionType<T> {
-  FType(type:ValueType<T>): FunctionType<T>;
-  FTypeOf(expr:Expr<T>): FunctionType<T>;
-}
-
-enum ValueType<T> {
-  VString:ValueType<String>;
-  VBool:ValueType<Bool>;
-  VFloat:ValueType<Float>;
-  VInt:ValueType<Int>;
-  VArray<T>(type:ValueType<T>):ValueType<Array<T>>;
-  VBytes:ValueType<Bytes>;
-  VDate:ValueType<Date>;
-  VGeometry<T>(type:geojson.GeometryType<T>):ValueType<T>;
+enum ExprType<T> {
+  VString:ExprType<String>;
+  VBool:ExprType<Bool>;
+  VFloat:ExprType<Float>;
+  VInt:ExprType<Int>;
+  VArray<T>(type:ExprType<T>):ExprType<Array<T>>;
+  VBytes:ExprType<Bytes>;
+  VDate:ExprType<Date>;
+  VGeometry<T>(type:geojson.GeometryType<T>):ExprType<T>;
+  VTypeOf(expr:Expr<T>):ExprType<T>;
 }
 
 enum BinOp<A, B, Ret> {

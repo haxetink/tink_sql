@@ -181,11 +181,11 @@ class Run extends TestWithDb {
           {where: function (alias) return alias.id == 1}
         )  
       ).next(function (_) 
-        return db.PostAlias.join(db.Post)
-          .on(PostAlias.id == Post.id).first()
+        return db.PostAlias.join(db.Post.as('bar'))
+          .on(PostAlias.id == bar.id).first()
       )
       .next(function (res)
-        return assert(res.PostAlias.title == 'update' && res.Post.title == 'regular')
+        return assert(res.PostAlias.title == 'update' && res.bar.title == 'regular')
       );
   }
 

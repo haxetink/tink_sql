@@ -165,7 +165,7 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
       case TQuery(alias, Select({selection: selection})):
         separated(selection.keys().map(function (name) 
           return field(alias + FIELD_DELIMITER + name, EField(
-            alias, name
+            alias, name, null
           ))
         ));
       case TTable(table):
@@ -173,7 +173,7 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
         var from = alias == null ? table.getName() : alias;
         separated(table.columnNames().map(function (name)
           return field(from + FIELD_DELIMITER + name, EField(
-            from, name
+            from, name, null
           ))
         ));
       case TJoin(left, right, type, c):
@@ -250,9 +250,9 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
           limit.offset != null && limit.offset != 0
         );
   
-  function where(condition:Null<Condition>)
+  function where(condition:Null<Condition>, printTableName = true)
     return if (condition == null) empty() else 
-      sql('WHERE').add(expr(condition));
+      sql('WHERE').add(expr(condition, printTableName));
 
   function having(condition:Null<Condition>)
     return if (condition == null) empty() else 
@@ -278,12 +278,14 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
 
   function update<Row:{}>(update:UpdateOperation<Row>)
     return sql('UPDATE')
-      .add(table(update.table))
-      .add('SET')
+      .addIdent(update.table.getName())
+      .add('SET ')
       .separated(update.set.map(function (set)
-        return ident(set.field.name).add('=').add(expr(set.expr))
+        return ident(set.field.name)
+          .add('=')
+          .add(expr(set.expr, false))
       ))
-      .add(where(update.where))
+      .add(where(update.where, false))
       .add(limit(update.max), update.max != null);
 
   function delete<Row:{}>(del:DeleteOperation<Row>)
@@ -323,24 +325,30 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
   inline function values(values:Array<Dynamic>)
     return parenthesis(separated(values.map(value)));
 
-  function expr(e:ExprData<Dynamic>):Statement
+  function expr(e:ExprData<Dynamic>, printTableName = true):Statement
     return switch e {
       case EUnOp(op, a, false):
-        unOp(op).add(expr(a));
+        unOp(op).add(expr(a, printTableName));
       case EUnOp(op, a, true):
         expr(a).add(unOp(op));
       case EBinOp(In, a, b) if (emptyArray(b)):
         value(false);
       case EBinOp(op, a, b):
-        parenthesis(expr(a).add(binOp(op)).add(expr(b)));
+        parenthesis(expr(a, printTableName)
+          .add(binOp(op))
+          .add(expr(b, printTableName))
+        );
       case ECall(name, args, _, wrap):
-        var params = args.map(function (arg) return expr(arg));
+        var params = args.map(function (arg) return expr(arg, printTableName));
         if (wrap == null || wrap)
           sql(name).parenthesis(separated(params));
         else 
           sql(name).separated(params);
-      case EField(table, name):
-        (table == null ? empty() : ident(table).sql('.')).ident(name);
+      case EField(table, name, _):
+        (!printTableName || table == null 
+          ? empty() 
+          : ident(table).sql('.')
+        ).ident(name);
       case EValue(v, VBool):
         value(v);
       case EValue(v, VString):

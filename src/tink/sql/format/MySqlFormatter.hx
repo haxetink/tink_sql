@@ -116,11 +116,11 @@ class MySqlFormatter extends SqlFormatter<MysqlColumnInfo, MysqlKeyInfo> {
         sql('ADD').add(defineKey(key));
     }
 
-  override function expr(e:ExprData<Dynamic>):Statement
-   return switch e {
+  override function expr(e:ExprData<Dynamic>, printTableName = true):Statement
+    return switch e {
       case EValue(geom, VGeometry(_)):
         'ST_GeomFromGeoJSON(\'${haxe.Json.stringify(geom)}\')';
-      default: super.expr(e);
+      default: super.expr(e, printTableName);
     }
 
   override public function parseColumn(res:MysqlColumnInfo):Column

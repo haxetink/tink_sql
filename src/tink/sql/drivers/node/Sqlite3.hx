@@ -44,7 +44,7 @@ class Sqlite3Connection<Db:DatabaseInfo> implements Connection<Db> {
   public function new(db, cnx) {
     this.db = db;
     this.cnx = cnx;
-    this.parser = new ResultParser(new ExprTyper(db));
+    this.parser = new ResultParser();
   }
 
   public function getFormatter()

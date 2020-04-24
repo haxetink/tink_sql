@@ -55,7 +55,7 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
     this.db = db;
     this.cnx = cnx;
     this.formatter = new MySqlFormatter();
-    this.parser = new ResultParser(new ExprTyper(db));
+    this.parser = new ResultParser();
   }
 
   public function value(v:Any):String

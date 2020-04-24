@@ -80,11 +80,6 @@ class TableBuilder {
                   fName = f.name,
                   meta = f.meta.get().toMap();
 
-              fieldsExprFields.push({
-                field: f.name,
-                expr: macro new tink.sql.Expr.Field(alias, $v{f.name}),
-              });
-
               fieldsValues.push({
                 var name = macro $v{fName};
                 var nullable = f.meta.has(':optional');
@@ -205,6 +200,17 @@ class TableBuilder {
                   type: ${type}
                 }
               });
+
+              fieldsExprFields.push({
+                field: f.name,
+                expr: macro new tink.sql.Expr.Field(
+                  alias, 
+                  $v{f.name}, 
+                  @:privateAccess tink.sql.expr.ExprTyper.typeColumn(
+                    ${fieldsValues[fieldsValues.length - 1]}.type
+                  )
+                ),
+              });
             }
 
             var module = Context.getLocalModule().split('.');
@@ -222,7 +228,7 @@ class TableBuilder {
             // Typedef fields and result so we get readable error messages
             var fieldsAlias = define(fieldsType, '${cName}_Fields');
             var rowAlias = define(rowType, '${cName}_Result');
-            var filterType = (macro function ($name:$fieldsAlias):tink.sql.Expr.Condition return tink.sql.Expr.ExprData.EValue(true, tink.sql.Expr.ValueType.VBool)).typeof().sure().toComplex({ direct: true });
+            var filterType = (macro function ($name:$fieldsAlias):tink.sql.Expr.Condition return tink.sql.Expr.ExprData.EValue(true, tink.sql.Expr.ExprType.VBool)).typeof().sure().toComplex({ direct: true });
 
             macro class $cName<Db> extends tink.sql.Table.TableSource<$fieldsAlias, $filterType, $rowAlias, Db> {
 

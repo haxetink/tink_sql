@@ -4,43 +4,27 @@ import tink.sql.Info;
 import tink.sql.Expr;
 import tink.sql.format.SqlFormatter;
 
-using tink.CoreApi;
-
-typedef TypeMap = Map<String, Option<ValueType<Dynamic>>>;
+typedef TypeMap = Map<String, ExprType<Dynamic>>;
 
 class ExprTyper {
-  var db:DatabaseInfo;
-  var tables(get, null): Map<String, Map<String, ValueType<Dynamic>>>;
+  static function typeColumn(type:DataType)
+    return switch type {
+      case DBool(_): (ExprType.VBool: ExprType<Dynamic>);
+      case DInt(_, _, _, _): ExprType.VInt;
+      case DDouble(_): ExprType.VFloat;
+      case DString(_, _) | DText(_, _): ExprType.VString;
+      case DBlob(_): ExprType.VBytes;
+      case DDate(_) | DDateTime(_) | DTimestamp(_): ExprType.VDate;
+      case DPoint: ExprType.VGeometry(Point);
+      case DPolygon: ExprType.VGeometry(Polygon);
+      case DMultiPolygon: ExprType.VGeometry(MultiPolygon);
+      case DUnknown(_, _): null;
+    }
 
-  public function new(db:DatabaseInfo)
-    this.db = db;
-    
-  function get_tables() {
-    if (tables != null) return tables;
-    return tables = [
-      for (table in db.tableNames())
-        table => [
-          for (column in db.tableInfo(table).getColumns())
-            column.name => switch column.type {
-              case DBool(_): (ValueType.VBool: ValueType<Dynamic>);
-              case DInt(_, _, _, _): ValueType.VInt;
-              case DDouble(_): ValueType.VFloat;
-              case DString(_, _) | DText(_, _): ValueType.VString;
-              case DBlob(_): ValueType.VBytes;
-              case DDate(_) | DDateTime(_) | DTimestamp(_): ValueType.VDate;
-              case DPoint: ValueType.VGeometry(Point);
-              case DPolygon: ValueType.VGeometry(Polygon);
-              case DMultiPolygon: ValueType.VGeometry(MultiPolygon);
-              default: throw 'Unknown type for column ${column.name}';
-            }
-        ]
-    ];
-  }
-
-  function nameField(table:String, field:String, ?alias): String
+  static function nameField(table:String, field:String, ?alias): String
     return (if (alias != null) alias else table) + SqlFormatter.FIELD_DELIMITER + field;
 
-  function typeTarget<Result:{}, Db>(target:Target<Result, Db>, nest = false):TypeMap
+  static function typeTarget<Result:{}, Db>(target:Target<Result, Db>, nest = false):TypeMap
     return switch target {
       case TQuery(alias, query):
         var types = typeQuery(query);
@@ -50,9 +34,11 @@ class ExprTyper {
         ];
       case TTable(table):
         [
-          for (field in tables[table.getName()].keys())
-            (if (nest) nameField(table.getName(), field, table.getAlias()) else field) 
-              => Some(tables[table.getName()][field])
+          for (column in table.getColumns())
+            (
+              if (nest) nameField(table.getName(), column.name, table.getAlias()) 
+              else column.name
+            ) => typeColumn(column.type)
         ];
       case TJoin(left, right, _, _):
         var res = typeTarget(left, true);
@@ -62,7 +48,7 @@ class ExprTyper {
         res;
     }
 
-  public function typeQuery<Db, Result>(query:Query<Db, Result>):TypeMap {
+  public static function typeQuery<Db, Result>(query:Query<Db, Result>):TypeMap {
     return switch query {
       case Select({selection: selection}) if (selection != null):
         [
@@ -80,20 +66,19 @@ class ExprTyper {
     }
   }
 
-  public function type<T>(expr:Expr<Dynamic>):Option<ValueType<Dynamic>>
-    return switch expr.data {
-      case EField(table, name) if(tables.exists(table)): Some(tables[table][name]);
-      case EValue(_, t): Some(t);
-      case EQuery(Select({selection: selection})) if (selection != null):
-        type(selection[selection.keys()[0]]);
-      case EBinOp(Add | Subt | Mult | Mod | Div, _, _): Some(ValueType.VFloat);
-      case EBinOp(Greater | Equals | And | Or, _, _): Some(ValueType.VBool);
-      case EBinOp((_: BinOp<Dynamic, Dynamic, Dynamic>) => Like, _, _): Some(ValueType.VBool);
-      case EBinOp(In, _, _): Some(ValueType.VBool);
-      case EUnOp(Not | IsNull, _, _): Some(ValueType.VBool);
-      case EUnOp((_: UnOp<Dynamic, Dynamic>) => Neg, _, _): Some(ValueType.VBool);
-      case ECall(_, _, FType(type), _): Some(type);
-      case ECall(_, _, FTypeOf(expr), _): type(expr);
-      default: None;
+  public static function type<T>(expr:Expr<Dynamic>):ExprType<Dynamic> {
+    var res:ExprType<Dynamic> = switch expr.data {
+      case EField(_, _, type): type;
+      case EValue(_, type): type;
+      case EQuery(_, type): type;
+      case EBinOp(Add | Subt | Mult | Mod | Div, _, _): ExprType.VFloat;
+      case EBinOp(_, _, _): ExprType.VBool;
+      case EUnOp(_, _, _): ExprType.VBool;
+      case ECall(_, _, type, _): type;
     }
+    return switch res {
+      case VTypeOf(expr): type(expr);
+      case v: v;
+    }
+  }
 }

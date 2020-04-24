@@ -135,7 +135,7 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
     return switch haxe.macro.Context.typeof(e) {
       case TInst(_.get() => { superClass: _.params => [fields, _, row, _] }, _):
         var fieldsType = fields.toComplex({direct: true});
-        var filterType = (macro function ($alias:$fieldsType):tink.sql.Expr.Condition return tink.sql.Expr.ExprData.EValue(true, tink.sql.Expr.ValueType.VBool)).typeof().sure();
+        var filterType = (macro function ($alias:$fieldsType):tink.sql.Expr.Condition return tink.sql.Expr.ExprData.EValue(true, tink.sql.Expr.ExprType.VBool)).typeof().sure();
         var path: haxe.macro.TypePath = 
         'tink.sql.Table.TableSource'.asTypePath(
           [fields, filterType, row].map(function (type)
@@ -145,11 +145,13 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
         var aliasFields = [];
         switch haxe.macro.Context.follow(fields) {
           case TAnonymous(_.get().fields => originalFields):
-            for (field in originalFields) 
+            for (field in originalFields) {
+              var name = field.name;
               aliasFields.push({
                 field: field.name, 
-                expr: macro new tink.sql.Expr.Field($v{alias}, $v{field.name})
+                expr: macro new tink.sql.Expr.Field($v{alias}, $v{field.name}, $e.fields.$name.type)
               });
+            }
           default: throw "assert";
         }
         var fieldObj = EObjectDecl(aliasFields).at(e.pos);
