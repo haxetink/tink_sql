@@ -21,7 +21,7 @@ class Run extends TestWithDb {
       password: env('DB_PASSWORD', '')
     });
     var dbMysql = new Db('test', mysql);
-    var sqlite = new tink.sql.drivers.Sqlite(function(db) return 'bin/$db.sqlite');
+    var sqlite = new tink.sql.drivers.Sqlite(function(db) return ':memory:');
     var dbSqlite = new Db('test', sqlite);
     loadFixture('init');
     Runner.run(TestBatch.make([
