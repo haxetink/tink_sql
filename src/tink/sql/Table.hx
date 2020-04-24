@@ -6,6 +6,7 @@ import tink.sql.Info;
 import tink.sql.Schema;
 import tink.sql.Dataset;
 import tink.sql.Query;
+import tink.sql.Types;
 
 using tink.CoreApi;
 
@@ -83,7 +84,7 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
         ignore: if (options == null) false else options.ignore
       }));
     
-  public function insertOne(row:Insert<Row>, ?options)
+  public function insertOne(row:Insert<Row>, ?options): Promise<Id<Db>>
     return insertMany([row], options);
     
   public function update(f:Fields->Update<Row>, options:{ where: Filter, ?max:Int })

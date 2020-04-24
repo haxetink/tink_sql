@@ -45,6 +45,7 @@ class Run extends TestWithDb {
       //new StringTest(sqlite, dbSqlite),
       new ExprTest(sqlite, dbSqlite),
       new Run(sqlite, dbSqlite),
+      new TestIssue104()
     ])).handle(Runner.exit);
   }
   
