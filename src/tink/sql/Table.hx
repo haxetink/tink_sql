@@ -84,7 +84,7 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
         ignore: if (options == null) false else options.ignore
       }));
     
-  public function insertOne(row:Insert<Row>, ?options): Promise<Id<Db>>
+  public function insertOne(row:Insert<Row>, ?options): Promise<Id<Row>>
     return insertMany([row], options);
     
   public function update(f:Fields->Update<Row>, options:{ where: Filter, ?max:Int })
