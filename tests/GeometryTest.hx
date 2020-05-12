@@ -27,7 +27,7 @@ class GeometryTest extends TestWithDb {
 			.next(function(_) return db.Geometry.first())
 			.next(function(row) {
 				var point:geojson.Point = row.point;
-				asserts.assert('${point.type}' == 'Point');
+				asserts.assert(point.type == Point);
 				asserts.assert(point.latitude == 1.0);
 				asserts.assert(point.longitude == 2.0);
 				return asserts.done();
@@ -39,7 +39,7 @@ class GeometryTest extends TestWithDb {
 			.next(function(_) return db.Geometry.where(Functions.stDistanceSphere(Geometry.point, new geojson.Point(1.0, 2.0)) == 0).first())
 			.next(function(row) {
 				var point:geojson.Point = row.point;
-				asserts.assert('${point.type}' == 'Point');
+				asserts.assert(point.type == Point);
 				asserts.assert(point.latitude == 1.0);
 				asserts.assert(point.longitude == 2.0);
 				return asserts.done();

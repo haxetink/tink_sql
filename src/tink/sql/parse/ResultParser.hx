@@ -13,40 +13,8 @@ using tink.CoreApi;
 class ResultParser<Db> {
   public function new() {}
   
-  function parseGeometryValue<T, C>(bytes: Bytes): geojson.util.GeoJson<T, C> {
-    var buffer = new BytesInput(bytes, 4);
-    function parseGeometry(): geojson.util.GeoJson<Dynamic, Dynamic> {
-      inline function multi(): Dynamic
-        return [for (_ in 0 ... buffer.readInt32()) parseGeometry()];
-      inline function parsePoint(): Array<Float> {
-        var y = buffer.readDouble(), x = buffer.readDouble();
-        return [x, y];
-      }
-      inline function coordinates() {
-        var point = parsePoint();
-        return new geojson.util.Coordinates(point[0], point[1]);
-      }
-      buffer.bigEndian = buffer.readByte() == 0;
-      switch buffer.readInt32() {
-        case 1:
-          var point = parsePoint();
-          return new geojson.Point(point[0], point[1]);
-        case 2:
-          return new geojson.LineString([
-            for (_ in 0 ... buffer.readInt32()) coordinates()
-          ]);
-        case 3:
-          return new geojson.Polygon([for (_ in 0 ... buffer.readInt32())
-            [for (_ in 0 ... buffer.readInt32()) coordinates()]
-          ]);
-        case 4: return new geojson.MultiPoint(multi());
-        case 5: return new geojson.MultiLineString(multi());
-        case 6: return geojson.MultiPolygon.fromPolygons(multi());
-        case 7: return (new geojson.GeometryCollection(multi()): Dynamic);
-        case v: throw 'GeoJson type $v not supported';
-      }
-    } 
-    return parseGeometry(); 
+  inline function parseGeometryValue<T, C>(bytes: Bytes): geojson.util.GeoJson<T, C> {
+    return geojson.util.WkbTools.parse(bytes.sub(4, bytes.length - 4));
   }
 
   function parseValue(value:Dynamic, type:ExprType<Dynamic>): Any {
