@@ -14,7 +14,13 @@ class ResultParser<Db> {
   
   inline function parseGeometryValue<T, C>(bytes:Bytes):Any {
     return switch tink.spatial.Parser.wkb(bytes.sub(4, bytes.length - 4)) {
-      case S2D(e): e.getParameters()[0];
+      case S2D(Point(v)): v;
+      case S2D(LineString(v)): v;
+      case S2D(Polygon(v)): v;
+      case S2D(MultiPoint(v)): v;
+      case S2D(MultiLineString(v)): v;
+      case S2D(MultiPolygon(v)): v;
+      case S2D(GeometryCollection(v)): v;
       case _: throw 'expected 2d geometries';
     }
   }
