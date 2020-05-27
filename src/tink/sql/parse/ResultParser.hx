@@ -1,6 +1,5 @@
 package tink.sql.parse;
 
-import geojson.GeometryCollection;
 import tink.sql.Expr;
 import haxe.DynamicAccess;
 import tink.sql.format.SqlFormatter;

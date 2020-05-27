@@ -1,7 +1,5 @@
 package;
 
-import geojson.util.Lines;
-import geojson.util.Line;
 import tink.sql.Expr;
 import tink.unit.Assert.assert;
 
@@ -16,20 +14,18 @@ class GeometryTest extends TestWithDb {
 	}
 	
 	public function insert() {
-		return db.Geometry.insertOne({point: new geojson.Point(1.0, 2.0)})
+		return db.Geometry.insertOne({point: tink.s2d.Point.xy(1.0, 2.0)})
 			.swap(assert(true));
 	}
 	
 	public function retrieve() {
 		return db.Geometry.insertOne({
-				point: new geojson.Point(1.0, 2.0)
+				point: tink.s2d.Point.xy(1.0, 2.0)
 			})
 			.next(function(_) return db.Geometry.first())
 			.next(function(row) {
-				var point:geojson.Point = row.point;
-				asserts.assert(point.type == Point);
-				asserts.assert(point.latitude == 1.0);
-				asserts.assert(point.longitude == 2.0);
+				asserts.assert(row.point.latitude == 1.0);
+				asserts.assert(row.point.longitude == 2.0);
 				return asserts.done();
 			});
 	}
