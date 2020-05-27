@@ -2,5 +2,5 @@ DROP PROCEDURE IF EXISTS test.func;
 
 CREATE PROCEDURE test.func(x INT(10))
 BEGIN
- SELECT x AS `x` UNION ALL SELECT x + 1;
+ SELECT x AS `x`, ST_GeomFromText('POINT(1.0 2.0)',4326) AS `point` UNION ALL SELECT x + 1, ST_GeomFromText('POINT(2.0 3.0)',4326) ;
 END ;

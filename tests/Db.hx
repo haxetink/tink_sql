@@ -58,6 +58,11 @@ typedef Types = {
 
 typedef Geometry = {
   public var point(default, null):Null<Point>;
+  public var lineString(default, null):Null<LineString>;
+  public var polygon(default, null):Null<Polygon>;
+  // public var multiPoint(default, null):Null<MultiPoint>;
+  // public var multiLineString(default, null):Null<MultiLineString>;
+  // public var multiPolygon(default, null):Null<MultiPolygon>;
 }
 
 typedef Schema = {
@@ -100,7 +105,7 @@ typedef StringTypes = {
 
 @:tables(User, Post, PostTags, Types, Geometry, Schema, StringTypes)
 class Db extends tink.sql.Database {
-  @:procedure var func:Int->{x:Int};
+  @:procedure var func:Int->{x:Int, point:tink.s2d.Point};
   @:table('alias') var PostAlias: Post;
 }
 
