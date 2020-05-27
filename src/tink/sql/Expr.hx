@@ -26,8 +26,18 @@ enum ExprType<T> {
   VArray<T>(type:ExprType<T>):ExprType<Array<T>>;
   VBytes:ExprType<Bytes>;
   VDate:ExprType<Date>;
-  VGeometry<T>(type:geojson.GeometryType<T>):ExprType<T>;
+  VGeometry<T>(type:GeometryType<T>):ExprType<T>;
   VTypeOf(expr:Expr<T>):ExprType<T>;
+}
+
+@:enum
+abstract GeometryType<T>(Int) {
+	var Point:GeometryType<tink.s2d.Point> = 1;
+	var LineString:GeometryType<tink.s2d.LineString> = 2;
+	var Polygon:GeometryType<tink.s2d.Polygon> = 3;
+	var MultiPoint:GeometryType<tink.s2d.MultiPoint> = 4;
+	var MultiLineString:GeometryType<tink.s2d.MultiLineString> = 5;
+	var MultiPolygon:GeometryType<tink.s2d.MultiPolygon> = 6;
 }
 
 enum BinOp<A, B, Ret> {

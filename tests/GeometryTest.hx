@@ -35,13 +35,11 @@ class GeometryTest extends TestWithDb {
 	}
 	
 	public function distance() {
-		return db.Geometry.insertOne({point: new geojson.Point(1.0, 2.0)})
-			.next(function(_) return db.Geometry.where(Functions.stDistanceSphere(Geometry.point, new geojson.Point(1.0, 2.0)) == 0).first())
+		return db.Geometry.insertOne({point: tink.s2d.Point.xy(1.0, 2.0)})
+			.next(function(_) return db.Geometry.where(Functions.stDistanceSphere(Geometry.point, tink.s2d.Point.xy(1.0, 2.0)) == 0).first())
 			.next(function(row) {
-				var point:geojson.Point = row.point;
-				asserts.assert(point.type == Point);
-				asserts.assert(point.latitude == 1.0);
-				asserts.assert(point.longitude == 2.0);
+				asserts.assert(row.point.latitude == 1.0);
+				asserts.assert(row.point.longitude == 2.0);
 				return asserts.done();
 			});
 	}

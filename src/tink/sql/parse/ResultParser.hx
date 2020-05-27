@@ -13,8 +13,11 @@ using tink.CoreApi;
 class ResultParser<Db> {
   public function new() {}
   
-  inline function parseGeometryValue<T, C>(bytes: Bytes): geojson.util.GeoJson<T, C> {
-    return geojson.util.WkbTools.parse(bytes.sub(4, bytes.length - 4));
+  inline function parseGeometryValue<T, C>(bytes:Bytes):Any {
+    return switch tink.spatial.Parser.wkb(bytes.sub(4, bytes.length - 4)) {
+      case S2D(e): e.getParameters()[0];
+      case _: throw 'expected 2d geometries';
+    }
   }
 
   function parseValue(value:Dynamic, type:ExprType<Dynamic>): Any {

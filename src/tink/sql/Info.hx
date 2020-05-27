@@ -36,7 +36,10 @@ enum DataType {
   DDateTime(?byDefault:Date);
   DTimestamp(?byDefault:Date);
   DPoint;
+  DLineString;
   DPolygon;
+  DMultiPoint;
+  DMultiLineString;
   DMultiPolygon;
   DUnknown(type:String, byDefault:Null<String>);
 }
