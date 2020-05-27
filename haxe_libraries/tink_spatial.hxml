@@ -1,3 +1,3 @@
--cp ${SCOPE_DIR}/../tink_spatial/src
+# @install: lix --silent download "gh://github.com/haxetink/tink_spatial#d0006d5ba65097fd208a53d947f265b5aacaf2f8" into tink_spatial/0.0.0/github/d0006d5ba65097fd208a53d947f265b5aacaf2f8
+-cp ${HAXE_LIBCACHE}/tink_spatial/0.0.0/github/d0006d5ba65097fd208a53d947f265b5aacaf2f8/src
 -D tink_spatial=0.0.0
---macro Sys.println("haxe_libraries/tink_spatial.hxml:2: [Warning] Using dev version of library tink_spatial")
