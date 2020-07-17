@@ -1,5 +1,7 @@
 package tink.sql.drivers.node;
 
+import js.node.stream.Readable.Readable;
+import js.node.events.EventEmitter;
 import js.node.Buffer;
 import haxe.DynamicAccess;
 import haxe.io.Bytes;
@@ -30,7 +32,7 @@ class MySql implements Driver {
   }
 
   public function open<Db:DatabaseInfo>(name:String, info:Db):Connection<Db> {
-    var cnx = NativeDriver.createPool({
+    var pool = NativeDriver.createPool({
       user: settings.user,
       password: settings.password,
       host: settings.host,
@@ -40,20 +42,20 @@ class MySql implements Driver {
       charset: settings.charset,
     });
 
-    return new MySqlConnection(info, cnx);
+    return new MySqlConnection(info, pool);
   }
 }
 
 class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sanitizer {
 
-  var cnx:NativeConnection;
+  var pool:NativeConnectionPool;
   var db:Db;
   var formatter:MySqlFormatter;
   var parser:ResultParser<Db>;
 
-  public function new(db, cnx) {
+  public function new(db, pool) {
     this.db = db;
-    this.cnx = cnx;
+    this.pool = pool;
     this.formatter = new MySqlFormatter();
     this.parser = new ResultParser();
   }
@@ -74,14 +76,8 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
     inline function fetch<T>(): Promise<T> return run(queryOptions(query));
     return switch query {
       case Select(_) | Union(_): 
-        Stream.promise(fetch().next(function (res:Array<Any>) {
-          var iterator = res.iterator();
-          var parse = parser.queryParser(query, formatter.isNested(query));
-          return Stream.ofIterator({
-            hasNext: function() return iterator.hasNext(),
-            next: function () return parse(iterator.next())
-          });
-        }));
+        var parse:DynamicAccess<Any>->{} = parser.queryParser(query, formatter.isNested(query));
+        stream(queryOptions(query)).map(parse);
       
       case CallProcedure(_): 
         Stream.promise(fetch().next(function (res:Array<Array<Any>>) {
@@ -121,12 +117,34 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
         {sql: sql, nestTables: false}
     }
   }
+  
+  
 
+  function stream<T>(options: QueryOptions):Stream<T, Error> {
+    return (Future.async(function(cb) {
+      pool.getConnection(function(err, cnx) {
+        if(err != null) {
+          cb(Failure(Error.ofJsError(err)));
+        } else {
+          var query = cnx.query(options);
+          var stream = Stream.ofNodeStream('query', query.stream(), {onEnd: cnx.release});
+          cb(Success(stream));
+        }
+      });
+    }, true):Promise<tink.streams.RealStream<T>>);
+  }
+    
   function run<T>(options: QueryOptions):Promise<T>
-    return Future.async(function (done) {
-      cnx.query(options, function (err, res) {
-        if (err != null) done(toError(err));
-        else done(Success(cast res));
+    return Future.async(function (cb) {
+      pool.getConnection(function(err, cnx) {
+        if(err != null)
+          cb(toError(err));
+        else
+          cnx.query(options, function (err, res) {
+            if (err != null) cb(toError(err));
+            else cb(Success(cast res));
+            cnx.release();
+          });
       });
     });
 
@@ -149,7 +167,7 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
 private extern class NativeDriver {
   static function escape(value:Any):String;
   static function escapeId(ident:String):String;
-  static function createPool(config:Config):NativeConnection;
+  static function createPool(config:Config):NativeConnectionPool;
 }
 
 private typedef Config = {>MySqlSettings,
@@ -164,7 +182,19 @@ private typedef QueryOptions = {
   ?typeCast:Dynamic->(Void->Dynamic)->Dynamic
 }
 
-private typedef NativeConnection = {
-  function query(q: QueryOptions, cb:JsError->Dynamic->Void):Void;
-  //function release():Void; -- doesn't seem to work
+extern class NativeConnectionPool {
+  function getConnection(cb:JsError->NativeConnection->Void):Void;
 }
+extern class NativeConnection {
+  @:overload(function (q: QueryOptions, cb:JsError->Dynamic->Void):Void {})
+  function query<Row>(q: QueryOptions):NativeQuery<Row>;
+  function pause():Void;
+  function resume():Void;
+  function release():Void;
+}
+extern class NativeQuery<Row> extends EventEmitter<NativeQuery<Row>> {
+  function stream():NativeStream;
+}
+
+extern class NativeStream extends Readable<NativeStream> {}
+
