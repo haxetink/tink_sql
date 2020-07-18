@@ -127,7 +127,7 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
           cb(Failure(Error.ofJsError(err)));
         } else {
           var query = cnx.query(options);
-          var stream = Stream.ofNodeStream('query', query.stream(), {onEnd: cnx.release});
+          var stream = Stream.ofNodeStream('query', query.stream({highWaterMark: 1024}), {onEnd: cnx.release});
           cb(Success(stream));
         }
       });
@@ -193,7 +193,7 @@ extern class NativeConnection {
   function release():Void;
 }
 extern class NativeQuery<Row> extends EventEmitter<NativeQuery<Row>> {
-  function stream():NativeStream;
+  function stream(?opt:{?highWaterMark:Int}):NativeStream;
 }
 
 extern class NativeStream extends Readable<NativeStream> {}
