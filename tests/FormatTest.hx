@@ -108,10 +108,10 @@ class FakeTable1 extends FakeTable {
 
 	override function getColumns():Iterable<Column>
 		return [
-			{name: 'id', nullable: false, type: DInt(Default, false, true)},
-			{name: 'username', nullable: false, type: DString(50)},
-			{name: 'admin', nullable: false, type: DBool()},
-			{name: 'age', nullable: true, type: DInt(Default, false, false)},
+			{name: 'id', nullable: false, writable: true, type: DInt(Default, false, true)},
+			{name: 'username', nullable: false, writable: true, type: DString(50)},
+			{name: 'admin', nullable: false, writable: true, type: DBool()},
+			{name: 'age', nullable: true, writable: true, type: DInt(Default, false, false)},
 		];
 }
 

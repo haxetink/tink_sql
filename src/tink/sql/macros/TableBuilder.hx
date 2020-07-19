@@ -83,6 +83,7 @@ class TableBuilder {
               fieldsValues.push({
                 var name = macro $v{fName};
                 var nullable = f.meta.has(':optional');
+                var writable = !f.meta.has(':generated');
                 var defaultValue = switch meta.get(':byDefault') {
                   case null: macro null;
                   case [[value]]: value;
@@ -197,7 +198,8 @@ class TableBuilder {
                 macro @:pos(f.pos) {
                   name: $name,
                   nullable: $v{nullable},
-                  type: ${type}
+                  type: ${type},
+                  writable: $v{writable},
                 }
               });
 

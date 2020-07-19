@@ -138,14 +138,16 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
       ))
     );
 
-  function insert<Row:{}>(insert:InsertOperation<Row>)
+
+  function insert<Row:{}>(insert:InsertOperation<Row>) {
+    var writableColumns = insert.table.getColumns().filter(function(c) return c.writable);
     return sql('INSERT')
       .add('IGNORE', insert.ignore)
       .add('INTO')
       .addIdent(insert.table.getName())
       .addParenthesis(
         separated(
-          insert.table.columnNames()
+          writableColumns.map(function(c) return c.name)
             .map(ident)
         )
       )
@@ -153,9 +155,10 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
       .add(
         separated(
           insert.rows
-            .map(insertRow.bind(insert.table.getColumns()))
+            .map(insertRow.bind(writableColumns))
         )
       );
+  }
 
   function field(name, value)
     return expr(value).add('AS').addIdent(name);
