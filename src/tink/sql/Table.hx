@@ -76,7 +76,7 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
     );
   }
   
-  public function insertMany(rows:Array<Insert<Row>>, ?options)
+  public function insertMany(rows:Array<Insert<Row>>, ?options): Promise<Id<Row>>
     return if (rows.length == 0) Promise.NULL
       else cnx.execute(Insert({
         table: this, 
