@@ -6,6 +6,7 @@ typedef User = {
   @:autoIncrement @:primary public var id(default, null):Id<User>;
   public var name(default, null):VarChar<50>;
   public var email(default, null):VarChar<50>;
+  public var location(default, null):Null<VarChar<32>>;
 }
 
 typedef Post = {
