@@ -223,22 +223,27 @@ class Run extends TestWithDb {
       id: cast null,
       name: 'Alice',
       email: 'alice@example.com',
+      location: 'Atlanta',
     },{
       id: cast null,
       name: 'Bob',
       email: 'bob@example.com',
+      location: null,
     },{
       id: cast null,
       name: 'Christa',
       email: 'christa@example.com',
+      location: 'Casablanca',
     },{
       id: cast null,
       name: 'Dave',
       email: 'dave@example.com',
+      location: 'Deauville',
     },{
       id: cast null,
       name: 'Dave',
       email: 'dave2@example.com',
+      location: 'Deauville',
     }]);
   }
 

@@ -7,6 +7,9 @@ class Functions {
   public static function iif<T>(cond:Expr<Bool>, ifTrue:Expr<T>, ifFalse:Expr<T>):Expr<T>
     return ECall('IF', [cast cond, cast ifTrue, cast ifFalse], VTypeOf(ifTrue));
 
+  public static function ifNull<D,O>(e:Field<D,O>, fallbackValue:Expr<D>):Expr<D>
+    return ECall('IFNULL', [cast e, cast fallbackValue], VTypeOf(e));
+
   // Todo: count can also take an Expr<Bool>
   public static function count<D,O>(?e:Field<D,O>):Expr<Int> 
     return ECall('COUNT', if (e == null) cast [EValue(1, VInt)] else cast [e], VInt);
