@@ -1,5 +1,6 @@
 package tink.sql.format;
 
+import tink.s2d.*;
 import tink.sql.Query;
 import tink.sql.Info;
 import tink.sql.Selection;
@@ -130,8 +131,12 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
           return switch row[column.name] {
             case null: value(null);
             case v: switch column.type {
-              case DPoint | DPolygon | DMultiPolygon:
-                'ST_GeomFromGeoJSON(\'${haxe.Json.stringify(v)}\')';
+              case DPoint: 'ST_GeomFromText(\'${(v:Point).toWkt()}\',4326)';
+              case DLineString: 'ST_GeomFromText(\'${(v:LineString).toWkt()}\',4326)';
+              case DPolygon: 'ST_GeomFromText(\'${(v:Polygon).toWkt()}\',4326)';
+              case DMultiPoint: 'ST_GeomFromText(\'${(v:MultiPoint).toWkt()}\',4326)';
+              case DMultiLineString: 'ST_GeomFromText(\'${(v:MultiLineString).toWkt()}\',4326)';
+              case DMultiPolygon: 'ST_GeomFromText(\'${(v:MultiPolygon).toWkt()}\',4326)';
               default: value(v);
             }
           }

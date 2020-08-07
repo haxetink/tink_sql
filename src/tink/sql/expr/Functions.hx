@@ -1,7 +1,7 @@
 package tink.sql.expr;
 
 import tink.sql.Expr;
-import geojson.*;
+import tink.s2d.*;
 
 class Functions {
   public static function iif<T>(cond:Expr<Bool>, ifTrue:Expr<T>, ifFalse:Expr<T>):Expr<T>

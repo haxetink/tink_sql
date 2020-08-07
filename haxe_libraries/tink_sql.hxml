@@ -3,3 +3,4 @@
 -lib tink_streams
 -lib tink_macro
 -lib tink_url
+-lib tink_spatial

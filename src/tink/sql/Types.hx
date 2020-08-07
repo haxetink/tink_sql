@@ -18,13 +18,13 @@ typedef MediumText = String;
 typedef TinyText = String;
 typedef VarChar<@:const L> = String;
 
-typedef Point = geojson.Point;
-typedef LineString = geojson.LineString;
-typedef Polygon = geojson.Polygon;
-typedef MultiPoint = geojson.MultiPoint;
-typedef MultiLineString = geojson.MultiLineString;
-typedef MultiPolygon = geojson.MultiPolygon;
-typedef Geometry = geojson.Geometry;
+typedef Point = tink.s2d.Point;
+typedef LineString = tink.s2d.LineString;
+typedef Polygon = tink.s2d.Polygon;
+typedef MultiPoint = tink.s2d.MultiPoint;
+typedef MultiLineString = tink.s2d.MultiLineString;
+typedef MultiPolygon = tink.s2d.MultiPolygon;
+typedef Geometry = tink.s2d.Geometry;
 
 abstract Id<T>(Int) to Int {
 
