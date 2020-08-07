@@ -1,3 +1,3 @@
-# @install: lix --silent download "gh://github.com/haxetink/tink_spatial#d0006d5ba65097fd208a53d947f265b5aacaf2f8" into tink_spatial/0.0.0/github/d0006d5ba65097fd208a53d947f265b5aacaf2f8
--cp ${HAXE_LIBCACHE}/tink_spatial/0.0.0/github/d0006d5ba65097fd208a53d947f265b5aacaf2f8/src
+# @install: lix --silent download "gh://github.com/haxetink/tink_spatial#6b345a15af0248e470f5e9bee7ae133872834e0c" into tink_spatial/0.0.0/github/6b345a15af0248e470f5e9bee7ae133872834e0c
+-cp ${HAXE_LIBCACHE}/tink_spatial/0.0.0/github/6b345a15af0248e470f5e9bee7ae133872834e0c/src
 -D tink_spatial=0.0.0
