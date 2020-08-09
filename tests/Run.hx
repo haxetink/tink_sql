@@ -17,6 +17,7 @@ class Run extends TestWithDb {
 
   static function main() {
     var mysql = new MySql({
+      host: '127.0.0.1',
       user: env('DB_USERNAME', 'root'),
       password: env('DB_PASSWORD', '')
     });
