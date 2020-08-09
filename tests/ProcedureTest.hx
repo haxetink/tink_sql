@@ -12,10 +12,10 @@ class ProcedureTest extends TestWithDb {
         asserts.assert(result.length == 2);
         asserts.assert(result[0].x == 1);
         asserts.assert(result[1].x == 2);
-        asserts.assert(result[0].point.longitude == 1.0);
-        asserts.assert(result[0].point.latitude == 2.0);
-        asserts.assert(result[1].point.longitude == 2.0);
-        asserts.assert(result[1].point.latitude == 3.0);
+        asserts.assert(result[0].point.latitude == 1.0);
+        asserts.assert(result[0].point.longitude == 2.0);
+        asserts.assert(result[1].point.latitude == 2.0);
+        asserts.assert(result[1].point.longitude == 3.0);
         asserts.done();
       case Failure(e):
         asserts.fail(e);
@@ -28,8 +28,8 @@ class ProcedureTest extends TestWithDb {
     db.func.call(1).first().handle(function(o) switch o {
       case Success(result): 
         asserts.assert(result.x == 1);
-        asserts.assert(result.point.longitude == 1.0);
-        asserts.assert(result.point.latitude == 2.0);
+        asserts.assert(result.point.latitude == 1.0);
+        asserts.assert(result.point.longitude == 2.0);
         asserts.done();
       case Failure(e):
         asserts.fail(e);
