@@ -70,13 +70,13 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
       case DBlob(maxLength):
         if (maxLength < 65536) 'VARBINARY($maxLength)'
         else 'BLOB';
-      case DDateTime(d):
+      case DDate(d) | DDateTime(d):
         sql('DATETIME').add(addDefault(d));
       case DTimestamp(d):
         sql('TIMESTAMP').add(addDefault(d));
       case DUnknown(type, d):
         sql(type).add(addDefault(d));
-      default: throw 'Type not support in current formatter: $type';
+      default: throw 'Type not supported in current formatter: $type';
     }
 
   public function defineColumn(column:Column):Statement

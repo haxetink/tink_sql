@@ -1,0 +1,30 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:5.7
+        ports:
+          - 3306
+        env:
+          MYSQL_DATABASE: test
+          MYSQL_ROOT_PASSWORD: ''
+    strategy:
+      matrix:
+        haxe-version:
+          - stable
+          - nightly
+        target: 
+          - node
+          - php
+    steps:
+    - uses: lix-pm/setup-lix@master
+    - uses: actions/setup-node@v1
+    - run: npm i
+    - run: lix install haxe ${{ matrix.haxe-version }}
+    - run: lix download
+    - run: lix run travix ${{ matrix.target }}

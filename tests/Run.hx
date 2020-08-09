@@ -6,7 +6,7 @@ import tink.unit.Assert.*;
 import tink.unit.AssertionBuffer;
 import tink.unit.*;
 import tink.testrunner.*;
-import tink.sql.drivers.MySql;
+import tink.sql.drivers.*;
 
 using tink.CoreApi;
 
@@ -21,7 +21,7 @@ class Run extends TestWithDb {
       password: env('DB_PASSWORD', '')
     });
     var dbMysql = new Db('test', mysql);
-    var sqlite = new tink.sql.drivers.Sqlite(function(db) return ':memory:');
+    var sqlite = new Sqlite(function(db) return ':memory:');
     var dbSqlite = new Db('test', sqlite);
     loadFixture('init');
     Runner.run(TestBatch.make([

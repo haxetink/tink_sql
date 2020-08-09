@@ -1,7 +1,11 @@
 {
+  "scripts": {
+    "test": "lix run travix",
+    "postinstall": "lix download"
+  },
   "dependencies": {
-    "lix": "^15.4.1",
-    "mysql": "^2.16.0",
-    "sqlite3": "^4.1.1"
+    "lix": "^15.9.0",
+    "mysql": "^2.18.1",
+    "sqlite3": "^5.0.0"
   }
 }
