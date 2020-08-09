@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/haxetink/tink_sql.svg?branch=master)](https://travis-ci.org/haxetink/tink_sql)
+[![CI](https://github.com/haxetink/tink_sql/workflows/CI/badge.svg)](https://github.com/haxetink/tink_sql/actions)
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/haxetink/public)
 
 # Tinkerbell SQL
