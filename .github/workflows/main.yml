@@ -16,17 +16,11 @@ jobs:
         options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
     strategy:
       matrix:
-        haxe-version:
-          - stable
-          - nightly
         target: 
           - node
           - php
     steps:
     - uses: actions/checkout@v2
-    - uses: lix-pm/setup-lix@master
     - uses: actions/setup-node@v1
     - run: npm i
-    - run: lix install haxe ${{ matrix.haxe-version }}
-    - run: lix download
-    - run: lix run travix ${{ matrix.target }}
+    - run: npx test ${{ matrix.target }}
