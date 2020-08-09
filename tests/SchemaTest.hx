@@ -26,7 +26,6 @@ class SchemaTest extends TestWithDb {
 
 	public function diffIdentical()
 		return check(asserts, 'identical', function(changes) {
-			trace(changes);
 			asserts.assert(changes.length == 0);
 		});
 
