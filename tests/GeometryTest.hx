@@ -1,7 +1,7 @@
 package;
 
 import tink.s2d.*;
-import tink.s2d.Point.xy as point;
+import tink.s2d.Point.latLng as point;
 import tink.sql.Expr;
 import tink.unit.Assert.assert;
 
