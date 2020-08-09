@@ -1,7 +1,7 @@
 {
     "haxe.configurations": [
-        ["dev.hxml", "-lib", "hxnodejs", "-js", "bin/node/tests.js"],
-        ["dev.hxml", "-php", "bin/php"]
+        [".vscode/node.hxml"],
+        [".vscode/php.hxml"]
     ],
     "editor.tabSize": 2,
     "editor.insertSpaces": true
