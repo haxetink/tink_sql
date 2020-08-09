@@ -12,7 +12,7 @@ jobs:
           - 3306
         env:
           MYSQL_DATABASE: test
-          MYSQL_ROOT_PASSWORD: ''
+          MYSQL_ALLOW_EMPTY_PASSWORD: yes
     strategy:
       matrix:
         haxe-version:
