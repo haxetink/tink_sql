@@ -61,6 +61,11 @@ typedef Geometry = {
   public var point(default, null):Null<Point>;
   public var lineString(default, null):Null<LineString>;
   public var polygon(default, null):Null<Polygon>;
+  
+  @:optional public var optionalPoint(default, null):Point;
+  @:optional public var optionalLineString(default, null):LineString;
+  @:optional public var optionalPolygon(default, null):Polygon;
+
   // public var multiPoint(default, null):Null<MultiPoint>;
   // public var multiLineString(default, null):Null<MultiLineString>;
   // public var multiPolygon(default, null):Null<MultiPolygon>;

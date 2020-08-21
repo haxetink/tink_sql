@@ -169,6 +169,9 @@ class TableBuilder {
                         default:
                           resolveType(type);
                       }
+                    
+                    case TLazy(f):
+                      resolveType(f());
 
                     default:
                       var typeName = type.getID(false);
