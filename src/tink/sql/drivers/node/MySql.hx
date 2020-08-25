@@ -5,6 +5,7 @@ import js.node.events.EventEmitter;
 import js.node.Buffer;
 import js.node.tls.SecureContext;
 import haxe.DynamicAccess;
+import haxe.extern.EitherType;
 import haxe.io.Bytes;
 import tink.sql.Query;
 import tink.sql.Info;
@@ -19,21 +20,10 @@ import #if haxe3 js.lib.Error #else js.Error #end as JsError;
 
 using tink.CoreApi;
 
-abstract SslSettings(Any) to Any {
-  @:from public static inline function ofString(s:String)
-    return new SslSettings(s);
-
-  @:from public static inline function ofSecureContextOptions(o:SecureContextOptions)
-    return new SslSettings(o);
-
-  inline function new(settings)
-    this = settings;
-}
-
 typedef NodeSettings = {
   > MySqlSettings,
   ?connectionLimit:Int,
-  ?ssl:SslSettings,
+  ?ssl:EitherType<String, SecureContextOptions>,
 }
 
 class MySql implements Driver {
