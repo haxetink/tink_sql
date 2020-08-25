@@ -3,7 +3,9 @@ package tink.sql.drivers.node;
 import js.node.stream.Readable.Readable;
 import js.node.events.EventEmitter;
 import js.node.Buffer;
+import js.node.tls.SecureContext;
 import haxe.DynamicAccess;
+import haxe.extern.EitherType;
 import haxe.io.Bytes;
 import tink.sql.Query;
 import tink.sql.Info;
@@ -21,6 +23,7 @@ using tink.CoreApi;
 typedef NodeSettings = {
   > MySqlSettings,
   ?connectionLimit:Int,
+  ?ssl:EitherType<String, SecureContextOptions>,
 }
 
 class MySql implements Driver {
@@ -40,6 +43,7 @@ class MySql implements Driver {
       database: name,
       connectionLimit: settings.connectionLimit,
       charset: settings.charset,
+      ssl: settings.ssl,
     });
 
     return new MySqlConnection(info, pool);
@@ -68,18 +72,18 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
 
   public function getFormatter()
     return formatter;
-  
+
   function toError<A>(error:JsError):Outcome<A, Error>
     return Failure(Error.withData(error.message, error));
 
   public function execute<Result>(query:Query<Db,Result>):Result {
     inline function fetch<T>(): Promise<T> return run(queryOptions(query));
     return switch query {
-      case Select(_) | Union(_): 
+      case Select(_) | Union(_):
         var parse:DynamicAccess<Any>->{} = parser.queryParser(query, formatter.isNested(query));
         stream(queryOptions(query)).map(parse);
-      
-      case CallProcedure(_): 
+
+      case CallProcedure(_):
         Stream.promise(fetch().next(function (res:Array<Array<Any>>) {
           var iterator = res[0].iterator();
           var parse = parser.queryParser(query, formatter.isNested(query));
@@ -97,7 +101,7 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
       case Delete(_):
         fetch().next(function(res) return {rowsAffected: (res.affectedRows: Int)});
       case ShowColumns(_):
-        fetch().next(function(res:Array<MysqlColumnInfo>) 
+        fetch().next(function(res:Array<MysqlColumnInfo>)
           return res.map(formatter.parseColumn)
         );
       case ShowIndex(_):
@@ -117,8 +121,8 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
         {sql: sql, nestTables: false}
     }
   }
-  
-  
+
+
 
   function stream<T>(options: QueryOptions):Stream<T, Error> {
     return (Future.async(function(cb) {
@@ -133,7 +137,7 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
       });
     }, true):Promise<tink.streams.RealStream<T>>);
   }
-    
+
   function run<T>(options: QueryOptions):Promise<T>
     return Future.async(function (cb) {
       pool.getConnection(function(err, cnx) {
@@ -150,7 +154,7 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
 
   function typeCast(field, next): Any {
     return switch field.type {
-      case 'GEOMETRY': 
+      case 'GEOMETRY':
         switch (field.buffer(): Buffer) {
           case null: null;
           case v: @:privateAccess new ResultParser().parseGeometryValue(v.hxToBytes());
@@ -174,6 +178,7 @@ private typedef Config = {>MySqlSettings,
   public var database(default, null):String;
   @:optional public var connectionLimit(default, null):Int;
   @:optional public var charset(default, null):String;
+  @:optional public var ssl(default, null):Any;
 }
 
 private typedef QueryOptions = {
