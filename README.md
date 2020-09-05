@@ -21,28 +21,28 @@ Define a database like so:
 import tink.sql.Types;
 
 typedef User = {
-  id:Id<User>,
-  name:VarChar<255>,
-  @:unique email:VarChar<255>,
-  password:VarChar<255>,
+  var id:Id<User>;
+  var name:VarChar<255>;
+  @:unique var email:VarChar<255>;
+  var password:VarChar<255>;
 }
 
 typedef Post = {
-  id:Id<Post>,
-  author:Id<User>,
-  title:LongText,
-  url:VarChar<255>,
+  var id:Id<Post>;
+  var author:Id<User>;
+  var title:LongText;
+  var url:VarChar<255>;
 }
 
 typedef Tag = {
-  id:Id<Tag>,
-  name:VarChar<20>,
-  desc:Null<Text>,
+  var id:Id<Tag>;
+  var name:VarChar<20>;
+  var desc:Null<Text>;
 }
 
 typedef PostTags = {
-  post:Id<Post>,
-  tag:Id<Tag>,
+  var post:Id<Post>;
+  var tag:Id<Tag>;
 }
 
 @:tables(User, Post, Tag, PostTags)
