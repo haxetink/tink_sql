@@ -63,4 +63,21 @@ class SelectTest extends TestWithDb {
 				return assert(rows.length == 1 && rows[0].tag == 'test');
 			});
 	}
+
+    public function selectWithIfNull() 
+        // test IFNULL: only Bob has location == null (translated to "Unknown" here)
+        return db.User
+            .select({ 
+                name: User.name,
+                location: tink.sql.expr.Functions.ifNull( User.location, "Unknown"),
+            })
+            .all()
+            .next( function(a) {
+                for (o in a) {
+                    asserts.assert( (o.name == "Bob") == (o.location == "Unknown") );
+                }
+                return asserts.done();
+            })
+        ;
+
 }

@@ -26,12 +26,12 @@ class MySqlFormatter extends SqlFormatter<MysqlColumnInfo, MysqlKeyInfo> {
           case Medium: 'MEDIUMTEXT';
           case Long: 'LONGTEXT';
         }).add(addDefault(d));
-      case DPoint:
-        'POINT';
-      case DPolygon:
-        'POLYGON';
-      case DMultiPolygon:
-        'MULTIPOLYGON';
+      case DPoint: 'POINT';
+      case DLineString: 'LINESTRING';
+      case DPolygon: 'POLYGON';
+      case DMultiPoint: 'MULTIPOINT';
+      case DMultiLineString: 'MULTILINESTRING';
+      case DMultiPolygon: 'MULTIPOLYGON';
       default: super.type(type);
     }
 
@@ -76,8 +76,14 @@ class MySqlFormatter extends SqlFormatter<MysqlColumnInfo, MysqlKeyInfo> {
         DText(Long, type.defaultValue);
       case {name: 'POINT'}:
         DPoint;
+      case {name: 'LINESTRING'}:
+        DLineString;
       case {name: 'POLYGON'}:
         DPolygon;
+      case {name: 'MULTIPOINT'}:
+        DMultiPoint;
+      case {name: 'MULTILINESTRING'}:
+        DMultiLineString;
       case {name: 'MULTIPOLYGON'}:
         DMultiPolygon;
       default:
@@ -118,8 +124,18 @@ class MySqlFormatter extends SqlFormatter<MysqlColumnInfo, MysqlKeyInfo> {
 
   override function expr(e:ExprData<Dynamic>, printTableName = true):Statement
     return switch e {
-      case EValue(geom, VGeometry(_)):
-        'ST_GeomFromGeoJSON(\'${haxe.Json.stringify(geom)}\')';
+      case EValue(v, VGeometry(Point)):
+        'ST_GeomFromText(\'${v.toWkt()}\',4326)';
+      case EValue(v, VGeometry(LineString)):
+        'ST_GeomFromText(\'${v.toWkt()}\',4326)';
+      case EValue(v, VGeometry(Polygon)):
+        'ST_GeomFromText(\'${v.toWkt()}\',4326)';
+      case EValue(v, VGeometry(MultiPoint)):
+        'ST_GeomFromText(\'${v.toWkt()}\',4326)';
+      case EValue(v, VGeometry(MultiLineString)):
+        'ST_GeomFromText(\'${v.toWkt()}\',4326)';
+      case EValue(v, VGeometry(MultiPolygon)):
+        'ST_GeomFromText(\'${v.toWkt()}\',4326)';
       default: super.expr(e, printTableName);
     }
 

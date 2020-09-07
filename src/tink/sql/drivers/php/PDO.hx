@@ -81,7 +81,8 @@ class PDOConnection<Db:DatabaseInfo> implements Connection<Db> implements Saniti
   public function value(v:Any):String {
     if (Std.is(v, Bool)) return v ? '1' : '0';
     if (v == null || Std.is(v, Int)) return '$v';
-    if (Std.is(v, Bytes)) v = (cast v: Bytes).toString();
+    if (Std.is(v, Date)) v = (cast v: Date).toString();
+    else if (Std.is(v, Bytes)) v = (cast v: Bytes).toString();
     return cnx.quote(v);
   }
 

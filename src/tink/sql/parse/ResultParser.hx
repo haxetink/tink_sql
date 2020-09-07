@@ -1,6 +1,5 @@
 package tink.sql.parse;
 
-import geojson.GeometryCollection;
 import tink.sql.Expr;
 import haxe.DynamicAccess;
 import tink.sql.format.SqlFormatter;
@@ -13,8 +12,17 @@ using tink.CoreApi;
 class ResultParser<Db> {
   public function new() {}
   
-  inline function parseGeometryValue<T, C>(bytes: Bytes): geojson.util.GeoJson<T, C> {
-    return geojson.util.WkbTools.parse(bytes.sub(4, bytes.length - 4));
+  inline function parseGeometryValue<T, C>(bytes:Bytes):Any {
+    return switch tink.spatial.Parser.wkb(bytes.sub(4, bytes.length - 4)) {
+      case S2D(Point(v)): v;
+      case S2D(LineString(v)): v;
+      case S2D(Polygon(v)): v;
+      case S2D(MultiPoint(v)): v;
+      case S2D(MultiLineString(v)): v;
+      case S2D(MultiPolygon(v)): v;
+      case S2D(GeometryCollection(v)): v;
+      case _: throw 'expected 2d geometries';
+    }
   }
 
   function parseValue(value:Dynamic, type:ExprType<Dynamic>): Any {

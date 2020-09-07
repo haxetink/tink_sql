@@ -6,7 +6,7 @@ import tink.unit.Assert.*;
 import tink.unit.AssertionBuffer;
 import tink.unit.*;
 import tink.testrunner.*;
-import tink.sql.drivers.MySql;
+import tink.sql.drivers.*;
 
 using tink.CoreApi;
 
@@ -17,11 +17,12 @@ class Run extends TestWithDb {
 
   static function main() {
     var mysql = new MySql({
+      host: '127.0.0.1',
       user: env('DB_USERNAME', 'root'),
       password: env('DB_PASSWORD', '')
     });
     var dbMysql = new Db('test', mysql);
-    var sqlite = new tink.sql.drivers.Sqlite(function(db) return ':memory:');
+    var sqlite = new Sqlite(function(db) return ':memory:');
     var dbSqlite = new Db('test', sqlite);
     loadFixture('init');
     Runner.run(TestBatch.make([
@@ -223,22 +224,27 @@ class Run extends TestWithDb {
       id: cast null,
       name: 'Alice',
       email: 'alice@example.com',
+      location: 'Atlanta',
     },{
       id: cast null,
       name: 'Bob',
       email: 'bob@example.com',
+      location: null,
     },{
       id: cast null,
       name: 'Christa',
       email: 'christa@example.com',
+      location: 'Casablanca',
     },{
       id: cast null,
       name: 'Dave',
       email: 'dave@example.com',
+      location: 'Deauville',
     },{
       id: cast null,
       name: 'Dave',
       email: 'dave2@example.com',
+      location: 'Deauville',
     }]);
   }
 

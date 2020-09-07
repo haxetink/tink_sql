@@ -136,8 +136,14 @@ class TableBuilder {
                         
                         case {module: 'tink.sql.Types', name: 'Point'}:
                           macro tink.sql.Info.DataType.DPoint;
+                        case {module: 'tink.sql.Types', name: 'LineString'}:
+                          macro tink.sql.Info.DataType.DLineString;
                         case {module: 'tink.sql.Types', name: 'Polygon'}:
                           macro tink.sql.Info.DataType.DPolygon;
+                        case {module: 'tink.sql.Types', name: 'MultiPoint'}:
+                          macro tink.sql.Info.DataType.DMultiPoint;
+                        case {module: 'tink.sql.Types', name: 'MultiLineString'}:
+                          macro tink.sql.Info.DataType.DMultiLineString;
                         case {module: 'tink.sql.Types', name: 'MultiPolygon'}:
                           macro tink.sql.Info.DataType.DMultiPolygon;
                         
@@ -164,6 +170,9 @@ class TableBuilder {
                         default:
                           resolveType(type);
                       }
+                    
+                    case TLazy(f):
+                      resolveType(f());
 
                     default:
                       var typeName = type.getID(false);

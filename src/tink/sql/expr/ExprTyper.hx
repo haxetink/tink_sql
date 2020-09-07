@@ -16,7 +16,10 @@ class ExprTyper {
       case DBlob(_): ExprType.VBytes;
       case DDate(_) | DDateTime(_) | DTimestamp(_): ExprType.VDate;
       case DPoint: ExprType.VGeometry(Point);
+      case DLineString: ExprType.VGeometry(LineString);
       case DPolygon: ExprType.VGeometry(Polygon);
+      case DMultiPoint: ExprType.VGeometry(MultiPoint);
+      case DMultiLineString: ExprType.VGeometry(MultiLineString);
       case DMultiPolygon: ExprType.VGeometry(MultiPolygon);
       case DUnknown(_, _): null;
     }
