@@ -41,6 +41,7 @@ class MySql implements Driver {
       host: settings.host,
       port: settings.port,
       database: name,
+      timezone: settings.timezone,
       connectionLimit: settings.connectionLimit,
       charset: settings.charset,
       ssl: settings.ssl,
