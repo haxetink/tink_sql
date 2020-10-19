@@ -66,7 +66,10 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
   }
 
   public function value(v:Any):String
-    return NativeDriver.escape(if(Std.is(v, Bytes)) Buffer.hxFromBytes(v) else v);
+    return if (Std.is(v, Date))
+      'FROM_UNIXTIME(${(v:Date).getTime()/1000})';
+    else
+      NativeDriver.escape(if(Std.is(v, Bytes)) Buffer.hxFromBytes(v) else v);
 
   public function ident(s:String):String
     return NativeDriver.escapeId(s);
