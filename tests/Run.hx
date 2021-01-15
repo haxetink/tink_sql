@@ -169,6 +169,13 @@ class Run extends TestWithDb {
           content: 'content',
         })
       ).next(function (_)
+        return db.PostAlias.insertOne({
+          id: cast null,
+          title: 'alias2',
+          author: 1,
+          content: 'content',
+        })
+      ).next(function (_)
         return db.Post.insertOne({
           id: cast null,
           title: 'regular',
@@ -182,6 +189,8 @@ class Run extends TestWithDb {
           },
           {where: function (alias) return alias.id == 1}
         )  
+      ).next(function (res) 
+        return db.PostAlias.delete({where: p -> p.title == 'alias2'})
       ).next(function (_) 
         return db.PostAlias.join(db.Post.as('bar'))
           .on(PostAlias.id == bar.id).first()

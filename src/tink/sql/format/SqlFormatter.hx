@@ -291,12 +291,12 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
           .add(expr(set.expr, false))
       ))
       .add(where(update.where, false))
-      .add(limit(update.max), update.max != null);
+      .add(limit(update.max));
 
   function delete<Row:{}>(del:DeleteOperation<Row>)
     return sql('DELETE FROM')
       .addIdent(del.from.getName())
-      .add(where(del.where))
+      .add(where(del.where, false))
       .add(limit(del.max));
 
   function call<Row:{}>(op:CallOperation<Row>):Statement
