@@ -16,6 +16,12 @@ jobs:
         options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
     strategy:
       matrix:
+      
+        haxe-version:
+          - 4.0.5
+          - 4.1.5
+          - stable
+          - nightly
         target: 
           - node
           - php
