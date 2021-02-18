@@ -233,7 +233,7 @@ typedef Scalar<T> = Dataset<SingleField<T, Dynamic>, Dynamic, Dynamic>;
     return EUnOp(IsNull, this, true);
 
   @:op(a in b)
-  public function inArray<T>(b:Expr<Array<T>>):Condition
+  public function inArray(b:Expr<Array<T>>):Condition
     return EBinOp(In, this, b);
 
   public function like(b:Expr<String>):Condition
