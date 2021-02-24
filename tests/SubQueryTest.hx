@@ -100,4 +100,13 @@ class SubQueryTest extends TestWithDb {
 			});
 	}
 
+	public function fromComplexSubquery() {
+		return db
+			.from({sub: db.Post.select({maxId: max(Post.id), renamed: Post.author}).groupBy(fields -> [fields.author])})
+			.join(db.User).on(User.id == sub.renamed)
+			.first()
+			.next(function(row) {
+				return assert(true);
+			});
+	}
 }

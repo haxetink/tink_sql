@@ -15,21 +15,31 @@ class Targets {
           case TInst(_.get() => {
             pack: ['tink', 'sql'] // Unify with dataset first?
           }, params) if (params.length > 0): 
-            var fields = params[0];
-            var result = (switch params.length {
+            // var fields = params[0];
+            var result = switch params.length {
               case 4: params[2];
               case 3: params[1];
               default: throw "assert";
-            }).toComplex();
-            var fieldsComplex = fields.toComplex();
+            }
+            var fields = [];
+            var fieldsComplex = ComplexType.TAnonymous(fields);
+            var resultComplex = result.toComplex();
             var aliasFields = [];
-            switch haxe.macro.Context.followWithAbstracts(fields) {
+            switch haxe.macro.Context.followWithAbstracts(result) {
               case TAnonymous(_.get().fields => originalFields):
-                for (field in originalFields) 
+                for (field in originalFields)  {
+                  var fname = field.name;
+                  var ftype = field.type.toComplex();
+                  fields.push({
+                    pos: field.pos,
+                    name: field.name,
+                    kind: FProp('default', 'never', macro : tink.sql.Expr.Field<$ftype, $resultComplex>)
+                  });
                   aliasFields.push({
                     field: field.name, 
-                    expr: macro new tink.sql.Expr.Field($v{name}, $v{field.name})
+                    expr: macro new tink.sql.Expr.Field($v{name}, $v{field.name}, VBool),
                   });
+                }
               default: throw "assert";
             }
             var aliasFieldsE = EObjectDecl(aliasFields).at(target.expr.pos);
@@ -44,11 +54,12 @@ class Targets {
             var filterType = f.asExpr().typeof().sure().toComplex({direct: true});
             var blank = target.expr.pos.makeBlankType();
             macro @:pos(target.expr.pos) {
+              var query = ${target.expr};
               var fields = (cast $aliasFieldsE: $fieldsComplex);
               @:privateAccess new tink.sql.Dataset.Selectable(
                 $cnx,
                 fields,
-                (TQuery($v{name}, ${target.expr}.toQuery()): tink.sql.Target<$result, $blank>),
+                (TQuery($v{name}, query.toQuery()): tink.sql.Target<$fieldsComplex, $blank>),
                 function (filter:$filterType) return filter(fields)
               );
             }
