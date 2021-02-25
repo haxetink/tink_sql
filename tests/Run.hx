@@ -36,6 +36,7 @@ class Run extends TestWithDb {
       new ExprTest(mysql, dbMysql),
       new Run(mysql, dbMysql),
       new SchemaTest(mysql, dbMysql),
+      new SubQueryTest(mysql, dbMysql),
       #if nodejs
       new ProcedureTest(mysql, dbMysql),
       #end
