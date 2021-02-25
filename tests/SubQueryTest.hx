@@ -12,13 +12,13 @@ using tink.CoreApi;
 @:asserts
 class SubQueryTest extends TestWithDb {
 	
-	@:setup @:access(Run)
-	public function setup() {
+	@:before @:access(Run)
+	public function before() {
 		var run = new Run(driver, db);
 		return Promise.inParallel([
 			db.Post.create(),
 			db.User.create(),
-			db.PostTags.create()
+			db.PostTags.create(),
 		])
 		.next(function (_) return run.insertUsers())
 		.next(function(_) return Promise.inSequence([
@@ -29,11 +29,12 @@ class SubQueryTest extends TestWithDb {
     ]));
 	}
 	
-	@:teardown
-	public function teardown() {
+	@:after
+	public function after() {
 		return Promise.inParallel([
 			db.Post.drop(),
-			db.User.drop()
+			db.User.drop(),
+			db.PostTags.drop(),
 		]);
 	}
 
@@ -96,7 +97,19 @@ class SubQueryTest extends TestWithDb {
 			.select({id: myPosts.id})
 			.first()
 			.next(function(row) {
-				return assert(true);
+				asserts.assert(row.id == 1);
+				return asserts.done();
+			});
+	}
+
+	public function fromSimpleTable() {
+		return db
+			.from({myPosts: db.Post})
+			.select({id: myPosts.id})
+			.first()
+			.next(function(row) {
+				asserts.assert(row.id == 1);
+				return asserts.done();
 			});
 	}
 
@@ -106,7 +119,11 @@ class SubQueryTest extends TestWithDb {
 			.join(db.User).on(User.id == sub.renamed)
 			.first()
 			.next(function(row) {
-				return assert(true);
+				asserts.assert(row.sub.maxId == 3);
+				asserts.assert(row.sub.renamed == 1);
+				asserts.assert(row.User.id == 1);
+				asserts.assert(row.User.name == 'Alice');
+				return asserts.done();
 			});
 	}
 }
