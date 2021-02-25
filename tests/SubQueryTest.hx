@@ -179,9 +179,9 @@ class SubQueryTest extends TestWithDb {
 					// TODO: database type (mysql or sqlite) should be carried at runtime for the following check
 					switch driver.type {
 						case MySql:
-							asserts.assert(e.message.startsWith('ER_DUP_ENTRY:'));
+							asserts.assert(e.message.indexOf('Duplicate entry') != -1);
 						case Sqlite:
-							asserts.assert(e.message.startsWith('SQLITE_CONSTRAINT:'));
+							asserts.assert(e.message.indexOf('UNIQUE constraint failed') != -1);
 					}
 					asserts.done();
 			});
