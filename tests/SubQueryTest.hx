@@ -126,4 +126,19 @@ class SubQueryTest extends TestWithDb {
 				return asserts.done();
 			});
 	}
+
+	public function fromComplexSubqueryAndFilter() {
+		return db
+			.from({sub: db.Post.select({maxId: max(Post.id), renamed: Post.author}).groupBy(fields -> [fields.author])})
+			.join(db.User).on(User.id == sub.renamed)
+			.where(User.id == 2 && sub.maxId >= 1)
+			.first()
+			.next(function(row) {
+				asserts.assert(row.sub.maxId == 4);
+				asserts.assert(row.sub.renamed == 2);
+				asserts.assert(row.User.id == 2);
+				asserts.assert(row.User.name == 'Bob');
+				return asserts.done();
+			});
+	}
 }
