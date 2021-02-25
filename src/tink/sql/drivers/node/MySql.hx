@@ -27,7 +27,9 @@ typedef NodeSettings = {
 }
 
 class MySql implements Driver {
-
+  
+  public var type(default, null):Driver.DriverType = MySql;
+  
   var settings:NodeSettings;
 
   public function new(settings) {

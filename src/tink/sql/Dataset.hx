@@ -98,9 +98,9 @@ class Selected<Fields, Filter, Result:{}, Db> extends Limitable<Fields, Result, 
     this.grouped = grouped;
     this.order = order;
   }
-
-  override function toQuery(?limit:Limit):Query<Db, RealStream<Result>>
-    return Select({
+  
+  function toSelectOp(?limit:Limit):SelectOperation<Db, Result> {
+    return {
       from: target,
       selection: selection,
       where: condition.where,
@@ -108,7 +108,11 @@ class Selected<Fields, Filter, Result:{}, Db> extends Limitable<Fields, Result, 
       limit: limit,
       groupBy: grouped,
       orderBy: order
-    });
+    }
+  }
+
+  override function toQuery(?limit:Limit):Query<Db, RealStream<Result>>
+    return Select(toSelectOp(limit));
 
   public function count():Promise<Int>
     return cnx.execute(Select({

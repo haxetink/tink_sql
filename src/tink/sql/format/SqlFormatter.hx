@@ -143,24 +143,44 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
       ))
     );
 
-  function insert<Row:{}>(insert:InsertOperation<Row>)
-    return sql('INSERT')
+
+  function insert<Db, Row:{}>(insert:InsertOperation<Db, Row>) {
+    var q = sql('INSERT')
       .add('IGNORE', insert.ignore)
       .add('INTO')
-      .addIdent(insert.table.getName())
-      .addParenthesis(
-        separated(
-          insert.table.columnNames()
-            .map(ident)
-        )
-      )
-      .add('VALUES')
-      .add(
-        separated(
-          insert.rows
-            .map(insertRow.bind(insert.table.getColumns()))
-        )
-      );
+      .addIdent(insert.table.getName());
+      
+    return switch insert.data {
+      case Literal(rows):
+        q
+          .addParenthesis(
+            separated(
+              insert.table.columnNames()
+                .map(ident)
+            )
+          )
+          .add('VALUES')
+          .add(separated(rows.map(insertRow.bind(insert.table.getColumns()))));
+      case Select(op):
+        var columns = switch [op.from, op.selection] {
+          case [TTable(table), null]:
+            table.columnNames();
+          case [TQuery(_, Select({selection: selection})), null]:
+            selection.keys();
+          case [_, fields] if(fields != null):
+            fields.keys();
+          case _:
+            throw 'Can\'t get field information for the select: $op';
+        }
+        q
+          .addParenthesis(
+            separated(
+              [for(c in columns) ident(c)]
+            )
+          )
+          .add(select(op));
+    }
+  }
 
   function field(name, value)
     return expr(value).add('AS').addIdent(name);
@@ -188,12 +208,12 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
     }
 
   function selection<Row:{}, Db, Fields>(target:Target<Row, Db>, selection:Selection<Row, Fields>)
-    return switch selection {
-      case null: switch target {
-        case TTable(_): sql('*');
-        default: prefixFields(target);
-      }
-      case fields:
+    return switch [target, selection] {
+      case [TTable(_), null]:
+        sql('*');
+      case [_, null]:
+        prefixFields(target);
+      case [_, fields]:
         separated(fields.keys().map(function(name)
           return field(name, fields[name])
         ));
@@ -354,6 +374,8 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
           ? empty() 
           : ident(table).sql('.')
         ).ident(name);
+      case EValue(null, _):
+        'NULL';
       case EValue(v, VBool):
         value(v);
       case EValue(v, VString):

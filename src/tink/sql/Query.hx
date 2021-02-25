@@ -11,7 +11,7 @@ using tink.CoreApi;
 enum Query<Db, Result> {
   Union<Row:{}>(union:UnionOperation<Db, Row>):Query<Db, RealStream<Row>>;
   Select<Row:{}>(select:SelectOperation<Db, Row>):Query<Db, RealStream<Row>>;
-  Insert<Row:{}>(insert:InsertOperation<Row>):Query<Db, Promise<Id<Row>>>;
+  Insert<Row:{}>(insert:InsertOperation<Db, Row>):Query<Db, Promise<Id<Row>>>;
   Update<Row:{}>(update:UpdateOperation<Row>):Query<Db, Promise<{rowsAffected:Int}>>;
   Delete<Row:{}>(delete:DeleteOperation<Row>):Query<Db, Promise<{rowsAffected:Int}>>;
   CallProcedure<Row:{}>(call:CallOperation<Row>):Query<Db, RealStream<Row>>;
@@ -70,13 +70,16 @@ typedef DeleteOperation<Row:{}> = {
   ?max:Int
 }
 
-typedef InsertOperation<Row:{}> = {
+typedef InsertOperation<Db, Row:{}> = {
   table:TableInfo,
-  rows:Array<Insert<Row>>,
+  data:InsertData<Db, Row>,
   ?ignore:Bool
 }
 
-typedef Insert<Row:{}> = Row;
+enum InsertData<Db, Row:{}> {
+  Literal(data:Array<Row>);
+  Select(op:SelectOperation<Db, Row>);
+}
 
 enum AlterTableOperation {
   AddColumn(col:Column);

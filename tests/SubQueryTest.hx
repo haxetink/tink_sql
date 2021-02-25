@@ -1,5 +1,6 @@
 package;
 
+import tink.testrunner.Assertions;
 import tink.unit.Assert.assert;
 import tink.sql.OrderBy;
 import tink.sql.Types;
@@ -7,6 +8,7 @@ import tink.sql.Expr;
 import tink.sql.Expr.Functions.*;
 import Db;
 
+using StringTools;
 using tink.CoreApi;
 
 @:asserts
@@ -61,24 +63,36 @@ class SubQueryTest extends TestWithDb {
 			});
 	}
 
-	public function anyFunc() {
-		return db.Post
-			.where(
-				Post.author == any(db.User.select({id: User.id}))
-			).first()
-			.next(function(row) {
-				return assert(true);
-			});
+	public function anyFunc():Assertions {
+		return switch driver.type {
+			case MySql:
+				db.Post
+					.where(
+						Post.author == any(db.User.select({id: User.id}))
+					).first()
+					.next(function(row) {
+						return assert(true);
+					});
+			case Sqlite:
+				// syntax not supported
+				asserts.done();
+		}
 	}
 
-	public function someFunc() {
-		return db.Post
-			.where(
-				Post.author == some(db.User.select({id: User.id}))
-			).first()
-			.next(function(row) {
-				return assert(true);
-			});
+	public function someFunc():Assertions {
+		return switch driver.type {
+			case MySql:
+				db.Post
+					.where(
+						Post.author == some(db.User.select({id: User.id}))
+					).first()
+					.next(function(row) {
+						return assert(true);
+					});
+			case Sqlite:
+				// syntax not supported
+				asserts.done();
+		}
 	}
 
 	public function existsFunc() {
@@ -139,6 +153,37 @@ class SubQueryTest extends TestWithDb {
 				asserts.assert(row.User.id == 2);
 				asserts.assert(row.User.name == 'Bob');
 				return asserts.done();
+			});
+	}
+	
+	public function insertSelectFromSelection() {
+		return db.User.insertSelect(db.User.select({
+			id: EValue(null, VTypeOf(User.id)), // TODO: need a better way to construct a NULL expr
+			name: User.name,
+			email: User.email,
+			location: User.location,
+		}).where(User.id == 1))
+			.next(function(id) {
+				asserts.assert(id == 6);
+				return asserts.done();
+			});
+	}
+	
+	public function insertSelectFromTable() {
+		return db.User.insertSelect(db.User.where(User.id == 1))
+		// TODO: find a way to dodge the DUPICATE_KEY error
+			.map(function(o) return switch o {
+				case Success(_):
+					asserts.fail(new Error('should fail with a duplicate key error'));
+				case Failure(e):
+					// TODO: database type (mysql or sqlite) should be carried at runtime for the following check
+					switch driver.type {
+						case MySql:
+							asserts.assert(e.message.startsWith('ER_DUP_ENTRY:'));
+						case Sqlite:
+							asserts.assert(e.message.startsWith('SQLITE_CONSTRAINT:'));
+					}
+					asserts.done();
 			});
 	}
 }

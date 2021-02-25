@@ -76,16 +76,23 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
     );
   }
   
-  public function insertMany(rows:Array<Insert<Row>>, ?options): Promise<Id<Row>>
+  public function insertMany(rows:Array<Row>, ?options): Promise<Id<Row>>
     return if (rows.length == 0) cast Promise.NULL
       else cnx.execute(Insert({
         table: this, 
-        rows: rows, 
+        data: Literal(rows), 
         ignore: if (options == null) false else options.ignore
       }));
     
-  public function insertOne(row:Insert<Row>, ?options): Promise<Id<Row>>
+  public function insertOne(row:Row, ?options): Promise<Id<Row>>
     return insertMany([row], options);
+    
+  public function insertSelect(selected:Selected<Dynamic, Dynamic, Row, Db>, ?options): Promise<Id<Row>>
+    return cnx.execute(Insert({
+        table: this, 
+        data: Select(selected.toSelectOp()), 
+        ignore: if (options == null) false else options.ignore
+      }));
     
   public function update(f:Fields->Update<Row>, options:{ where: Filter, ?max:Int })
     return switch f(this.fields) {
