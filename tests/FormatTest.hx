@@ -38,7 +38,7 @@ class FormatTest extends TestWithDb {
 	public function insertIgnore(ignore, result) {
 		return assert(formatter.insert({
 			table: db.PostTags, 
-			rows: [{post: 1, tag: 'haxe'}],
+			data: Literal([{post: 1, tag: 'haxe'}]),
 			ignore: ignore
 		}).toString(sanitizer) == result);
 	}
