@@ -122,6 +122,9 @@ class Selected<Fields, Filter, Result:{}, Db> extends Limitable<Fields, Result, 
       .collect()
       .next(function (v) return Success((cast v[0]).count));
 
+  inline function asSelected():Selected<Fields, Filter, Result, Db> {
+    return this;
+  }
 }
 
 @:allow(tink.sql)
