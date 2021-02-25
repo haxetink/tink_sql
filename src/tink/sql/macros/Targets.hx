@@ -66,7 +66,6 @@ class Targets {
       case 'Bool': macro VBool;
       case 'Float': macro VFloat;
       case 'Int' | 'tink.sql.Id': macro VInt;
-      case 'Array': macro VArray<T>(type:ExprType<T>);
       case 'haxe.io.Bytes': macro VBytes;
       case 'Date': macro VDate;
       case 'tink.s2d.Point': macro VGeometry(Point);
@@ -75,6 +74,11 @@ class Targets {
       case 'tink.s2d.MultiPoint': macro VGeometry(MultiPoint);
       case 'tink.s2d.MultiLineString': macro VGeometry(MultiLineString);
       case 'tink.s2d.MultiPolygon': macro VGeometry(MultiPolygon);
+      case 'Array':
+        switch type.reduce() {
+          case TInst(_, [param]): macro VArray(${typeToExprOfExprType(param)});
+          case _: throw 'unreachable';
+        }
       case _: throw 'Cannot convert $type to ExprType';
     }
   }
