@@ -22,10 +22,10 @@ class SubQueryTest extends TestWithDb {
 		])
 		.next(function (_) return run.insertUsers())
 		.next(function(_) return Promise.inSequence([
-			run.insertPost('test', 'Alice', ['test', 'off-topic']),
-			run.insertPost('test2', 'Alice', ['test']),
-			run.insertPost('Some ramblings', 'Alice', ['off-topic']),
-			run.insertPost('Just checking', 'Bob', ['test']),
+			Promise.lazy(run.insertPost.bind('test', 'Alice', ['test', 'off-topic'])),
+			Promise.lazy(run.insertPost.bind('test2', 'Alice', ['test'])),
+			Promise.lazy(run.insertPost.bind('Some ramblings', 'Alice', ['off-topic'])),
+			Promise.lazy(run.insertPost.bind('Just checking', 'Bob', ['test'])),
     ]));
 	}
 	
@@ -128,9 +128,9 @@ class SubQueryTest extends TestWithDb {
 	}
 
 	public function fromComplexSubqueryAndFilter() {
-		return db
-			.from({sub: db.Post.select({maxId: max(Post.id), renamed: Post.author}).groupBy(fields -> [fields.author])})
-			.join(db.User).on(User.id == sub.renamed)
+		return db.User
+			.join(db.from({sub: db.Post.select({maxId: max(Post.id), renamed: Post.author}).groupBy(fields -> [fields.author])}))
+			.on(User.id == sub.renamed)
 			.where(User.id == 2 && sub.maxId >= 1)
 			.first()
 			.next(function(row) {
