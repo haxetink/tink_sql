@@ -176,7 +176,6 @@ class SubQueryTest extends TestWithDb {
 				case Success(_):
 					asserts.fail(new Error('should fail with a duplicate key error'));
 				case Failure(e):
-					// TODO: database type (mysql or sqlite) should be carried at runtime for the following check
 					switch driver.type {
 						case MySql:
 							asserts.assert(e.message.indexOf('Duplicate entry') != -1);
