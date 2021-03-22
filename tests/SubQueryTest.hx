@@ -63,6 +63,16 @@ class SubQueryTest extends TestWithDb {
 			});
 	}
 
+	public function inSubQuery() {
+		return db.User
+			.where(
+				User.id.inArray(db.User.select({id: User.id}).where(User.name == 'Dave'))
+			).all()
+			.next(function(rows) {
+				return assert(rows.length == 2);
+			});
+	}
+
 	public function anyFunc():Assertions {
 		return switch driver.type {
 			case MySql:

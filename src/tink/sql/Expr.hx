@@ -62,6 +62,7 @@ enum UnOp<A, Ret> {
 }
 
 typedef Scalar<T> = Dataset<SingleField<T, Dynamic>, Dynamic, Dynamic>;
+typedef Set<T> = Dataset<SingleField<T, Dynamic>, Dynamic, Dynamic>;
 
 @:notNull abstract Expr<T>(ExprData<T>) {
 
@@ -307,4 +308,7 @@ typedef Scalar<T> = Dataset<SingleField<T, Dynamic>, Dynamic, Dynamic>;
   
   @:from inline static function ofScalar<T>(s:Scalar<T>):Expr<T>
     return s.toScalarExpr();
+  
+  @:from inline static function ofSet<T>(s:Set<T>):Expr<Array<T>>
+    return s.toExpr();
 }
