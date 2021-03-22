@@ -63,6 +63,16 @@ class SubQueryTest extends TestWithDb {
 			});
 	}
 
+	public function inSubQuery() {
+		return db.User
+			.where(
+				User.id.inArray(db.User.select({id: User.id}).where(User.name == 'Dave'))
+			).all()
+			.next(function(rows) {
+				return assert(rows.length == 2);
+			});
+	}
+
 	public function anyFunc():Assertions {
 		return switch driver.type {
 			case MySql:
@@ -176,12 +186,11 @@ class SubQueryTest extends TestWithDb {
 				case Success(_):
 					asserts.fail(new Error('should fail with a duplicate key error'));
 				case Failure(e):
-					// TODO: database type (mysql or sqlite) should be carried at runtime for the following check
 					switch driver.type {
 						case MySql:
-							asserts.assert(e.message.startsWith('ER_DUP_ENTRY:'));
+							asserts.assert(e.message.indexOf('Duplicate entry') != -1);
 						case Sqlite:
-							asserts.assert(e.message.startsWith('SQLITE_CONSTRAINT:'));
+							asserts.assert(e.message.indexOf('UNIQUE constraint failed') != -1);
 					}
 					asserts.done();
 			});
