@@ -25,7 +25,7 @@ private class MySqlSanitizer implements Sanitizer {
     if (Std.is(v, Bool)) return v ? 'true' : 'false';
     if (v == null || Std.is(v, Int)) return '$v';
     if (Std.is(v, Bytes)) v = (cast v: Bytes).toString();
-    if (Std.is(v, Date)) return 'FROM_UNIXTIME(${(v:Date).getTime()/1000})';
+    if (Std.is(v, Date)) return 'DATE_ADD(FROM_UNIXTIME(0), INTERVAL ${(v:Date).getTime()/1000} SECOND)';
     return string('$v');
   }
   

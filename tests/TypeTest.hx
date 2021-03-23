@@ -18,8 +18,9 @@ class TypeTest extends TestWithDb {
 		return db.Types.drop();
 	}
 	
-	public function insert() {
-		var mydate = new Date(2000, 0, 1, 0, 0, 0);
+	@:variant(new Date(2000, 0, 1, 0, 0, 0))
+	@:variant(new Date(1920, 0, 1, 0, 0, 0))
+	public function insert(mydate:Date) {
 		var future = db.Types.insertOne({
 			int: 123,
 			float: 1.23,
