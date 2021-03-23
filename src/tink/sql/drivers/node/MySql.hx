@@ -69,7 +69,7 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
 
   public function value(v:Any):String
     return if (Std.is(v, Date))
-      'FROM_UNIXTIME(${(v:Date).getTime()/1000})';
+      'DATE_ADD(FROM_UNIXTIME(0), INTERVAL ${(v:Date).getTime()/1000} SECOND)';
     else
       NativeDriver.escape(if(Std.is(v, Bytes)) Buffer.hxFromBytes(v) else v);
 
