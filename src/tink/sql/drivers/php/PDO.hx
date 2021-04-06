@@ -144,11 +144,17 @@ class PDOConnection<Db:DatabaseInfo> implements Connection<Db> implements Saniti
     return switch query {
       case Select(_) | Union(_) | CallProcedure(_): 
         var parse = parser.queryParser(query, formatter.isNested(query));
+        var statement = formatter.format(query).toString(this);
+
+        #if sql_debug
+        trace(statement);
+        #end
+
         try Success([
           for (
             row in 
             cnx
-              .query(formatter.format(query).toString(this))
+              .query(statement)
               .fetchAll(PDO.FETCH_OBJ)
           )
             parse(row)
