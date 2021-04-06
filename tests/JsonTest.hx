@@ -42,6 +42,16 @@ class JsonTest extends TestWithDb {
 				asserts.assert(haxe.Json.stringify(row.jsonObject) == haxe.Json.stringify({"a":1, "b":2}));
 				asserts.assert(row.jsonOptNull == null);
 				return Noise;
+			})
+			.next(function(_) return db.JsonTypes.where(r -> r.jsonOptNull.isNull()).count())
+			.next(function(count:Int) {
+				asserts.assert(count == 1);
+				return Noise;
+			})
+			.next(function(_) return db.JsonTypes.where(r -> r.jsonNull.isNull()).count())
+			.next(function(count:Int) {
+				asserts.assert(count == 0);
+				return Noise;
 			});
 			
 		future.handle(function(o) switch o {

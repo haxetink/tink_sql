@@ -137,7 +137,7 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
       separated(columns.map(
         function (column):Statement
           return switch [row[column.name], column.type] {
-            case [null, DJson]: value("null");
+            case [null, DJson] if (row.exists(column.name)): value("null");
             case [null, _]: value(null);
             case [v, DPoint]: 'ST_GeomFromText(\'${(v:Point).toWkt()}\',4326)';
             case [v, DLineString]: 'ST_GeomFromText(\'${(v:LineString).toWkt()}\',4326)';
