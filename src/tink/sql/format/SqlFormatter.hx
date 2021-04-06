@@ -70,6 +70,8 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
       case DString(maxLength, d):
         sql(if (maxLength < 65536) 'VARCHAR($maxLength)'
         else 'TEXT').add(addDefault(d));
+      case DJson:
+        sql('JSON');
       case DBlob(maxLength):
         if (maxLength < 65536) 'VARBINARY($maxLength)'
         else 'BLOB';
@@ -134,17 +136,17 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
     return parenthesis(
       separated(columns.map(
         function (column):Statement
-          return switch row[column.name] {
-            case null: value(null);
-            case v: switch column.type {
-              case DPoint: 'ST_GeomFromText(\'${(v:Point).toWkt()}\',4326)';
-              case DLineString: 'ST_GeomFromText(\'${(v:LineString).toWkt()}\',4326)';
-              case DPolygon: 'ST_GeomFromText(\'${(v:Polygon).toWkt()}\',4326)';
-              case DMultiPoint: 'ST_GeomFromText(\'${(v:MultiPoint).toWkt()}\',4326)';
-              case DMultiLineString: 'ST_GeomFromText(\'${(v:MultiLineString).toWkt()}\',4326)';
-              case DMultiPolygon: 'ST_GeomFromText(\'${(v:MultiPolygon).toWkt()}\',4326)';
-              default: value(v);
-            }
+          return switch [row[column.name], column.type] {
+            case [null, DJson]: value("null");
+            case [null, _]: value(null);
+            case [v, DPoint]: 'ST_GeomFromText(\'${(v:Point).toWkt()}\',4326)';
+            case [v, DLineString]: 'ST_GeomFromText(\'${(v:LineString).toWkt()}\',4326)';
+            case [v, DPolygon]: 'ST_GeomFromText(\'${(v:Polygon).toWkt()}\',4326)';
+            case [v, DMultiPoint]: 'ST_GeomFromText(\'${(v:MultiPoint).toWkt()}\',4326)';
+            case [v, DMultiLineString]: 'ST_GeomFromText(\'${(v:MultiLineString).toWkt()}\',4326)';
+            case [v, DMultiPolygon]: 'ST_GeomFromText(\'${(v:MultiPolygon).toWkt()}\',4326)';
+            case [v, DJson]: value(haxe.Json.stringify(v));
+            case [v, _]: value(v);
           }
       ))
     );

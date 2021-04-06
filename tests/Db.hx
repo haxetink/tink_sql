@@ -114,8 +114,21 @@ typedef StringTypes = {
   public var textLong(default, null): LongText;
 }
 
+typedef JsonTypes = {
+  @:autoIncrement @:primary public var id(default, null):Id<User>;
+  public var jsonNull(default, null):Json;
+  public var jsonTrue(default, null):Json;
+  public var jsonFalse(default, null):Json;
+  public var jsonInt(default, null):Json;
+  public var jsonFloat(default, null):Json;
+  public var jsonArrayInt(default, null):Json;
+  public var jsonObject(default, null):Json;
+
+  @:optional public var jsonOptNull(default, null):Json;
+}
+
 typedef Db = tink.sql.Database<Def>;
-@:tables(User, Post, PostTags, Clap, Types, Geometry, Schema, StringTypes)
+@:tables(User, Post, PostTags, Clap, Types, Geometry, Schema, StringTypes, JsonTypes)
 interface Def extends tink.sql.DatabaseDefinition {
   @:procedure var func:Int->{x:Int, point:tink.s2d.Point};
   @:table('alias') var PostAlias:Post;

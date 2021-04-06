@@ -13,6 +13,7 @@ class ExprTyper {
       case DInt(_, _, _, _): ExprType.VInt;
       case DDouble(_): ExprType.VFloat;
       case DString(_, _) | DText(_, _): ExprType.VString;
+      case DJson: ExprType.VJson;
       case DBlob(_): ExprType.VBytes;
       case DDate(_) | DDateTime(_) | DTimestamp(_): ExprType.VDate;
       case DPoint: ExprType.VGeometry(Point);

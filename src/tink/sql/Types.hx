@@ -18,6 +18,8 @@ typedef MediumText = String;
 typedef TinyText = String;
 typedef VarChar<@:const L> = String;
 
+typedef Json = Dynamic;
+
 typedef Point = tink.s2d.Point;
 typedef LineString = tink.s2d.LineString;
 typedef Polygon = tink.s2d.Polygon;

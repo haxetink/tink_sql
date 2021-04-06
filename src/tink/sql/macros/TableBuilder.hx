@@ -84,6 +84,9 @@ class TableBuilder {
                         case {module: 'tink.sql.Types', name: 'VarChar'}:
                           var maxLength = getInt(params[0], f.pos);
                           macro tink.sql.Info.DataType.DString($v{maxLength}, $defaultValue);
+
+                        case {module: 'tink.sql.Types', name: 'Json'}:
+                          macro tink.sql.Info.DataType.DJson;
                         
                         case {module: 'tink.sql.Types', name: 'Point'}:
                           macro tink.sql.Info.DataType.DPoint;

@@ -45,6 +45,7 @@ class Run extends TestWithDb {
       #if !neko
       new StringTest(mysql, dbMysql),
       #end
+      new JsonTest(mysql, dbMysql),
       new GeometryTest(mysql, dbMysql),
       new ExprTest(mysql, dbMysql),
       new Run(mysql, dbMysql),
@@ -78,6 +79,7 @@ class Run extends TestWithDb {
 
       // ====== sqlite ======
       new TypeTest(sqlite, dbSqlite),
+      new JsonTest(sqlite, dbSqlite),
       new SelectTest(sqlite, dbSqlite),
       new FormatTest(sqlite, dbSqlite),
       new StringTest(sqlite, dbSqlite),
@@ -137,7 +139,7 @@ class Run extends TestWithDb {
 
   public function info() {
     asserts.assert(db.getName() == 'test');
-    asserts.assert(sorted(db.getInfo().tableNames()).join(',') == 'Clap,Geometry,Post,PostTags,Schema,StringTypes,Types,User,alias');
+    asserts.assert(sorted(db.getInfo().tableNames()).join(',') == 'Clap,Geometry,JsonTypes,Post,PostTags,Schema,StringTypes,Types,User,alias');
     asserts.assert(sorted(db.getInfo().tableInfo('Post').columnNames()).join(',') == 'author,content,id,title');
     return asserts.done();
   }

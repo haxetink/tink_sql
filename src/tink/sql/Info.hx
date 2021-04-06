@@ -32,6 +32,7 @@ enum DataType {
   DDouble(?byDefault:Float);
   DString(maxLength:Int, ?byDefault:String);
   DText(size:TextSize, ?byDefault:String);
+  DJson;
   DBlob(maxLength:Int);
   DDate(?byDefault:Date);
   DDateTime(?byDefault:Date);

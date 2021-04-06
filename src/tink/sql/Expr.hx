@@ -20,6 +20,7 @@ enum ExprData<T> {
 
 enum ExprType<T> {
   VString:ExprType<String>;
+  VJson:ExprType<Dynamic>;
   VBool:ExprType<Bool>;
   VFloat:ExprType<Float>;
   VInt:ExprType<Int>;
