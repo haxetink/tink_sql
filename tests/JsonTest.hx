@@ -73,11 +73,31 @@ class JsonTest extends TestWithDb {
 			jsonInt: 123,
 			jsonFloat: 123.4,
 			jsonArrayInt: [1,2,3],
-			jsonObject: {"a":1, "b":2},
+			jsonObject: {"a":1, "b":"B"},
 		})
 			.next(function(_) return db.JsonTypes.where(r -> jsonValue(r.jsonObject, "$.a", VInt) == 1).first())
 			.next(function(row:JsonTypes) {
 				asserts.assert(row.jsonObject.a == 1);
+				return Noise;
+			})
+			.next(function(_) return db.JsonTypes.where(r -> jsonValue(r.jsonObject, "$.b", VString) == "B").first())
+			.next(function(row:JsonTypes) {
+				asserts.assert(row.jsonObject.b == "B");
+				return Noise;
+			})
+			.next(function(_) return db.JsonTypes.where(r -> jsonValue(r.jsonArrayInt, "$[2]", VInt) == 3).first())
+			.next(function(row:JsonTypes) {
+				asserts.assert(row.jsonArrayInt[2] == 3);
+				return Noise;
+			})
+			.next(function(_) return db.JsonTypes.where(r -> jsonValue(r.jsonTrue, "$", VBool) == true).first())
+			.next(function(row:JsonTypes) {
+				asserts.assert(row.jsonTrue == true);
+				return Noise;
+			})
+			.next(function(_) return db.JsonTypes.where(r -> jsonValue(r.jsonFloat, "$", VFloat) == 123.4).first())
+			.next(function(row:JsonTypes) {
+				asserts.assert(row.jsonFloat == 123.4);
 				return Noise;
 			});
 			

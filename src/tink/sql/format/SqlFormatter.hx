@@ -393,15 +393,12 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
       case ECall("JSON_VALUE", [jsonDoc, path], returnType, _):
         var params = [
           expr(jsonDoc, printTableName),
-          expr(path, printTableName).add(
-            returning().add(switch (returnType:ExprType<Dynamic>) {
-              case VString: type(DString(512));
-              case VBool: type(DBool());
-              case VFloat: type(DDouble());
-              case VInt: sql('SIGNED INTEGER');
-              case _: throw "not implemented";
-            })
-          ),
+          switch (returnType:ExprType<Dynamic>) {
+            case VString: expr(path, printTableName);
+            case VFloat: expr(path, printTableName).add(returning()).add(sql('DOUBLE'));
+            case VBool | VInt: expr(path, printTableName).add(returning()).add(sql('SIGNED'));
+            case _: throw "not implemented";
+          },
         ];
         sql("JSON_VALUE").parenthesis(separated(params));
       case ECall(name, args, _, wrap):
