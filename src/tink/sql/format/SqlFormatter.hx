@@ -366,6 +366,9 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
       case Neg: '-';
     }
 
+  function returning():Statement
+    return 'RETURNING';
+
   inline function emptyArray<T>(e:ExprData<T>)
     return e.match(EValue([], VArray(_)));
 
@@ -387,6 +390,20 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
           .add(binOp(op))
           .add(expr(b, printTableName))
         );
+      case ECall("JSON_VALUE", [jsonDoc, path], returnType, _):
+        var params = [
+          expr(jsonDoc, printTableName),
+          expr(path, printTableName).add(
+            returning().add(switch (returnType:ExprType<Dynamic>) {
+              case VString: type(DString(512));
+              case VBool: type(DBool());
+              case VFloat: type(DDouble());
+              case VInt: sql('SIGNED INTEGER');
+              case _: throw "not implemented";
+            })
+          ),
+        ];
+        sql("JSON_VALUE").parenthesis(separated(params));
       case ECall(name, args, _, wrap):
         var params = args.map(function (arg) return expr(arg, printTableName));
         if (wrap == null || wrap)

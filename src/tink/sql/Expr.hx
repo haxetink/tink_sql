@@ -15,6 +15,7 @@ enum ExprData<T> {
   EField(table:String, name:String, type:ExprType<T>):ExprData<T>;
   ECall(name:String, args:Array<Expr<Any>>, type:ExprType<T>, ?parenthesis: Bool):ExprData<T>;
   EValue<T>(value:T, type:ExprType<T>):ExprData<T>;
+  EReturning<T>(type:ExprType<T>):ExprData<T>;
   EQuery<T, Db, Result>(query:Query<Db, Result>, ?type:ExprType<T>):ExprData<T>;
 }
 

@@ -79,6 +79,7 @@ class ExprTyper {
       case EBinOp(_, _, _): ExprType.VBool;
       case EUnOp(_, _, _): ExprType.VBool;
       case ECall(_, _, type, _): type;
+      case EReturning(type): type;
     }
     return switch res {
       case VTypeOf(expr): type(expr);

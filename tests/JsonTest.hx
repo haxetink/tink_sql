@@ -2,6 +2,7 @@ package;
 
 import Db;
 import tink.sql.Info;
+import tink.sql.Expr.Functions.*;
 import tink.unit.Assert.assert;
 
 using tink.CoreApi;
@@ -51,6 +52,32 @@ class JsonTest extends TestWithDb {
 			.next(function(_) return db.JsonTypes.where(r -> r.jsonNull.isNull()).count())
 			.next(function(count:Int) {
 				asserts.assert(count == 0);
+				return Noise;
+			});
+			
+		future.handle(function(o) switch o {
+			case Success(_): asserts.done();
+			case Failure(e): asserts.fail(e);
+		});
+		
+		return asserts;
+	}
+
+	@:exclude //JSON_VALUE was added in MySQL 8.0.21, not available in SQLite as of writing
+	public function test_jsonValue() {
+		var future = db.JsonTypes.insertOne({
+			id: null,
+			jsonNull: null,
+			jsonTrue: true,
+			jsonFalse: false,
+			jsonInt: 123,
+			jsonFloat: 123.4,
+			jsonArrayInt: [1,2,3],
+			jsonObject: {"a":1, "b":2},
+		})
+			.next(function(_) return db.JsonTypes.where(r -> jsonValue(r.jsonObject, "$.a", VInt) == 1).first())
+			.next(function(row:JsonTypes) {
+				asserts.assert(row.jsonObject.a == 1);
 				return Noise;
 			});
 			
