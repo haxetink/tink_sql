@@ -8,5 +8,6 @@ interface Driver {
 
 enum DriverType {
   MySql;
+  PostgreSql;
   Sqlite;
 }

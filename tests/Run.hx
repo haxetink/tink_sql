@@ -22,8 +22,20 @@ class Run extends TestWithDb {
       password: env('DB_PASSWORD', '')
     });
     var dbMysql = new Db('test', mysql);
+
+    #if nodejs
+    var postgres = new tink.sql.drivers.node.PostgreSql({
+      host: env('POSTGRES_HOST', '127.0.0.1'),
+      user: env('POSTGRES_USER', 'postgres'),
+      password: env('POSTGRES_PASSWORD', 'postgres'),
+      database: env('POSTGRES_DB', 'test'),
+    });
+    var dbPostgres = new Db('test', postgres);
+    #end
+
     var sqlite = new Sqlite(function(db) return ':memory:');
     var dbSqlite = new Db('test', sqlite);
+
     loadFixture('init');
     Runner.run(TestBatch.make([
       new TypeTest(mysql, dbMysql),
@@ -39,6 +51,10 @@ class Run extends TestWithDb {
       new SubQueryTest(mysql, dbMysql),
       #if nodejs
       new ProcedureTest(mysql, dbMysql),
+      #end
+
+      #if nodejs
+      new Run(postgres, dbPostgres),
       #end
 
       new TypeTest(sqlite, dbSqlite),
