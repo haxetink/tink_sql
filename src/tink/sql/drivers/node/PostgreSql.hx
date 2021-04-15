@@ -89,12 +89,16 @@ class PostgreSqlConnection<Db:DatabaseInfo> implements Connection<Db> implements
       case Select(_) | Union(_):
         var parse:DynamicAccess<Any>->{} = parser.queryParser(query, formatter.isNested(query));
         stream(queryOptions(query)).map(parse);
+      case Insert(_):
+        fetch().next(function(res) return res.rows.length > 0 ? new Id(res.rows[0][0]) : Promise.NOISE);
+      case Update(_):
+        fetch().next(function(res) return {rowsAffected: res.rowCount});
+      case Delete(_):
+        fetch().next(function(res) return {rowsAffected: res.rowCount});
       case CreateTable(_, _) | DropTable(_) | AlterTable(_, _):
         fetch().next(function(r) {
           return Noise;
         });
-      case Insert(_):
-        fetch().next(function(res) return new Id(res.rows[0][0]));
       case _:
         throw query.getName() + " has not been implemented";
     }
