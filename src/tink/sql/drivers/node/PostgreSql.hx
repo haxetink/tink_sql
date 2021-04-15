@@ -93,6 +93,8 @@ class PostgreSqlConnection<Db:DatabaseInfo> implements Connection<Db> implements
         fetch().next(function(r) {
           return Noise;
         });
+      case Insert(_):
+        fetch().next(function(res) return new Id(res.rows[0][0]));
       case _:
         throw query.getName() + " has not been implemented";
     }
@@ -103,7 +105,12 @@ class PostgreSqlConnection<Db:DatabaseInfo> implements Connection<Db> implements
     #if sql_debug
     trace(sql);
     #end
-    return {text: sql};
+    return switch query {
+      case Insert(_):
+        {text: sql, rowMode: "array"};
+      default:
+        {text: sql};
+    }
   }
 
   function stream<T>(options: QueryOptions):Stream<T, Error> {
