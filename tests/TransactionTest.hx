@@ -12,11 +12,12 @@ class TransactionTest extends TestWithDb {
 	@:after
 	public function dropTable() return db.User.drop();
 	
-	@:include public function shouldCommit()
-		return db.transaction(function () {
-      return db.User.insertOne({
+	// @:include
+  public function shouldCommit()
+		return db.transaction(function (trx) {
+      return trx.User.insertOne({
         id: cast null,
-        name: '', email: ''
+        name: '', email: '', location: ''
       }).next(function (id) {
         return Commit(id);
       });
@@ -24,18 +25,19 @@ class TransactionTest extends TestWithDb {
       return assert(res.equals(Commit(1)));
     });
 
-  @:include public function shouldRollback()
-    return db.transaction(function () {
-      return db.User.insertOne({
+  // @:include
+  public function shouldRollback()
+    return db.transaction(function (trx) {
+      return trx.User.insertOne({
         id: cast null,
-        name: '', email: ''
+        name: '', email: '', location: ''
       }).next(function (id) {
         return Rollback;
       });
     }).next(function (res)
       return db.User.all()
     ).next(function (res) {
-      trace(res);
+      // trace(res);
       return assert(res.length == 0);
     });
 

@@ -6,6 +6,7 @@ import tink.sql.Info;
 import tink.sql.Schema;
 import tink.sql.Dataset;
 import tink.sql.Query;
+import tink.sql.Types;
 
 using tink.CoreApi;
 
@@ -25,15 +26,18 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
 {
   
   public var name(default, null):TableName<Row>;
+  var alias:Null<String>;
+  var columns:Array<Column>;
   
-  function new(cnx, name, alias, fields) {
+  function new(cnx, name, alias, fields, ?columns) {
     this.name = name;
+    this.alias = alias;
     this.fields = fields;
-    
+    this.columns = columns;
     super(
       cnx,
       fields,
-      TTable(name, alias),
+      TTable(this),
       function (f:Filter) return (cast f : Fields->Condition)(fields) //TODO: raise issue on Haxe tracker and remove the cast once resolved
     );
   }
@@ -72,16 +76,23 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
     );
   }
   
-  public function insertMany(rows:Array<Insert<Row>>, ?options)
-    return if (rows.length == 0) Promise.NULL
+  public function insertMany(rows:Array<Row>, ?options): Promise<Id<Row>>
+    return if (rows.length == 0) cast Promise.NULL
       else cnx.execute(Insert({
         table: this, 
-        rows: rows, 
-        ignore: if (options == null) null else options.ignore
+        data: Literal(rows), 
+        ignore: if (options == null) false else options.ignore
       }));
     
-  public function insertOne(row:Insert<Row>, ?options)
+  public function insertOne(row:Row, ?options): Promise<Id<Row>>
     return insertMany([row], options);
+    
+  public function insertSelect(selected:Selected<Dynamic, Dynamic, Row, Db>, ?options): Promise<Id<Row>>
+    return cnx.execute(Insert({
+        table: this, 
+        data: Select(selected.toSelectOp()), 
+        ignore: if (options == null) false else options.ignore
+      }));
     
   public function update(f:Fields->Update<Row>, options:{ where: Filter, ?max:Int })
     return switch f(this.fields) {
@@ -110,9 +121,13 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
   public function getName():String 
     return name;
 
+  @:noCompletion
+  public function getAlias():Null<String>
+    return alias;
+
   @:noCompletion 
   public function getColumns():Array<Column> 
-    throw 'not implemented';
+    return columns;
   
   @:noCompletion 
   public function columnNames():Array<String>
@@ -128,7 +143,7 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
     return switch haxe.macro.Context.typeof(e) {
       case TInst(_.get() => { superClass: _.params => [fields, _, row, _] }, _):
         var fieldsType = fields.toComplex({direct: true});
-        var filterType = (macro function ($alias:$fieldsType):tink.sql.Expr.Condition return tink.sql.Expr.ExprData.EValue(true, tink.sql.Expr.ValueType.VBool)).typeof().sure();
+        var filterType = (macro function ($alias:$fieldsType):tink.sql.Expr.Condition return tink.sql.Expr.ExprData.EValue(true, tink.sql.Expr.ExprType.VBool)).typeof().sure();
         var path: haxe.macro.TypePath = 
         'tink.sql.Table.TableSource'.asTypePath(
           [fields, filterType, row].map(function (type)
@@ -136,17 +151,19 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
           ).concat([TPType(e.pos.makeBlankType())])
         );
         var aliasFields = [];
-        switch fields {
+        switch haxe.macro.Context.follow(fields) {
           case TAnonymous(_.get().fields => originalFields):
-            for (field in originalFields) 
+            for (field in originalFields) {
+              var name = field.name;
               aliasFields.push({
                 field: field.name, 
-                expr: macro new tink.sql.Expr.Field($v{alias}, $v{field.name})
+                expr: macro new tink.sql.Expr.Field($v{alias}, $v{field.name}, $e.fields.$name.type)
               });
+            }
           default: throw "assert";
         }
         var fieldObj = EObjectDecl(aliasFields).at(e.pos);
-        macro @:privateAccess new $path($e.cnx, $e.name, $v{alias}, $fieldObj);
+        macro @:privateAccess new $path($e.cnx, $e.name, $v{alias}, $fieldObj, $e.getColumns());
       default: e.reject();
     }
   }

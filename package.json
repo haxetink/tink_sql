@@ -1,14 +1,12 @@
 {
-  "name": "tink_sql",
-  "version": "0.0.0",
-  "description": "",
   "scripts": {
-    "haxelib": "haxelib",
-    "travix": "haxe -lib travix --run travix.Travix",
+    "test": "lix run travix",
     "postinstall": "lix download"
   },
   "dependencies": {
-    "lix": "^15.1.1",
-    "mysql": "^2.15.0"
+    "lix": "^15.9.0",
+    "mysql": "^2.18.1",
+    "pg": "^8.6.0",
+    "sqlite3": "^5.0.0"
   }
 }

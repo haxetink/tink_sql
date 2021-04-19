@@ -3,6 +3,7 @@ package;
 import tink.unit.Assert.assert;
 import tink.sql.OrderBy;
 import Db;
+import tink.sql.Fields;
 
 using tink.CoreApi;
 
@@ -42,6 +43,7 @@ class SelectTest extends TestWithDb {
 				name: User.name
 			})
 			.where(Post.title == 'test')
+			.groupBy(function (fields) return [fields.Post.id])
 			.having(User.name == 'Alice')
 			.first()
 			.next(function(row) {
@@ -49,7 +51,7 @@ class SelectTest extends TestWithDb {
 			});
 
 	public function selectWithFunction() {
-		function getTag(p, u, t)
+		function getTag(p: Fields<Post>, u: Fields<User>, t: Fields<PostTags>)
 			return {tag: t.tag}
 		return db.Post
 			.join(db.User).on(Post.author == User.id)
@@ -61,4 +63,21 @@ class SelectTest extends TestWithDb {
 				return assert(rows.length == 1 && rows[0].tag == 'test');
 			});
 	}
+
+    public function selectWithIfNull() 
+        // test IFNULL: only Bob has location == null (translated to "Unknown" here)
+        return db.User
+            .select({ 
+                name: User.name,
+                location: tink.sql.expr.Functions.ifNull( User.location, "Unknown"),
+            })
+            .all()
+            .next( function(a) {
+                for (o in a) {
+                    asserts.assert( (o.name == "Bob") == (o.location == "Unknown") );
+                }
+                return asserts.done();
+            })
+        ;
+
 }

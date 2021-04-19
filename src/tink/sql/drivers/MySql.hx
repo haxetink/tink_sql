@@ -2,16 +2,19 @@ package tink.sql.drivers;
 
 import tink.sql.format.Sanitizer;
 import tink.core.Any;
+import haxe.io.Bytes;
 
 using StringTools;
 
 private typedef Impl = 
-  #if nodejs
+  #if macro
+    tink.sql.drivers.macro.Dummy;
+  #elseif nodejs
     tink.sql.drivers.node.MySql;
   #elseif php
-    tink.sql.drivers.php.MySQLi;
+    tink.sql.drivers.php.PDO.PDOMysql;
   #else
-    tink.sql.drivers.sys.MySql;
+    tink.sql.drivers.sys.MySql; 
   #end
 
 private class MySqlSanitizer implements Sanitizer {
@@ -20,8 +23,13 @@ private class MySqlSanitizer implements Sanitizer {
   
   public function new() {}
   
-  public function value(v:Any):String 
-    return string(Std.string(v));
+  public function value(v:Any):String {
+    if (Std.is(v, Bool)) return v ? 'true' : 'false';
+    if (v == null || Std.is(v, Int)) return '$v';
+    if (Std.is(v, Bytes)) v = (cast v: Bytes).toString();
+    if (Std.is(v, Date)) return 'DATE_ADD(FROM_UNIXTIME(0), INTERVAL ${(v:Date).getTime()/1000} SECOND)';
+    return string('$v');
+  }
   
   public function ident(s:String) {
     //Remarks for `string` apply to this function also
@@ -75,6 +83,7 @@ private class MySqlSanitizer implements Sanitizer {
   }
   
 }
+
 abstract MySql(Impl) from Impl to Impl {
   public inline function new(settings) {
     this = new Impl(settings);

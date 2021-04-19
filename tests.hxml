@@ -1,3 +1,4 @@
+-D no-deprecation-warnings
 -lib jdbc.mysql
 -lib tink_unittest
 -lib tink_await

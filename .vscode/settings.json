@@ -1,6 +1,7 @@
 {
-    "haxe.displayConfigurations": [
-        ["dev.hxml"]
+    "haxe.configurations": [
+        [".vscode/node.hxml"],
+        [".vscode/php.hxml"]
     ],
     "editor.tabSize": 2,
     "editor.insertSpaces": true

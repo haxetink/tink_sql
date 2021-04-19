@@ -2,6 +2,7 @@ package tink.sql.macros;
 
 import haxe.macro.Context;
 import tink.macro.BuildCache;
+import haxe.macro.Type;
 import haxe.macro.Expr;
 import tink.sql.schema.KeyStore;
 
@@ -9,50 +10,75 @@ using tink.MacroApi;
 
 class TableBuilder {
 
+  static function resultField(fieldType: ComplexType, field: ClassField): Field {
+    return {
+      pos: field.pos,
+      name: field.name,
+      #if haxe4
+      access: if (field.isFinal) [AFinal] else [],
+      kind: 
+        if (field.isFinal) FVar(fieldType) 
+        else FProp('default', 'never', fieldType),
+      #else
+      kind: FProp('default', 'never', fieldType),
+      #end
+      meta: {
+        var m = [];
+        if(field.meta.extract(':optional').length > 0) 
+          m.push({name: ':optional', pos: field.pos});
+        m;
+      },
+    }
+  }
+
+  static function fieldsType(fieldType: ComplexType, rowType: ComplexType, field: ClassField): Field {
+    return {
+      pos: field.pos,
+      name: field.name,
+      kind: FProp('default', 'never', macro : tink.sql.Expr.Field<$fieldType, $rowType>)
+    }
+  }
+
+  @:allow(tink.sql.macros.FieldsBuilder)
+  static function buildFieldTypes(fields:Array<ClassField>) {
+    var fieldTypes = [
+      for (field in fields) 
+        field.name => field.type.reduce().toComplex()
+    ];
+    var rowType = TAnonymous([
+      for (field in fields)
+        resultField(fieldTypes[field.name], field)
+    ]);
+    var fieldsType = TAnonymous([
+      for (field in fields)
+        fieldsType(fieldTypes[field.name], rowType, field)
+    ]);
+    return {
+      rowType: rowType,
+      fieldsType: fieldsType
+    }
+  }
+
   static function build() {
     return BuildCache.getType('tink.sql.Table', function (ctx:BuildContext) {
       return
         switch ctx.type {
           case TAnonymous(_.get() => { fields: [{ kind: FVar(_, _), name: name, type: Context.followWithAbstracts(_)  => TAnonymous(_.get().fields => fields) }] } ):
-
             var cName = ctx.name;
             var names = [for (f in fields) f.name];
 
-            var rowTypeFields = new Array<Field>(),
-                fieldsTypeFields = new Array<Field>(),
-                fieldsExprFields = [],
+            var fieldsExprFields = [],
                 fieldsValues = [],
                 keys = new KeyStore();
 
-            var rowType = TAnonymous(rowTypeFields),
-                fieldsType = TAnonymous(fieldsTypeFields);//caution: these are mutable until the function is done
+            var types = buildFieldTypes(fields);
+            var rowType = types.rowType;
+            var fieldsType = types.fieldsType;
 
             for (f in fields) {
               var fType = f.type.reduce().toComplex(),
                   fName = f.name,
                   meta = f.meta.get().toMap();
-
-              rowTypeFields.push({
-                pos: f.pos,
-                name: fName,
-                kind: FProp('default', 'null', fType),
-                meta: {
-                  var m = [];
-                  if(f.meta.extract(':optional').length > 0) m.push({name: ':optional', pos: f.pos});
-                  m;
-                },
-              });
-
-              fieldsTypeFields.push({
-                pos: f.pos,
-                name: fName,
-                kind: FProp('default', 'null', macro : tink.sql.Expr.Field<$fType, $rowType>)
-              });
-
-              fieldsExprFields.push({
-                field: f.name,
-                expr: macro new tink.sql.Expr.Field(tableName, $v{f.name}),
-              });
 
               fieldsValues.push({
                 var name = macro $v{fName};
@@ -60,7 +86,7 @@ class TableBuilder {
                 var defaultValue = switch meta.get(':byDefault') {
                   case null: macro null;
                   case [[value]]: value;
-                  case more: f.pos.error('@:byDefault excepts one expression');
+                  case more: f.pos.error('@:byDefault expects one expression');
                 }
 
                 function resolveType(type:haxe.macro.Type) {
@@ -109,8 +135,14 @@ class TableBuilder {
                         
                         case {module: 'tink.sql.Types', name: 'Point'}:
                           macro tink.sql.Info.DataType.DPoint;
+                        case {module: 'tink.sql.Types', name: 'LineString'}:
+                          macro tink.sql.Info.DataType.DLineString;
                         case {module: 'tink.sql.Types', name: 'Polygon'}:
                           macro tink.sql.Info.DataType.DPolygon;
+                        case {module: 'tink.sql.Types', name: 'MultiPoint'}:
+                          macro tink.sql.Info.DataType.DMultiPoint;
+                        case {module: 'tink.sql.Types', name: 'MultiLineString'}:
+                          macro tink.sql.Info.DataType.DMultiLineString;
                         case {module: 'tink.sql.Types', name: 'MultiPolygon'}:
                           macro tink.sql.Info.DataType.DMultiPolygon;
                         
@@ -137,6 +169,9 @@ class TableBuilder {
                         default:
                           resolveType(type);
                       }
+                    
+                    case TLazy(f):
+                      resolveType(f());
 
                     default:
                       var typeName = type.getID(false);
@@ -174,10 +209,37 @@ class TableBuilder {
                   type: ${type}
                 }
               });
-            }
-            var filterType = (macro function ($name:$fieldsType):tink.sql.Expr.Condition return tink.sql.Expr.ExprData.EValue(true, tink.sql.Expr.ValueType.VBool)).typeof().sure().toComplex({ direct: true });
 
-            macro class $cName<Db> extends tink.sql.Table.TableSource<$fieldsType, $filterType, $rowType, Db> {
+              fieldsExprFields.push({
+                field: f.name,
+                expr: macro new tink.sql.Expr.Field(
+                  alias, 
+                  $v{f.name}, 
+                  @:privateAccess tink.sql.expr.ExprTyper.typeColumn(
+                    ${fieldsValues[fieldsValues.length - 1]}.type
+                  )
+                ),
+              });
+            }
+
+            var module = Context.getLocalModule().split('.');
+            module.pop();
+            function define(type, name) {
+              Context.defineType({
+                fields: [],
+                name: name,
+                pack: module,
+                pos: ctx.pos,
+                kind: TDAlias(type)
+              });
+              return module.concat([name]).join('.').asComplexType();
+            }
+            // Typedef fields and result so we get readable error messages
+            var fieldsAlias = define(fieldsType, '${cName}_Fields');
+            var rowAlias = define(rowType, '${cName}_Result');
+            var filterType = (macro function ($name:$fieldsAlias):tink.sql.Expr.Condition return tink.sql.Expr.ExprData.EValue(true, tink.sql.Expr.ExprType.VBool)).typeof().sure().toComplex({ direct: true });
+
+            macro class $cName<Db> extends tink.sql.Table.TableSource<$fieldsAlias, $filterType, $rowAlias, Db> {
 
               public function new(cnx, tableName, ?alias) {
                 super(cnx, new tink.sql.Table.TableName(tableName), alias, ${EObjectDecl(fieldsExprFields).at(ctx.pos)});

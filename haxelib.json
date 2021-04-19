@@ -8,9 +8,8 @@
 	"dependencies": {
 		"tink_streams": "",
 		"tink_macro": "",
-		"tink_json": "",
 		"tink_url": "",
-		"geojson": ""
+		"tink_spatial": ""
 	},
 	"releasenote": "Initial release",
 	"contributors": ["back2dos"], 

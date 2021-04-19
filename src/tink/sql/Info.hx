@@ -7,6 +7,7 @@ interface DatabaseInfo {
 
 interface TableInfo {
   function getName():String;
+  function getAlias():Null<String>;
   function getColumns():Iterable<Column>;
   function columnNames():Iterable<String>;
   function getKeys():Iterable<Key>;
@@ -35,7 +36,10 @@ enum DataType {
   DDateTime(?byDefault:Date);
   DTimestamp(?byDefault:Date);
   DPoint;
+  DLineString;
   DPolygon;
+  DMultiPoint;
+  DMultiLineString;
   DMultiPolygon;
   DUnknown(type:String, byDefault:Null<String>);
 }

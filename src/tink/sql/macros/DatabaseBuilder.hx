@@ -21,32 +21,58 @@ class DatabaseBuilder {
       }
       
     var init = [],
-        tables = [];
+        tables = [],
+        procedures = []; // TODO: actually use this
       
     for (m in c) if(!m.isStatic) {
-      var table = 
-        switch (m:Field).meta.getValues(':table') {
-          case []: continue;
+      function extractMeta(name:String) {
+        return switch (m:Field).meta.getValues(name) {
+          case []: null;
           case [[]]: m.name;
           case [[v]]: v.getName().sure();
-          default: m.pos.error('Invalid use of @:table');
+          default: m.pos.error('Invalid use of @$name');
         }
+      }
       
-      m.publish();
+      switch extractMeta(':table') {
+        case null:
+        case table:
+          m.publish();
 
-      var fieldName = m.name;
-      
-      var type = TAnonymous([{
-        name : fieldName,
-        pos: m.pos,
-        kind: FVar(m.getVar().sure().type),
-      }]);
-      
-      m.kind = FProp('default', 'null', macro : tink.sql.Table<$type>);
+          var fieldName = m.name;
+          
+          var type = TAnonymous([{
+            name : fieldName,
+            pos: m.pos,
+            kind: FVar(m.getVar().sure().type),
+          }]);
+          
+          m.kind = FProp('default', 'null', macro : tink.sql.Table<$type>);
 
-      init.push(macro @:pos(m.pos) this.$fieldName.init(cnx, $v{table}));
+          init.push(macro this.$fieldName.init(cnx, $v{table}, $v{fieldName}));
+          
+          tables.push(macro $v{table} => this.$fieldName); 
+      }
       
-      tables.push(macro @:pos(m.pos) $v{table} => this.$fieldName);
+      switch extractMeta(':procedure') {
+        case null:
+        case procedure:
+          m.publish();
+
+          var fieldName = m.name;
+          var type = switch m.kind {
+            case FVar(t, _): t;
+            case FProp(_, _, t, _): t;
+            case FFun(_): m.pos.error('@:procedure doesn\'t work on method fields');
+          }
+          
+          m.kind = FProp('default', 'null', macro : tink.sql.Procedure<$type>);
+
+          init.push(macro @:pos(m.pos) this.$fieldName = new tink.sql.Procedure<$type>(cnx, $v{procedure}));
+          
+          // procedures.push(macro @:pos(m.pos) $v{procedure} => this.$fieldName); 
+      }
+        
     }
     
     if (c.hasConstructor())
@@ -69,6 +95,13 @@ class DatabaseBuilder {
       $b{init};
       super(name, driver, $a{tables});
     }).getFunction().sure());
+    
+    // transaction
+    final thisCt = Context.getLocalType().toComplex();
+    c.addMembers(macro class {
+      public inline function transaction<T>(run:$thisCt->tink.core.Promise<tink.sql.Transaction.TransactionEnd<T>>):tink.core.Promise<tink.sql.Transaction.TransactionEnd<T>>
+        return _transaction(cast run);
+    });
     
     ctor.publish();
   }

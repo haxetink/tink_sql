@@ -5,10 +5,11 @@ import tink.sql.Query;
 import tink.sql.schema.KeyStore;
 import tink.sql.Expr;
 import tink.sql.format.SqlFormatter;
+import tink.sql.format.Statement.StatementFactory.*;
 
-class MySqlFormatter extends SqlFormatter {
+class MySqlFormatter extends SqlFormatter<MysqlColumnInfo, MysqlKeyInfo> {
 
-  override public function format<Db, Result>(query:Query<Db, Result>):String
+  override public function format<Db, Result>(query:Query<Db, Result>):Statement
     return switch query {
       case ShowColumns(from): showColumns(from);
       case ShowIndex(from): showIndex(from);
@@ -16,21 +17,21 @@ class MySqlFormatter extends SqlFormatter {
       default: super.format(query);
     }
 
-  override function type(type: DataType): String
+  override function type(type: DataType):Statement
     return switch type {
       case DText(size, d):
-        (switch size {
+        sql(switch size {
           case Tiny: 'TINYTEXT';
           case Default: 'TEXT';
           case Medium: 'MEDIUMTEXT';
           case Long: 'LONGTEXT';
-        }) + addDefault(d);
-      case DPoint:
-        'POINT';
-      case DPolygon:
-        'POLYGON';
-      case DMultiPolygon:
-        'MULTIPOLYGON';
+        }).add(addDefault(d));
+      case DPoint: 'POINT';
+      case DLineString: 'LINESTRING';
+      case DPolygon: 'POLYGON';
+      case DMultiPoint: 'MULTIPOINT';
+      case DMultiLineString: 'MULTILINESTRING';
+      case DMultiPolygon: 'MULTIPOLYGON';
       default: super.type(type);
     }
 
@@ -75,8 +76,14 @@ class MySqlFormatter extends SqlFormatter {
         DText(Long, type.defaultValue);
       case {name: 'POINT'}:
         DPoint;
+      case {name: 'LINESTRING'}:
+        DLineString;
       case {name: 'POLYGON'}:
         DPolygon;
+      case {name: 'MULTIPOINT'}:
+        DMultiPoint;
+      case {name: 'MULTILINESTRING'}:
+        DMultiLineString;
       case {name: 'MULTIPOLYGON'}:
         DMultiPolygon;
       default:
@@ -85,63 +92,84 @@ class MySqlFormatter extends SqlFormatter {
   }
 
   function showColumns(from:TableInfo)
-    return 'SHOW COLUMNS FROM ' + ident(from.getName());
+    return sql('SHOW COLUMNS FROM').addIdent(from.getName());
 
   function showIndex(from:TableInfo)
-    return 'SHOW INDEX FROM ' + ident(from.getName());
+    return sql('SHOW INDEX FROM').addIdent(from.getName());
 
   function alterTable(table:TableInfo, changes:Array<AlterTableOperation>)
-    return join([
-      'ALTER TABLE',
-      ident(table.getName()),
-      changes.map(alteration).join(separate)
-    ]);
+    return sql('ALTER TABLE')
+      .addIdent(table.getName())
+      .addSeparated(changes.map(alteration));
 
   function alteration(change:AlterTableOperation)
-    return join(switch change {
+    return switch change {
       case AddColumn(col):
-        ['ADD COLUMN', defineColumn(col)];
+        sql('ADD COLUMN').add(defineColumn(col));
       case AlterColumn(to, _):
-        ['MODIFY COLUMN', defineColumn(to)];
+        sql('MODIFY COLUMN').add(defineColumn(to));
       case DropColumn(col):
-        ['DROP COLUMN', ident(col.name)];
+        sql('DROP COLUMN').add(ident(col.name));
       case DropKey(key):
-        ['DROP', switch key {
-          case Unique(name, _) | Index(name, _): 'INDEX ' + ident(name);
-          case Primary(_): 'PRIMARY KEY';
-        }];
+        sql('DROP')
+          .add(
+            switch key {
+              case Unique(name, _) | Index(name, _): sql('INDEX').addIdent(name);
+              case Primary(_): 'PRIMARY KEY';
+            }
+          );
       case AddKey(key):
-        ['ADD', defineKey(key)];
-    });
-
-  override function expr(e:ExprData<Dynamic>):String
-   return switch e {
-      case EValue(geom, VGeometry(_)):
-        'ST_GeomFromGeoJSON(\'${haxe.Json.stringify(geom)}\')';
-      default: super.expr(e);
+        sql('ADD').add(defineKey(key));
     }
 
-  public function parseColumn(res:MysqlColumnInfo):Column
+  override function expr(e:ExprData<Dynamic>, printTableName = true):Statement
+    return switch e {
+      case EValue(v, VGeometry(Point)):
+        'ST_GeomFromText(\'${v.toWkt()}\',4326)';
+      case EValue(v, VGeometry(LineString)):
+        'ST_GeomFromText(\'${v.toWkt()}\',4326)';
+      case EValue(v, VGeometry(Polygon)):
+        'ST_GeomFromText(\'${v.toWkt()}\',4326)';
+      case EValue(v, VGeometry(MultiPoint)):
+        'ST_GeomFromText(\'${v.toWkt()}\',4326)';
+      case EValue(v, VGeometry(MultiLineString)):
+        'ST_GeomFromText(\'${v.toWkt()}\',4326)';
+      case EValue(v, VGeometry(MultiPolygon)):
+        'ST_GeomFromText(\'${v.toWkt()}\',4326)';
+      default: super.expr(e, printTableName);
+    }
+
+  override public function parseColumn(res:MysqlColumnInfo):Column
     return {  
       name: res.Field,
       nullable: res.Null == 'YES',
       type: parseType(res.Type, res.Extra.indexOf('auto_increment') > -1, res.Default)
     }
 
-  public function parseKeys(keys:Array<MysqlKeyInfo>):Array<Key> {
+  override public function parseKeys(keys:Array<MysqlKeyInfo>):Array<Key> {
     var store = new KeyStore();
     for (key in keys)
       switch key {
         case {Key_name: _.toLowerCase() => 'primary'}:
           store.addPrimary(key.Column_name);
-        case {Non_unique: 0}:
+        case {Non_unique: 0} | {Non_unique: '0'}:
           store.addUnique(key.Key_name, key.Column_name);
         default:
           store.addIndex(key.Key_name, key.Column_name);
       }
     return store.get();
   }
-
+  
+  override function call<Row:{}>(op:CallOperation<Row>):Statement
+    return sql('CALL')
+      .add(op.name)
+      .parenthesis(
+        separated(
+          op.arguments.map(function (arg) 
+            return expr(arg)
+          )
+        )
+      );
 }
 
 typedef MysqlColumnInfo = {
@@ -155,6 +183,6 @@ typedef MysqlColumnInfo = {
 
 typedef MysqlKeyInfo = {
   Key_name: String,
-  Non_unique: Int,
+  Non_unique: haxe.extern.EitherType<Int, String>,
   Column_name: String
 }

@@ -1,5 +1,0 @@
-tests.hxml
--js bin/node/tests.js
--lib travix
--lib tink_sql
--lib hxnodejs

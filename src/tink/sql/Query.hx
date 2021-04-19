@@ -9,12 +9,13 @@ import tink.streams.RealStream;
 using tink.CoreApi;
 
 enum Query<Db, Result> {
-  Multi(queries: Array<Query<Db, Any>>):Query<Db, Promise<Noise>>;
+  // Multi(queries: Array<Query<Db, Any>>):Query<Db, Promise<Noise>>;
   Union<Row:{}>(union:UnionOperation<Db, Row>):Query<Db, RealStream<Row>>;
   Select<Row:{}>(select:SelectOperation<Db, Row>):Query<Db, RealStream<Row>>;
-  Insert<Row:{}>(insert:InsertOperation<Row>):Query<Db, Promise<Id<Row>>>;
+  Insert<Row:{}>(insert:InsertOperation<Db, Row>):Query<Db, Promise<Id<Row>>>;
   Update<Row:{}>(update:UpdateOperation<Row>):Query<Db, Promise<{rowsAffected:Int}>>;
   Delete<Row:{}>(delete:DeleteOperation<Row>):Query<Db, Promise<{rowsAffected:Int}>>;
+  CallProcedure<Row:{}>(call:CallOperation<Row>):Query<Db, RealStream<Row>>;
   CreateTable<Row:{}>(table:TableInfo, ?ifNotExists:Bool):Query<Db, Promise<Noise>>;
   DropTable<Row:{}>(table:TableInfo):Query<Db, Promise<Noise>>;
   AlterTable<Row:{}>(table:TableInfo, changes:Array<AlterTableOperation>):Query<Db, Promise<Noise>>;
@@ -32,7 +33,7 @@ typedef UnionOperation<Db, Row:{}> = {
 
 typedef SelectOperation<Db, Row:{}> = {
   from:Target<Row, Db>,
-  ?selection:Selection<Row>,
+  ?selection:Selection<Row, Any>,
   ?where:Condition,
   ?limit:Limit,
   ?orderBy:OrderBy<Row>,
@@ -47,10 +48,15 @@ typedef UpdateOperation<Row:{}> = {
   ?max:Int
 }
 
+typedef CallOperation<Row:{}> = {
+  name:String,
+  arguments:Array<Expr<Dynamic>>,
+  ?limit:Limit,
+}
+
 typedef Update<Row> = Array<FieldUpdate<Row>>;
 
 class FieldUpdate<Row> {
-
   public var field(default, null):Field<Row, Dynamic>;
   public var expr(default, null):Expr<Dynamic>;
 
@@ -66,13 +72,16 @@ typedef DeleteOperation<Row:{}> = {
   ?max:Int
 }
 
-typedef InsertOperation<Row:{}> = {
+typedef InsertOperation<Db, Row:{}> = {
   table:TableInfo,
-  rows:Array<Insert<Row>>,
+  data:InsertData<Db, Row>,
   ?ignore:Bool
 }
 
-typedef Insert<Row:{}> = Row;
+enum InsertData<Db, Row:{}> {
+  Literal(data:Array<Row>);
+  Select(op:SelectOperation<Db, Row>);
+}
 
 enum AlterTableOperation {
   AddColumn(col:Column);

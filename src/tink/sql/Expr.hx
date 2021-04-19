@@ -1,32 +1,68 @@
 package tink.sql;
 
 import haxe.io.Bytes;
-import geojson.*;
 import tink.sql.Types;
 import tink.sql.Query;
 import tink.sql.Dataset;
 
 typedef Condition = Expr<Bool>;
+typedef Field<Data, Owner> = tink.sql.expr.Field<Data, Owner>; 
+typedef Functions = tink.sql.expr.Functions; 
 
 enum ExprData<T> {
   EUnOp<A, Ret>(op:UnOp<A, Ret>, a:Expr<A>, postfix:Bool):ExprData<Ret>;
   EBinOp<A, B, Ret>(op:BinOp<A, B, Ret>, a:Expr<A>, b:Expr<B>):ExprData<Ret>;
-  EField(table:String, name:String):ExprData<T>;
-  ECall(name:String, args:Array<Expr<Any>>):ExprData<T>;
-  EValue<T>(value:T, type:ValueType<T>):ExprData<T>;
-  EQuery<T, Db, Result>(query:Query<Db, Result>):ExprData<T>;
+  EField(table:String, name:String, type:ExprType<T>):ExprData<T>;
+  ECall(name:String, args:Array<Expr<Any>>, type:ExprType<T>, ?parenthesis: Bool):ExprData<T>;
+  EValue<T>(value:T, type:ExprType<T>):ExprData<T>;
+  EQuery<T, Db, Result>(query:Query<Db, Result>, ?type:ExprType<T>):ExprData<T>;
 }
 
-enum ValueType<T> {
-  VString:ValueType<String>;
-  VBool:ValueType<Bool>;
-  VFloat:ValueType<Float>;
-  VInt:ValueType<Int>;
-  VArray<T>(type:ValueType<T>):ValueType<Array<T>>;
-  VBytes:ValueType<Bytes>;
-  VDate:ValueType<Date>;
-  VGeometry<T>(type:geojson.GeometryType<T>):ValueType<T>;
+enum ExprType<T> {
+  VString:ExprType<String>;
+  VBool:ExprType<Bool>;
+  VFloat:ExprType<Float>;
+  VInt:ExprType<Int>;
+  VArray<T>(type:ExprType<T>):ExprType<Array<T>>;
+  VBytes:ExprType<Bytes>;
+  VDate:ExprType<Date>;
+  VGeometry<T>(type:GeometryType<T>):ExprType<T>;
+  VTypeOf(expr:Expr<T>):ExprType<T>;
 }
+
+@:enum
+abstract GeometryType<T>(Int) {
+	var Point:GeometryType<tink.s2d.Point> = 1;
+	var LineString:GeometryType<tink.s2d.LineString> = 2;
+	var Polygon:GeometryType<tink.s2d.Polygon> = 3;
+	var MultiPoint:GeometryType<tink.s2d.MultiPoint> = 4;
+	var MultiLineString:GeometryType<tink.s2d.MultiLineString> = 5;
+	var MultiPolygon:GeometryType<tink.s2d.MultiPolygon> = 6;
+}
+
+enum BinOp<A, B, Ret> {
+  Add<T:Float>:BinOp<T, T, T>;
+  Subt<T:Float>:BinOp<T, T, T>;
+  Mult<T:Float>:BinOp<T, T, T>;
+  Mod<T:Float>:BinOp<T, T, T>;
+  Div<T:Float>:BinOp<T, T, Float>;
+
+  Greater<T>:BinOp<T, T, Bool>;
+  Equals<T>:BinOp<T, T, Bool>;
+  And:BinOp<Bool, Bool, Bool>;
+  Or:BinOp<Bool, Bool, Bool>;
+  Like<T:String>:BinOp<T, T, Bool>;
+  In<T>:BinOp<T, Array<T>, Bool>;
+}
+
+enum UnOp<A, Ret> {
+  Not:UnOp<Bool, Bool>;
+  IsNull<T>:UnOp<T, Bool>;
+  Neg<T:Float>:UnOp<T, T>;
+}
+
+typedef Scalar<T> = Dataset<SingleField<T, Dynamic>, Dynamic, Dynamic>;
+typedef Set<T> = Dataset<SingleField<T, Dynamic>, Dynamic, Dynamic>;
 
 @:notNull abstract Expr<T>(ExprData<T>) {
 
@@ -197,249 +233,82 @@ enum ValueType<T> {
   public function isNull<T>():Condition
     return EUnOp(IsNull, this, true);
 
-  // @:op(a in b) // https://github.com/HaxeFoundation/haxe/issues/6224
-  public function inArray<T>(b:Expr<Array<T>>):Condition
+  @:op(a in b)
+  public function inArray(b:Expr<Array<T>>):Condition
     return EBinOp(In, this, b);
 
   public function like(b:Expr<String>):Condition
     return EBinOp(Like, this, b);
 
-  @:from static function ofIdArray<T>(v:Array<Id<T>>):Expr<Array<Id<T>>>
+  @:from inline static function ofIdArray<T>(v:Array<Id<T>>):Expr<Array<Id<T>>>
     return EValue(v, cast VArray(VInt));
 
-  @:from static function ofIntArray<T:Int>(v:Array<T>):Expr<Array<T>>
+  @:from inline static function ofIntArray<T:Int>(v:Array<T>):Expr<Array<T>>
     return EValue(v, VArray(cast VInt));
 
-  @:from static function ofFloatArray<T:Float>(v:Array<T>):Expr<Array<T>>
+  @:from inline static function ofFloatArray<T:Float>(v:Array<T>):Expr<Array<T>>
     return EValue(v, VArray(cast VFloat));
 
-  @:from static function ofStringArray<T:String>(v:Array<T>):Expr<Array<T>>
+  @:from inline static function ofStringArray<T:String>(v:Array<T>):Expr<Array<T>>
     return EValue(v, VArray(cast VString));
 
-  @:from static function ofBool<S:Bool>(b:S):Expr<S>
+  @:from inline static function ofBool<S:Bool>(b:S):Expr<S>
     return cast EValue(b, cast VBool);
 
-  @:from static function ofDate<S:Date>(s:S):Expr<S>
+  @:from inline static function ofDate<S:Date>(s:S):Expr<S>
     return EValue(s, cast VDate);
 
-  @:from static function ofString<S:String>(s:S):Expr<S>
+  @:from inline static function ofString<S:String>(s:S):Expr<S>
     return EValue(s, cast VString);
 
-  @:from static function ofInt(s:Int):Expr<Int>
+  @:from inline static function ofInt(s:Int):Expr<Int>
     return EValue(s, VInt);
 
-  @:from static function ofFloat(s:Float):Expr<Float>
+  @:from inline static function ofFloat(s:Float):Expr<Float>
     return EValue(s, VFloat);
 
-  @:from static function ofPoint(p:Point):Expr<Point>
+  @:from inline static function ofPoint(p:Point):Expr<Point>
     return EValue(p, VGeometry(Point));
+    
+  @:from inline static function ofLineString(p:LineString):Expr<LineString>
+    return EValue(p, VGeometry(LineString));
+    
+  @:from inline static function ofPolygon(p:Polygon):Expr<Polygon>
+    return EValue(p, VGeometry(Polygon));
+    
+  @:from inline static function ofMultiPoint(p:MultiPoint):Expr<MultiPoint>
+    return EValue(p, VGeometry(MultiPoint));
+    
+  @:from inline static function ofMultiLineString(p:MultiLineString):Expr<MultiLineString>
+    return EValue(p, VGeometry(MultiLineString));
+    
+  @:from inline static function ofMultiPolygon(p:MultiPolygon):Expr<MultiPolygon>
+    return EValue(p, VGeometry(MultiPolygon));
 
-  @:from static function ofBytes(b:Bytes):Expr<Bytes>
+  @:from inline static function ofPointAsGeometry(p:Point):Expr<Geometry>
+    return cast EValue(p, VGeometry(Point));
+    
+  @:from inline static function ofLineStringAsGeometry(p:LineString):Expr<Geometry>
+    return cast EValue(p, VGeometry(LineString));
+    
+  @:from inline static function ofPolygonAsGeometry(p:Polygon):Expr<Geometry>
+    return cast EValue(p, VGeometry(Polygon));
+    
+  @:from inline static function ofMultiPointAsGeometry(p:MultiPoint):Expr<Geometry>
+    return cast EValue(p, VGeometry(MultiPoint));
+    
+  @:from inline static function ofMultiLineStringAsGeometry(p:MultiLineString):Expr<Geometry>
+    return cast EValue(p, VGeometry(MultiLineString));
+    
+  @:from inline static function ofMultiPolygonAsGeometry(p:MultiPolygon):Expr<Geometry>
+    return cast EValue(p, VGeometry(MultiPolygon));
+
+  @:from inline static function ofBytes(b:Bytes):Expr<Bytes>
     return EValue(b, VBytes);
-}
-
-class Functions {
-  public static function iif<T>(cond:Expr<Bool>, ifTrue:Expr<T>, ifFalse:Expr<T>):Expr<T>
-    return ECall('IF', [cast cond, cast ifTrue, cast ifFalse]);
-
-  // Todo: count can also take an Expr<Bool>
-  public static function count<D,O>(?e:Field<D,O>):Expr<Int> 
-    return ECall('COUNT', if (e == null) cast [EValue(true, VBool)] else cast [e]);
-
-  public static function stContains<T>(g1:Expr<Geometry>, g2:Expr<Geometry>):Expr<Bool>
-    return ECall('ST_Contains', cast [g1, g2]);
-
-  public static function stWithin<T>(g1:Expr<Geometry>, g2:Expr<Geometry>):Expr<Bool>
-    return ECall('ST_Within', cast [g1, g2]);
-
-  public static function stDistanceSphere(g1:Expr<Point>, g2:Expr<Point>):Expr<Float>
-    return ECall('ST_Distance_Sphere', cast [g1, g2]);
-}
-
-enum BinOp<A, B, Ret> {
-  Add<T:Float>:BinOp<T, T, T>;
-  Subt<T:Float>:BinOp<T, T, T>;
-  Mult<T:Float>:BinOp<T, T, T>;
-  Mod<T:Float>:BinOp<T, T, T>;
-  Div<T:Float>:BinOp<T, T, Float>;
-
-  Greater<T>:BinOp<T, T, Bool>;
-  Equals<T>:BinOp<T, T, Bool>;
-  And:BinOp<Bool, Bool, Bool>;
-  Or:BinOp<Bool, Bool, Bool>;
-  Like<T:String>:BinOp<T, T, Bool>;
-  In<T>:BinOp<T, Array<T>, Bool>;
-}
-
-enum UnOp<A, Ret> {
-  Not:UnOp<Bool, Bool>;
-  IsNull<T>:UnOp<T, Bool>;
-  Neg<T:Float>:UnOp<T, T>;
-}
-
-@:forward
-abstract Field<Data, Owner>(Expr<Data>) to Expr<Data> {
-  public var name(get, never):String;
-
-    function get_name()
-      return switch this.data {
-        case EField(_, v): v;
-        case v: throw 'assert: invalid field $v';
-      }
-
-  public var table(get, never):String;
-
-    function get_table()
-      return switch this.data {
-        case EField(v, _): v;
-        case v: throw 'assert: invalid field $v';
-      }
-
-  public function set(e:Expr<Data>):FieldUpdate<Owner>
-    return new FieldUpdate(cast this, e);
-
-  public inline function new(table, name)
-    this = EField(table, name);
-  //TODO: it feels pretty sad to have to do this below:
-  //{ region arithmetics
-    @:op(a + b) static function add<T:Float, X, Y>(a:Field<T, X>, b:Field<T, Y>):Expr<T>
-      return EBinOp(Add, a, b);
-
-    @:op(a - b) static function subt<T:Float, X, Y>(a:Field<T, X>, b:Field<T, Y>):Expr<T>
-      return EBinOp(Subt, a, b);
-
-    @:op(a * b) static function mult<T:Float, X, Y>(a:Field<T, X>, b:Field<T, Y>):Expr<T>
-      return EBinOp(Mult, a, b);
-
-    @:op(a / b) static function div<T:Float, X, Y>(a:Field<T, X>, b:Field<T, Y>):Expr<Float>
-      return EBinOp(Div, a, b);
-
-    @:op(a % b) static function mod<T:Float, X, Y>(a:Field<T, X>, b:Field<T, Y>):Expr<T>
-      return EBinOp(Mod, a, b);
-  //} endregion
-
-  //{ region relations
-    @:op(a == b) static function eq<T, X, Y>(a:Field<T, X>, b:Field<T, Y>):Condition
-      return EBinOp(Equals, a, b);
-
-    @:op(a != b) static function neq<T, X, Y>(a:Field<T, X>, b:Field<T, Y>):Condition
-      return !(a == b);
-
-    @:op(a > b) static function gt<T:Float, X, Y>(a:Field<T, X>, b:Field<T, Y>):Condition
-      return EBinOp(Greater, a, b);
-
-    @:op(a < b) static function lt<T:Float, X, Y>(a:Field<T, X>, b:Field<T, Y>):Condition
-      return EBinOp(Greater, b, a);
-
-    @:op(a >= b) static function gte<T:Float, X, Y>(a:Field<T, X>, b:Field<T, Y>):Condition
-      return !(b > a);
-
-    @:op(a <= b) static function lte<T:Float, X, Y>(a:Field<T, X>, b:Field<T, Y>):Condition
-      return !(a > b);
-
-    @:op(a > b) static function gtDate<X, Y>(a:Field<Date, X>, b:Field<Date, Y>):Condition
-      return EBinOp(Greater, a, b);
-
-    @:op(a < b) static function ltDate<X, Y>(a:Field<Date, X>, b:Field<Date, Y>):Condition
-      return EBinOp(Greater, b, a);
-
-    @:op(a >= b) static function gteDate<X, Y>(a:Field<Date, X>, b:Field<Date, Y>):Condition
-      return !(b > a);
-
-    @:op(a <= b) static function lteDate<X, Y>(a:Field<Date, X>, b:Field<Date, Y>):Condition
-      return !(a > b);
-  //} endregion
-
-  //{ region arithmetics for constants
-    @:commutative
-    @:op(a + b) static function addConst<T:Float, S>(a:Field<T, S>, b:T):Expr<T>
-      return (a:Expr<T>) + EValue(b, cast VFloat);
-
-    @:op(a - b) static function subtByConst<T:Float, S>(a:Field<T, S>, b:T):Expr<T>
-      return (a:Expr<T>) - EValue(b, cast VFloat);
-
-    @:op(a - b) static function subtConst<T:Float, S>(a:T, b:Field<T, S>):Expr<T>
-      return EValue(a, cast VFloat) - (b:Expr<T>);
-
-    @:commutative
-    @:op(a * b) static function multConst<T:Float, S>(a:Field<T, S>, b:T):Expr<T>
-      return (a:Expr<T>) * EValue(b, cast VFloat);
-
-    @:op(a / b) static function divByConst<T:Float, S>(a:Field<T, S>, b:T):Expr<Float>
-      return (a:Expr<T>) / EValue(b, cast VFloat);
-
-    @:op(a / b) static function divConst<T:Float, S>(a:T, b:Field<T, S>):Expr<Float>
-      return EValue(a, cast VFloat) / (b:Expr<T>);
-
-    @:op(a % b) static function modByConst<T:Float, S>(a:Field<T, S>, b:T):Expr<T>
-      return (a:Expr<T>) % EValue(b, cast VFloat);
-
-    @:op(a % b) static function modConst<T:Float, S>(a:T, b:Field<T, S>):Expr<T>
-      return EValue(a, cast VFloat) % (b:Expr<T>);
-  //} endregion
-
-  //{ region relations for constants
-    @:commutative
-    @:op(a == b) static function eqBool<S>(a:Field<Bool, S>, b:Bool):Condition
-      return (a:Expr<Bool>) == EValue(b, VBool);
-
-    @:commutative
-    @:op(a != b) static function neqBool<S>(a:Field<Bool, S>, b:Bool):Condition
-      return (a:Expr<Bool>) != EValue(b, VBool);
-
-    @:commutative
-    @:op(a == b) static function eqString<T:String, S>(a:Field<T, S>, b:String):Condition
-      return (a:Expr<T>) == cast EValue(b, VString);
-
-    @:commutative
-    @:op(a != b) static function neqString<T:String, S>(a:Field<T, S>, b:String):Condition
-      return (a:Expr<T>) != cast EValue(b, VString);
-
-    @:commutative
-    @:op(a == b) static function eqFloat<T:Float, S>(a:Field<T, S>, b:T):Condition
-      return (a:Expr<T>) == EValue(b, cast VFloat);
-
-    @:commutative
-    @:op(a != b) static function neqFloat<T:Float, S>(a:Field<T, S>, b:T):Condition
-      return (a:Expr<T>) != EValue(b, cast VFloat);
-
-    @:op(a > b) static function gtConst<T:Float, S>(a:Field<T, S>, b:T):Condition
-      return (a:Expr<T>) > EValue(b, cast VFloat);
-
-    @:op(a < b) static function ltConst<T:Float, S>(a:Field<T, S>, b:T):Condition
-      return (a:Expr<T>) < EValue(b, cast VFloat);
-
-    @:op(a >= b) static function gteConst<T:Float, S>(a:Field<T, S>, b:T):Condition
-      return (a:Expr<T>) >= EValue(b, cast VFloat);
-
-    @:op(a <= b) static function lteConst<T:Float, S>(a:Field<T, S>, b:T):Condition
-      return (a:Expr<T>) <= EValue(b, cast VFloat);
-
-    @:op(a > b) static function gtDateConst<S>(a:Field<Date, S>, b:Date):Condition
-      return (a:Expr<Date>) > EValue(b, VDate);
-
-    @:op(a < b) static function ltDateConst<S>(a:Field<Date, S>, b:Date):Condition
-      return (a:Expr<Date>) < EValue(b, VDate);
-
-    @:op(a >= b) static function gteDateConst<S>(a:Field<Date, S>, b:Date):Condition
-      return (a:Expr<Date>) >= EValue(b, VDate);
-
-    @:op(a <= b) static function lteDateConst<S>(a:Field<Date, S>, b:Date):Condition
-      return (a:Expr<Date>) <= EValue(b, VDate);
-
-    @:commutative
-    @:op(a == b) static function eqBytes<T:Bytes, S>(a:Field<T, S>, b:T):Condition
-      return (a:Expr<T>) == EValue(b, cast VBytes);
-  //} endregion
-
-  //{ region logic
-    @:op(!a) static function not<X, Y>(c:Field<Bool, Y>):Condition
-      return EUnOp(Not, c, false);
-
-    @:op(a && b) static function and<X, Y>(a:Field<Bool, X>, b:Field<Bool, Y>):Condition
-      return EBinOp(And, a, b);
-
-    @:op(a || b) static function or<X, Y>(a:Field<Bool, X>, b:Field<Bool, Y>):Condition
-      return EBinOp(Or, a, b);
-  //} endregion
+  
+  @:from inline static function ofScalar<T>(s:Scalar<T>):Expr<T>
+    return s.toScalarExpr();
+  
+  @:from inline static function ofSet<T>(s:Set<T>):Expr<Array<T>>
+    return s.toExpr();
 }

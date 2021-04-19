@@ -6,7 +6,7 @@ import tink.unit.Assert.*;
 import tink.unit.AssertionBuffer;
 import tink.unit.*;
 import tink.testrunner.*;
-import tink.sql.drivers.MySql;
+import tink.sql.drivers.*;
 
 using tink.CoreApi;
 
@@ -16,24 +16,57 @@ using tink.CoreApi;
 class Run extends TestWithDb {
 
   static function main() {
-    var driver = new MySql({
+    var mysql = new MySql({
+      host: '127.0.0.1',
       user: env('DB_USERNAME', 'root'),
       password: env('DB_PASSWORD', '')
     });
-    var db = new Db('test', driver);
+    var dbMysql = new Db('test', mysql);
+
+    #if nodejs
+    // var postgres = new tink.sql.drivers.node.PostgreSql({
+    //   host: env('POSTGRES_HOST', '127.0.0.1'),
+    //   user: env('POSTGRES_USER', 'postgres'),
+    //   password: env('POSTGRES_PASSWORD', 'postgres'),
+    //   database: env('POSTGRES_DB', 'test'),
+    // });
+    // var dbPostgres = new Db('test', postgres);
+    #end
+
+    // var sqlite = new Sqlite(function(db) return ':memory:');
+    // var dbSqlite = new Db('test', sqlite);
+
     loadFixture('init');
     Runner.run(TestBatch.make([
-      new TypeTest(driver, db),
-      new SelectTest(driver, db),
-      #if nodejs
-      new FormatTest(driver, db),
+      new TypeTest(mysql, dbMysql),
+      new SelectTest(mysql, dbMysql),
+      new FormatTest(mysql, dbMysql),
+      #if !neko
+      new StringTest(mysql, dbMysql),
       #end
-      new StringTest(driver, db),
-      new GeometryTest(driver, db),
-      new ExprTest(driver, db),
-      new Run(driver, db),
-      new SchemaTest(driver, db),
-      new TransactionTest(driver, db),
+      new GeometryTest(mysql, dbMysql),
+      new ExprTest(mysql, dbMysql),
+      new Run(mysql, dbMysql),
+      new SchemaTest(mysql, dbMysql),
+      new SubQueryTest(mysql, dbMysql),
+      #if nodejs
+      new ProcedureTest(mysql, dbMysql),
+      #end
+      
+      new TransactionTest(mysql, dbMysql),
+
+      #if nodejs
+      // new Run(postgres, dbPostgres),
+      #end
+
+      // new TypeTest(sqlite, dbSqlite),
+      // new SelectTest(sqlite, dbSqlite),
+      // new FormatTest(sqlite, dbSqlite),
+      // //new StringTest(sqlite, dbSqlite),
+      // new ExprTest(sqlite, dbSqlite),
+      // new Run(sqlite, dbSqlite),
+      // new SubQueryTest(sqlite, dbSqlite),
+      // new TestIssue104()
     ])).handle(Runner.exit);
   }
   
@@ -58,6 +91,7 @@ class Run extends TestWithDb {
     return Future.ofMany([
       db.User.create(),
       db.Post.create(),
+      db.PostAlias.create(),
       db.PostTags.create(),
     ]).map(function(o) {
       // for(o in o) trace(Std.string(o));
@@ -70,6 +104,7 @@ class Run extends TestWithDb {
     return Future.ofMany([
       db.User.drop(),
       db.Post.drop(),
+      db.PostAlias.drop(),
       db.PostTags.drop(),
     ]).map(function(o) {
       // for(o in o) trace(Std.string(o));
@@ -80,7 +115,7 @@ class Run extends TestWithDb {
 
   public function info() {
     asserts.assert(db.name == 'test');
-    asserts.assert(sorted(db.tableNames()).join(',') == 'Geometry,Post,PostTags,Schema,StringTypes,Types,User');
+    asserts.assert(sorted(db.tableNames()).join(',') == 'Geometry,Post,PostTags,Schema,StringTypes,Types,User,alias');
     asserts.assert(sorted(db.tableInfo('Post').columnNames()).join(',') == 'author,content,id,title');
     return asserts.done();
   }
@@ -136,6 +171,55 @@ class Run extends TestWithDb {
     );
   }
 
+  public function leftJoinTest() {
+    return insertUsers().next(function (_)
+      return db.User.leftJoin(db.Post).on(User.id == Post.author).first()
+    ).next(function (res)
+      return assert(res.User.id == 1 && res.Post == null)
+    );
+  }
+
+  public function aliasTest() {
+    return insertUsers()
+      .next(function (_)
+        return db.PostAlias.insertOne({
+          id: cast null,
+          title: 'alias',
+          author: 1,
+          content: 'content',
+        })
+      ).next(function (_)
+        return db.PostAlias.insertOne({
+          id: cast null,
+          title: 'alias2',
+          author: 1,
+          content: 'content',
+        })
+      ).next(function (_)
+        return db.Post.insertOne({
+          id: cast null,
+          title: 'regular',
+          author: 1,
+          content: 'content',
+        })
+      ).next(function (_) 
+        return db.PostAlias.update(
+          function (fields) {
+            return [fields.title.set('update')];
+          },
+          {where: function (alias) return alias.id == 1}
+        )  
+      ).next(function (res) 
+        return db.PostAlias.delete({where: p -> p.title == 'alias2'})
+      ).next(function (_) 
+        return db.PostAlias.join(db.Post.as('bar'))
+          .on(PostAlias.id == bar.id).first()
+      )
+      .next(function (res)
+        return assert(res.PostAlias.title == 'update' && res.bar.title == 'regular')
+      );
+  }
+
   function await(run:AssertionBuffer->Promise<Noise>, asserts:AssertionBuffer)
     run(asserts).handle(function(o) switch o {
       case Success(_): asserts.done();
@@ -169,22 +253,27 @@ class Run extends TestWithDb {
       id: cast null,
       name: 'Alice',
       email: 'alice@example.com',
+      location: 'Atlanta',
     },{
       id: cast null,
       name: 'Bob',
       email: 'bob@example.com',
+      location: null,
     },{
       id: cast null,
       name: 'Christa',
       email: 'christa@example.com',
+      location: 'Casablanca',
     },{
       id: cast null,
       name: 'Dave',
       email: 'dave@example.com',
+      location: 'Deauville',
     },{
       id: cast null,
       name: 'Dave',
       email: 'dave2@example.com',
+      location: 'Deauville',
     }]);
   }
 
