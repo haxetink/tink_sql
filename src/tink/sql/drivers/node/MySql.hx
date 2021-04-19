@@ -84,7 +84,7 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
     return Failure(Error.withData(error.message, error));
 
   public function execute<Result>(query:Query<Db,Result>):Result {
-    inline function fetch<T>(release = true): Promise<T> return run(queryOptions(query), release);
+    inline function fetch<T>(): Promise<T> return run(queryOptions(query));
     return switch query {
       case Select(_) | Union(_):
         var parse:DynamicAccess<Any>->{} = parser.queryParser(query, formatter.isNested(query));
@@ -102,7 +102,7 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
       case CreateTable(_, _) | DropTable(_) | AlterTable(_, _):
         fetch().next(function(_) return Noise);
       case Transaction(op):
-        fetch(op != Start).next(function(_) return Noise);
+        fetch().next(function(_) return Noise);
       case Insert(_):
         fetch().next(function(res) return new Id(res.insertId));
       case Update(_):
@@ -133,15 +133,14 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
 
   function stream<T>(options: QueryOptions):Stream<T, Error> {
       var query = cnx.query(options);
-      return Stream.ofNodeStream('query', query.stream({highWaterMark: 1024}), {onEnd: release});
+      return Stream.ofNodeStream('query', query.stream({highWaterMark: 1024}));
   }
 
-  function run<T>(options: QueryOptions, release:Bool):Promise<T>
+  function run<T>(options: QueryOptions):Promise<T>
     return new Promise((resolve, reject) -> {
       cnx.query(options, (err, res) -> {
         if (err != null) reject(Error.ofJsError(err));
         else resolve(cast res);
-        if(release) this.release();
       });
       null;
     });
@@ -158,11 +157,6 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
       default: next();
     }
   }
-  
-  function release() {
-    // TODO:
-  }
-
 }
 
 @:jsRequire("mysql")
