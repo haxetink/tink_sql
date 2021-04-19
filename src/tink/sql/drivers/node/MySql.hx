@@ -37,35 +37,83 @@ class MySql implements Driver {
   }
 
   public function open<Db:DatabaseInfo>(name:String, info:Db):Connection<Db> {
-    var cnx = NativeDriver.createConnection({
+    var pool = NativeDriver.createPool({
       user: settings.user,
       password: settings.password,
       host: settings.host,
       port: settings.port,
       database: name,
       timezone: settings.timezone,
-      // connectionLimit: settings.connectionLimit,
+      connectionLimit: settings.connectionLimit,
       charset: settings.charset,
       ssl: settings.ssl,
     });
 
-    return new MySqlConnection(info, cnx);
+    return new MySqlConnectionPool(info, pool);
   }
 }
 
+class MySqlConnectionPool<Db:DatabaseInfo> implements Connection<Db> {
+  var db:Db;
+  var pool:NativeConnectionPool;
+  var formatter:MySqlFormatter;
+  var parser:ResultParser<Db>;
+  
+
+  public function new(db, pool) {
+    this.db = db;
+    this.pool = pool;
+    this.formatter = new MySqlFormatter();
+    this.parser = new ResultParser();
+  }
+  
+  
+  public function getFormatter()
+    return formatter;
+  
+  public function execute<Result>(query:Query<Db, Result>):Result {
+    final cnx = getNativeConnection();
+    return new MySqlConnection(db, cnx, true).execute(query);
+  }
+  
+  public function isolate():Pair<Connection<Db>, CallbackLink> {
+    final cnx = getNativeConnection();
+    return new Pair(
+      (new MySqlConnection(db, cnx, false):Connection<Db>),
+      (() -> cnx.handle(o -> switch o {
+        case Success(native): native.release();
+        case Failure(_): // nothing to do
+      }):CallbackLink)
+    );
+  }
+  
+  function getNativeConnection() {
+    return new Promise((resolve, reject) -> {
+      pool.getConnection((err, cnx) -> {
+        if(err != null)
+          reject(Error.ofJsError(err));
+        else
+          resolve(cnx);
+      });
+      null;
+    });
+  }
+}
 
 class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sanitizer {
 
   var db:Db;
-  var cnx:NativeConnection;
+  var cnx:Promise<NativeConnection>;
   var formatter:MySqlFormatter;
   var parser:ResultParser<Db>;
+  var autoRelease:Bool;
 
-  public function new(db, cnx) {
+  public function new(db, cnx, autoRelease) {
     this.db = db;
     this.cnx = cnx;
     this.formatter = new MySqlFormatter();
     this.parser = new ResultParser();
+    this.autoRelease = autoRelease;
   }
 
   public function value(v:Any):String
@@ -132,17 +180,22 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
   }
 
   function stream<T>(options: QueryOptions):Stream<T, Error> {
+    return cnx.next(cnx -> {
       var query = cnx.query(options);
-      return Stream.ofNodeStream('query', query.stream({highWaterMark: 1024}));
+      Stream.ofNodeStream('query', query.stream({highWaterMark: 1024}), {onEnd: autoRelease ? cnx.release : null});
+    });
   }
 
   function run<T>(options: QueryOptions):Promise<T>
-    return new Promise((resolve, reject) -> {
-      cnx.query(options, (err, res) -> {
-        if (err != null) reject(Error.ofJsError(err));
-        else resolve(cast res);
+    return cnx.next(cnx -> {
+      new Promise((resolve, reject) -> {
+        cnx.query(options, (err, res) -> {
+          if(autoRelease) cnx.release();
+          if (err != null) reject(Error.ofJsError(err));
+          else resolve(cast res);
+        });
+        null;
       });
-      null;
     });
 
   function typeCast(field, next): Any {
@@ -156,6 +209,10 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
         return field.buffer();
       default: next();
     }
+  }
+  
+  public function isolate():Pair<Connection<Db>, CallbackLink> {
+    return new Pair((this:Connection<Db>), null);
   }
 }
 

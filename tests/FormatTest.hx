@@ -20,7 +20,7 @@ class FormatTest extends TestWithDb {
 
 	public function new(driver, db) {
 		super(driver, db);
-		uniqueDb = new UniqueDb('test', driver);
+		uniqueDb = UniqueDb.create('test', driver);
 		sanitizer = MySql.getSanitizer(null);
 		formatter = new SqlFormatter();
 	}

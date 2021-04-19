@@ -8,4 +8,5 @@ using tink.CoreApi;
 interface Connection<Db> {
   function getFormatter():Formatter<{}, {}>;
   function execute<Result>(query:Query<Db, Result>):Result;
+  function isolate():Pair<Connection<Db>, CallbackLink>;
 }

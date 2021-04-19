@@ -94,17 +94,32 @@ class DatabaseBuilder {
       kind: FVar('tink.sql.Connection'.asComplexType([self]), macro null)
     });*/
       
-    var ctor = c.getConstructor((macro function (name, driver:tink.sql.Driver) {
-      cnx = cast driver.open(name, this);
+    var ctor = c.getConstructor((macro function (name, cnx:tink.sql.Connection<Dynamic>, info) {
+      // cnx = cast driver.open(name, this);
       $b{init};
-      super(name, driver, $a{tables});
+      super(name, cnx, info);
     }).getFunction().sure());
     
     // transaction
     final thisCt = Context.getLocalType().toComplex();
+    final thisTp = switch thisCt {
+      case TPath(v): v;
+      case _: throw 'assert';
+    }
+
     c.addMembers(macro class {
+      public static final INFO = new tink.sql.Database.DatabaseStaticInfo(${macro $a{tables}});
+      
       public inline function transaction<T>(run:$thisCt->tink.core.Promise<tink.sql.Transaction.TransactionEnd<T>>):tink.core.Promise<tink.sql.Transaction.TransactionEnd<T>>
-        return _transaction(cast run);
+        return _transaction(cnx -> run(new $thisTp(name, cnx, info)));
+      
+      public inline static function create(name, driver:tink.sql.Driver) {
+        final info = makeInfo(name);
+        return new $thisTp(name, cast driver.open(name, info), info);
+      }
+      
+      public inline static function makeInfo(name)
+        return new tink.sql.Database.DatabaseInstanceInfo(name, @:privateAccess INFO.tables);
     });
     
     ctor.publish();
