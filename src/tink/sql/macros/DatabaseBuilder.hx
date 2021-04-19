@@ -44,14 +44,18 @@ class DatabaseBuilder {
           var type = TAnonymous([{
             name : fieldName,
             pos: m.pos,
-            kind: FVar(m.getVar().sure().type),
+            kind: FVar(m.getVar().sure().type.toType().sure().toComplex()),
           }]);
           
           m.kind = FProp('default', 'null', macro : tink.sql.Table<$type>);
 
-          init.push(macro this.$fieldName.init(cnx, $v{table}, $v{fieldName}));
-          
-          tables.push(macro $v{table} => this.$fieldName); 
+          init.push(macro @:pos(m.pos) this.$fieldName.init(cnx, $v{table}, $v{fieldName}));
+          final path = switch macro : tink.sql.Table<$type> {
+            case TPath(path): path;
+            case _: throw 'assert';
+          }
+          final info = macro @:privateAccess ${tink.sql.macros.Helper.typePathToExpr(path, m.pos)}.makeInfo($v{table}, null);
+          tables.push(macro @:pos(m.pos) $v{table} => $info);
       }
       
       switch extractMeta(':procedure') {
