@@ -79,7 +79,7 @@ class Sqlite3Connection<Db> implements Connection.ConnectionPool<Db> {
         get(query).next(function (statement) {
           return streamStatement(statement, parse);
         });
-      case CreateTable(_, _) | DropTable(_) | AlterTable(_, _):
+      case Transaction(_) | CreateTable(_, _) | DropTable(_) | AlterTable(_, _):
         run(query).next(function(_) return Noise);
       case Insert(_):
         run(query).next(function(res) return new Id(res.lastID));

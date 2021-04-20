@@ -12,7 +12,6 @@ class TransactionTest extends TestWithDb {
 	@:after
 	public function dropTable() return db.User.drop();
 	
-	// @:include
   public function shouldCommit()
 		return db.transaction(function (trx) {
       return trx.User.insertOne({
@@ -25,7 +24,6 @@ class TransactionTest extends TestWithDb {
       return assert(res.equals(Commit(1)));
     });
 
-  // @:include
   public function shouldRollback()
     return db.transaction(function (trx) {
       return trx.User.insertOne({
