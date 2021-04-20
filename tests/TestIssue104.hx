@@ -9,7 +9,7 @@ private typedef Customer = {
 	public var avatar(default, null):VarChar<50>;
 }
 
-interface D {
+interface D extends tink.sql.DatabaseDefinition {
 	@:table var fa_customer:Customer;
 }
 

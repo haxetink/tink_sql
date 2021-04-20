@@ -15,13 +15,13 @@ using tink.CoreApi;
 @:access(tink.sql.format.SqlFormatter)
 class FormatTest extends TestWithDb {
 
-	var uniqueDb:Database<UniqueDb>;
+	var uniqueDb:UniqueDb;
 	var sanitizer:Sanitizer;
 	var formatter:SqlFormatter<{}, {}>;
 
 	public function new(driver, db) {
 		super(driver, db);
-		uniqueDb = new Database<UniqueDb>('test', driver);
+		uniqueDb = new UniqueDb('test', driver);
 		sanitizer = MySql.getSanitizer(null);
 		formatter = new SqlFormatter();
 	}
@@ -143,7 +143,8 @@ class FakeTable implements  TableInfo {
 		return [];
 }
 
-interface UniqueDb {
+typedef UniqueDb = Database<UniqueDef>;
+interface UniqueDef extends tink.sql.DatabaseDefinition {
 	@:table var UniqueTable:UniqueTable;
 }
 

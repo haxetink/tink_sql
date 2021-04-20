@@ -17,15 +17,12 @@ using tink.CoreApi;
 class Run extends TestWithDb {
 
   static function main() {
-    
-    
-    // new Temp();
     var mysql = new MySql({
       host: '127.0.0.1',
       user: env('DB_USERNAME', 'root'),
       password: env('DB_PASSWORD', '')
     });
-    var dbMysql = new Database<Db>('test', mysql);
+    var dbMysql = new Db('test', mysql);
 
     #if nodejs
     var postgres = new tink.sql.drivers.node.PostgreSql({
@@ -34,11 +31,11 @@ class Run extends TestWithDb {
       password: env('POSTGRES_PASSWORD', 'postgres'),
       database: env('POSTGRES_DB', 'test'),
     });
-    var dbPostgres = new Database<Db>('test', postgres);
+    var dbPostgres = new Db('test', postgres);
     #end
 
     var sqlite = new Sqlite(function(db) return ':memory:');
-    var dbSqlite = new Database<Db>('test', sqlite);
+    var dbSqlite = new Db('test', sqlite);
 
     loadFixture('init');
     Runner.run(TestBatch.make([

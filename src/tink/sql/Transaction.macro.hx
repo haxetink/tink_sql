@@ -28,33 +28,27 @@ class Transaction {
         
         switch f.kind {
           case DFTable(name, type): // `name` is the actual table name as seen by the database
-            final obj = TAnonymous([{
-              name : fname,
-              pos: f.pos,
-              kind: FVar(type.toComplex()),
-            }]);
-            
-            final ftype = macro : tink.sql.Table<$obj>;
-            final path = switch ftype { case TPath(path): path; case _: throw 'assert';}
-            
+            final ct = type.toComplex({direct: true});
+            final path = switch ct { case TPath(path): path; case _: throw 'assert';}
             def.fields = def.fields.concat((macro class {
-              public final $fname:$ftype;
+              public final $fname:$ct;
             }).fields);
             
             init.push(macro @:pos(f.pos) this.$fname.init(cnx, $v{name}, $v{fname}));
-            
             tableInfos.push(macro @:pos(f.pos) $v{name} => @:privateAccess ${tink.sql.macros.Helper.typePathToExpr(path, f.pos)}.makeInfo($v{name}, null));
             
           case DFProcedure(name, type):
-            final ct = type.toComplex();
+            final ct = type.toComplex({direct: true});
+            final path = switch ct { case TPath(path): path; case _: throw 'assert';}
             def.fields = def.fields.concat((macro class {
-              public final $fname:tink.sql.Procedure<$ct>;
+              public final $fname:$ct;
             }).fields);
 
-            init.push(macro @:pos(f.pos) this.$fname = new tink.sql.Procedure<$ct>(cnx, $v{name}));
+            init.push(macro @:pos(f.pos) this.$fname = new $path(cnx, $v{name}));
         }
       }
       
+      // trace(new haxe.macro.Printer().printTypeDefinition(def));
       def.pack = ['tink', 'sql'];
       def;
     });

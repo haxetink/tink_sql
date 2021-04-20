@@ -12,7 +12,6 @@ class Database {
     return BuildCache.getType('tink.sql.Database', (ctx:BuildContext) -> {
       final name = ctx.name;
       final ct = ctx.type.toComplex();
-      
       final def = macro class $name extends tink.sql.Transaction<$ct> {
         public static final INFO = ${Helper.typePathToExpr(switch macro:tink.sql.Transaction<$ct> {case TPath(tp): tp; case _: null;}, ctx.pos)}.INFO;
         
@@ -32,6 +31,7 @@ class Database {
         }
       }
       
+      // trace(new haxe.macro.Printer().printTypeDefinition(def));
       def.pack = ['tink', 'sql'];
       def;
     });

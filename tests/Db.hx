@@ -110,7 +110,8 @@ typedef StringTypes = {
 }
 
 // @:tables(User, Post, PostTags, Types, Geometry, Schema, StringTypes)
-interface Db {
+typedef Db = tink.sql.Database<Def>;
+interface Def extends tink.sql.DatabaseDefinition {
   @:procedure var func:Int->{x:Int, point:tink.s2d.Point};
   @:table var User:User;
   @:table var Post:Post;

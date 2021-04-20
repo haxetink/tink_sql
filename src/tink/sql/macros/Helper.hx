@@ -40,18 +40,6 @@ class Helper {
       case TInst(_.get() => c = {isInterface: true}, _):
         final ret = [];
       
-        // type-level @:tables meta
-        for (t in type.getMeta().fold((m, all:Array<MetadataEntry>) -> all.concat(m.extract(':tables')), []))
-          for (p in t.params) {
-            trace(p);
-            final tp = p.toString().asTypePath();
-            final name = switch tp { case { sub: null, name: name } | { sub: name } : name; }
-            ret.push({
-              name: name,
-              kind: DFTable(name, TPath(tp).toType().sure()),
-              pos: p.pos,
-            });
-          }
           
         for(field in type.getFields().sure()) {
           function extractMeta(name:String) {
