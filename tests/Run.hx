@@ -34,7 +34,7 @@ class Run extends TestWithDb {
       password: env('POSTGRES_PASSWORD', 'postgres'),
       database: env('POSTGRES_DB', 'test'),
     });
-    var dbPostgres = new Db('test', postgres);
+    var dbPostgres = new Database<Db>('test', postgres);
     #end
 
     var sqlite = new Sqlite(function(db) return ':memory:');

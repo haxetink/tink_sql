@@ -25,7 +25,7 @@ class Sqlite3 implements Driver {
   public function new(?fileForName:String->String)
     this.fileForName = fileForName;
 
-  public function open<Db:DatabaseInfo>(name:String, info:Db):Connection<Db> {
+  public function open<Db>(name:String, info:DatabaseInfo):Connection.ConnectionPool<Db> {
     var cnx = new Sqlite3Database(
       switch fileForName {
         case null: name;
@@ -36,15 +36,15 @@ class Sqlite3 implements Driver {
   }
 }
 
-class Sqlite3Connection<Db:DatabaseInfo> implements Connection<Db> {
+class Sqlite3Connection<Db> implements Connection.ConnectionPool<Db> {
 
   var cnx:Sqlite3Database;
-  var db:Db;
+  var info:DatabaseInfo;
   var formatter = new SqliteFormatter();
   var parser:ResultParser<Db>;
 
-  public function new(db, cnx) {
-    this.db = db;
+  public function new(info, cnx) {
+    this.info = info;
     this.cnx = cnx;
     this.parser = new ResultParser();
   }
@@ -124,6 +124,11 @@ class Sqlite3Connection<Db:DatabaseInfo> implements Connection<Db> {
         );
       });
     });
+    
+  
+  public function isolate():Pair<Connection<Db>, CallbackLink> {
+    return new Pair((this:Connection<Db>), null);
+  }
 }
 
 private extern class NativeSqlite3 {
