@@ -109,17 +109,10 @@ typedef StringTypes = {
   public var textLong(default, null): LongText;
 }
 
-// @:tables(User, Post, PostTags, Types, Geometry, Schema, StringTypes)
 typedef Db = tink.sql.Database<Def>;
+@:tables(User, Post, PostTags, Types, Geometry, Schema, StringTypes)
 interface Def extends tink.sql.DatabaseDefinition {
   @:procedure var func:Int->{x:Int, point:tink.s2d.Point};
-  @:table var User:User;
-  @:table var Post:Post;
-  @:table var PostTags:PostTags;
-  @:table var Types:Types;
-  @:table var Geometry:Geometry;
-  @:table var Schema:Schema;
-  @:table var StringTypes:StringTypes;
   @:table('alias') var PostAlias:Post;
 }
 
