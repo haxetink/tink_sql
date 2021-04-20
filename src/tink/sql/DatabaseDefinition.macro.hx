@@ -48,6 +48,7 @@ class DatabaseDefinition {
         case procedure:
           final type = m.getVar().sure().type;
           m.kind = FVar(macro : tink.sql.Procedure<$type>);
+          m.isFinal = true;
       }
     }
     

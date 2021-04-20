@@ -12,9 +12,10 @@ class Transaction {
     return BuildCache.getType('tink.sql.Transaction', (ctx:BuildContext) -> {
       final name = ctx.name;
       final ct = ctx.type.toComplex();
+      final path = switch ct { case TPath(path): path; case _: throw 'assert';}
       final tableInfos = [];
       final init = [];
-      final def = macro class $name extends tink.sql.Transaction.TransactionObject<$ct> {
+      final def = macro class $name extends tink.sql.Transaction.TransactionObject<$ct> implements $path {
         public static final INFO = new tink.sql.DatabaseInfo.DatabaseStaticInfo(${macro $a{tableInfos}});
         
         public function new(cnx:tink.sql.Connection<$ct>) {
