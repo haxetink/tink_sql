@@ -43,10 +43,26 @@ class MySql implements Driver {
       port: settings.port,
       database: name,
       timezone: settings.timezone,
-      connectionLimit: settings.connectionLimit,
+      connectionLimit: switch settings.connectionLimit {
+        case null: 1;
+        case v: v;
+      },
       charset: settings.charset,
       ssl: settings.ssl,
     });
+    
+    // pool.on('acquire', function (connection) {
+    //   js.Node.console.log('Connection ${connection.threadId} acquired');
+    // });
+    // pool.on('connection', function (connection) {
+    //   js.Node.console.log('Connection ${connection.threadId} created');
+    // });
+    // pool.on('enqueue', function () {
+    //   js.Node.console.log('Waiting for available connection slot');
+    // });
+    // pool.on('release', function (connection) {
+    //   js.Node.console.log('Connection ${connection.threadId} released');
+    // });
 
     return new MySqlConnectionPool(info, pool);
   }
@@ -254,7 +270,7 @@ private typedef QueryOptions = {
   final ?typeCast:Dynamic->(Void->Dynamic)->Dynamic;
 }
 
-extern class NativeConnectionPool {
+extern class NativeConnectionPool extends js.node.events.EventEmitter<NativeConnectionPool> {
   function getConnection(cb:JsError->NativeConnection->Void):Void;
 }
 extern class NativeConnection {
