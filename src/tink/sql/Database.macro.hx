@@ -28,22 +28,7 @@ class Database {
         public inline function getInfo() return __info;
         
         public function transaction<T>(run:tink.sql.Transaction<$ct>->tink.core.Promise<tink.sql.Transaction.TransactionEnd<T>>):tink.core.Promise<tink.sql.Transaction.TransactionEnd<T>> {
-          return switch __pool.isolate() {
-            case {a: isolated, b: lock}:
-              isolated.execute(Transaction(Start))
-                .next(function (_) 
-                  return run(new tink.sql.Transaction<$ct>(isolated))
-                    .flatMap(function (result)
-                      return isolated.execute(Transaction(switch result {
-                        case Success(Commit(_)): Commit;
-                        case Success(Rollback) | Failure(_): Rollback;
-                      })).next(function (_) {
-                        lock.cancel();
-                        return result;
-                      })
-                    )
-                );
-          }
+          return tink.sql.Transaction.TransactionTools.transaction(__pool, isolated -> run(new tink.sql.Transaction<$ct>(isolated)));
         }
       }
       
