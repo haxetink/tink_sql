@@ -21,7 +21,6 @@ import #if haxe3 js.lib.Error #else js.Error #end as JsError;
 using tink.CoreApi;
 
 typedef NodeSettings = MySqlSettings & {
-  @:deprecated('connectionLimit is no longer supported at Driver level')
   final ?connectionLimit:Int;
   final ?ssl:EitherType<String, SecureContextOptions>;
 }
@@ -99,7 +98,6 @@ class MySqlConnectionPool<Db> implements Connection.ConnectionPool<Db> {
     });
   }
 }
-
 class MySqlConnection<Db> implements Connection<Db> implements Sanitizer {
 
   var info:DatabaseInfo;
@@ -214,24 +212,46 @@ class MySqlConnection<Db> implements Connection<Db> implements Sanitizer {
 private extern class NativeDriver {
   static function escape(value:Any):String;
   static function escapeId(ident:String):String;
-  static function createConnection(config:Config):NativeConnection;
-  static function createPool(config:PoolConfig):NativeConnectionPool;
+  static function createConnection(config:NativeConfig):NativeConnection;
+  static function createPool(config:NativePoolConfig):NativeConnectionPool;
 }
 
-private typedef Config = {>MySqlSettings,
-  public var database(default, null):String;
-  @:optional public var multipleStatements(default, null):Bool;
-  @:optional public var charset(default, null):String;
-  @:optional public var ssl(default, null):Any;
+private typedef NativeConfig = {
+  final ?host:String;
+  final ?port:Int;
+  final ?localAddress:String;
+  final ?socketPath:String;
+  final ?user:String;
+  final ?password:String;
+  final ?database:String;
+  final ?charset:String;
+  final ?timezone:String;
+  final ?connectTimeout:Int;
+  final ?stringifyObjects:Bool;
+  final ?insecureAuth:Bool;
+  final ?typeCast:Bool;
+  final ?queryFormat:haxe.Constraints.Function;
+  final ?supportBigNumbers:Bool;
+  final ?bigNumberStrings:Bool;
+  final ?dateStrings:Bool;
+  final ?debug:Bool;
+  final ?trace:Bool;
+  final ?localInfile:Bool;
+  final ?multipleStatements:Bool;
+  final ?flags:String;
+  final ?ssl:Any;
 }
-private typedef PoolConfig = {>Config,
-  @:optional public var connectionLimit(default, null):Int;
+private typedef NativePoolConfig = NativeConfig & {
+  final ?acquireTimeout:Int;
+  final ?waitForConnections:Int;
+  final ?connectionLimit:Int;
+  final ?queueLimit:Int;
 }
 
 private typedef QueryOptions = {
-  sql:String,
-  ?nestTables:Bool,
-  ?typeCast:Dynamic->(Void->Dynamic)->Dynamic
+  final sql:String;
+  final ?nestTables:Bool;
+  final ?typeCast:Dynamic->(Void->Dynamic)->Dynamic;
 }
 
 extern class NativeConnectionPool {
