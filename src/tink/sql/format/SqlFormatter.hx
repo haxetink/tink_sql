@@ -326,10 +326,13 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
 
   function transaction(transaction:TransactionOperation)
     return switch transaction {
-      case Start: 'START TRANSACTION';
+      case Start: beginTransaction();
       case Commit: 'COMMIT';
       case Rollback: 'ROLLBACK';
     }
+    
+  function beginTransaction()
+    return 'START TRANSACTION';
 
   function binOp(o:BinOp<Dynamic, Dynamic, Dynamic>):Statement
     return switch o {

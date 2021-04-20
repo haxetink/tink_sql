@@ -42,6 +42,7 @@ class Run extends TestWithDb {
 
     loadFixture('init');
     Runner.run(TestBatch.make([
+      // ====== mysql ======
       new TypeTest(mysql, dbMysql),
       new SelectTest(mysql, dbMysql),
       new FormatTest(mysql, dbMysql),
@@ -59,10 +60,12 @@ class Run extends TestWithDb {
       
       new TransactionTest(mysql, dbMysql),
 
+      // ====== postgres ======
       #if nodejs
       new Run(postgres, dbPostgres),
       #end
 
+      // ====== sqlite ======
       new TypeTest(sqlite, dbSqlite),
       new SelectTest(sqlite, dbSqlite),
       new FormatTest(sqlite, dbSqlite),
@@ -70,6 +73,7 @@ class Run extends TestWithDb {
       new ExprTest(sqlite, dbSqlite),
       new Run(sqlite, dbSqlite),
       new SubQueryTest(sqlite, dbSqlite),
+      new TransactionTest(sqlite, dbSqlite),
       new TestIssue104()
     ])).handle(Runner.exit);
   }
