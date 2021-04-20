@@ -7,6 +7,7 @@ import tink.unit.AssertionBuffer;
 import tink.unit.*;
 import tink.testrunner.*;
 import tink.sql.drivers.*;
+import tink.sql.Database;
 
 using tink.CoreApi;
 
@@ -16,12 +17,15 @@ using tink.CoreApi;
 class Run extends TestWithDb {
 
   static function main() {
+    
+    
+    // new Temp();
     var mysql = new MySql({
       host: '127.0.0.1',
       user: env('DB_USERNAME', 'root'),
       password: env('DB_PASSWORD', '')
     });
-    var dbMysql = Db.create('test', mysql);
+    var dbMysql = new Database<Db>('test', mysql);
 
     #if nodejs
     // var postgres = new tink.sql.drivers.node.PostgreSql({
@@ -114,9 +118,9 @@ class Run extends TestWithDb {
 
 
   public function info() {
-    asserts.assert(db.name == 'test');
-    asserts.assert(sorted(db.info.tableNames()).join(',') == 'Geometry,Post,PostTags,Schema,StringTypes,Types,User,alias');
-    asserts.assert(sorted(db.info.tableInfo('Post').columnNames()).join(',') == 'author,content,id,title');
+    asserts.assert(db.getName() == 'test');
+    asserts.assert(sorted(db.getInfo().tableNames()).join(',') == 'Geometry,Post,PostTags,Schema,StringTypes,Types,User,alias');
+    asserts.assert(sorted(db.getInfo().tableInfo('Post').columnNames()).join(',') == 'author,content,id,title');
     return asserts.done();
   }
 

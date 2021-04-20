@@ -36,7 +36,7 @@ class MySql implements Driver {
     this.settings = settings;
   }
 
-  public function open<Db:DatabaseInfo>(name:String, info:Db):Connection<Db> {
+  public function open<Db>(name:String, info:DatabaseInfo):Connection.ConnectionPool<Db> {
     var pool = NativeDriver.createPool({
       user: settings.user,
       password: settings.password,
@@ -53,15 +53,15 @@ class MySql implements Driver {
   }
 }
 
-class MySqlConnectionPool<Db:DatabaseInfo> implements Connection<Db> {
-  var db:Db;
+class MySqlConnectionPool<Db> implements Connection.ConnectionPool<Db> {
+  var info:DatabaseInfo;
   var pool:NativeConnectionPool;
   var formatter:MySqlFormatter;
   var parser:ResultParser<Db>;
   
 
-  public function new(db, pool) {
-    this.db = db;
+  public function new(info, pool) {
+    this.info = info;
     this.pool = pool;
     this.formatter = new MySqlFormatter();
     this.parser = new ResultParser();
@@ -73,13 +73,13 @@ class MySqlConnectionPool<Db:DatabaseInfo> implements Connection<Db> {
   
   public function execute<Result>(query:Query<Db, Result>):Result {
     final cnx = getNativeConnection();
-    return new MySqlConnection(db, cnx, true).execute(query);
+    return new MySqlConnection(info, cnx, true).execute(query);
   }
   
   public function isolate():Pair<Connection<Db>, CallbackLink> {
     final cnx = getNativeConnection();
     return new Pair(
-      (new MySqlConnection(db, cnx, false):Connection<Db>),
+      (new MySqlConnection(info, cnx, false):Connection<Db>),
       (() -> cnx.handle(o -> switch o {
         case Success(native): native.release();
         case Failure(_): // nothing to do
@@ -100,16 +100,16 @@ class MySqlConnectionPool<Db:DatabaseInfo> implements Connection<Db> {
   }
 }
 
-class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sanitizer {
+class MySqlConnection<Db> implements Connection<Db> implements Sanitizer {
 
-  var db:Db;
+  var info:DatabaseInfo;
   var cnx:Promise<NativeConnection>;
   var formatter:MySqlFormatter;
   var parser:ResultParser<Db>;
   var autoRelease:Bool;
 
-  public function new(db, cnx, autoRelease) {
-    this.db = db;
+  public function new(info, cnx, autoRelease) {
+    this.info = info;
     this.cnx = cnx;
     this.formatter = new MySqlFormatter();
     this.parser = new ResultParser();
@@ -131,7 +131,7 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
   function toError<A>(error:JsError):Outcome<A, Error>
     return Failure(Error.withData(error.message, error));
 
-  public function execute<Result>(query:Query<Db,Result>):Result {
+  public function execute<Result>(query:Query<Db, Result>):Result {
     inline function fetch<T>(): Promise<T> return run(queryOptions(query));
     return switch query {
       case Select(_) | Union(_):

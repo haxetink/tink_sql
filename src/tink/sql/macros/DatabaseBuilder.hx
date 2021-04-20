@@ -108,7 +108,7 @@ class DatabaseBuilder {
     }
 
     c.addMembers(macro class {
-      public static final INFO = new tink.sql.Database.DatabaseStaticInfo(${macro $a{tables}});
+      public static final INFO = new tink.sql.DatabaseInfo.DatabaseStaticInfo(${macro $a{tables}});
       
       public inline function transaction<T>(run:$thisCt->tink.core.Promise<tink.sql.Transaction.TransactionEnd<T>>):tink.core.Promise<tink.sql.Transaction.TransactionEnd<T>>
         return _transaction(cnx -> run(new $thisTp(name, cnx, info)));
@@ -119,7 +119,7 @@ class DatabaseBuilder {
       }
       
       public inline static function makeInfo(name)
-        return new tink.sql.Database.DatabaseInstanceInfo(name, @:privateAccess INFO.tables);
+        return INFO.instantiate(name);
     });
     
     ctor.publish();

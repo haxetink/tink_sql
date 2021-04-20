@@ -115,7 +115,7 @@ class SubQueryTest extends TestWithDb {
 			});
 	}
 
-	public function fromSubquery() {
+	public function fromSubquery():tink.testrunner.Assertions {
 		return db
 			.from({myPosts: db.Post.where(Post.author == 1)})
 			.select({id: myPosts.id})

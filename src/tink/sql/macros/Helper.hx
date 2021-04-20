@@ -1,8 +1,10 @@
 package tink.sql.macros;
 
 import haxe.macro.Expr;
+import haxe.macro.Type;
 import haxe.macro.Context;
 
+using Lambda;
 using tink.MacroApi;
 
 class Helper {
@@ -32,4 +34,72 @@ class Helper {
         macro $p{tempPack.concat([tempName])};
     }
   }
+  
+  public static function getDatabaseFields(type:Type, pos:Position):Array<DatabaseField> {
+    return switch type {
+      case TInst(_.get() => c = {isInterface: true}, _):
+        final ret = [];
+      
+        // type-level @:tables meta
+        for (t in type.getMeta().fold((m, all:Array<MetadataEntry>) -> all.concat(m.extract(':tables')), []))
+          for (p in t.params) {
+            trace(p);
+            final tp = p.toString().asTypePath();
+            final name = switch tp { case { sub: null, name: name } | { sub: name } : name; }
+            ret.push({
+              name: name,
+              kind: DFTable(name, TPath(tp).toType().sure()),
+              pos: p.pos,
+            });
+          }
+          
+        for(field in type.getFields().sure()) {
+          function extractMeta(name:String) {
+            return switch field.meta.extract(name) {
+              case []: null;
+              case [{params:[]}]: field.name;
+              case [{params:[v]}]: v.getName().sure();
+              default: field.pos.error('Invalid use of @$name');
+            }
+          }
+          
+          switch extractMeta(':table') {
+            case null:
+            case table:
+              ret.push({
+                name: field.name,
+                kind: DFTable(table, field.type),
+                pos: field.pos,
+              });
+          }
+          
+          switch extractMeta(':procedure') {
+            case null:
+            case procedure:
+              ret.push({
+                name: field.name,
+                kind: DFProcedure(procedure, field.type),
+                pos: field.pos,
+              });
+          }
+        }
+        
+        ret;
+      
+      case _:
+        pos.error('[tink_sql] Expected interface');
+    }
+  }
+}
+
+
+typedef DatabaseField = {
+  final name:String;
+  final kind:DatabaseFieldKind;
+  final pos:Position;
+}
+
+enum DatabaseFieldKind {
+  DFTable(name:String, type:Type);
+  DFProcedure(name:String, type:Type);
 }

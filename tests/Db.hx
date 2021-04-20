@@ -109,10 +109,17 @@ typedef StringTypes = {
   public var textLong(default, null): LongText;
 }
 
-@:tables(User, Post, PostTags, Types, Geometry, Schema, StringTypes)
-class Db extends tink.sql.Database {
+// @:tables(User, Post, PostTags, Types, Geometry, Schema, StringTypes)
+interface Db {
   @:procedure var func:Int->{x:Int, point:tink.s2d.Point};
-  @:table('alias') var PostAlias: Post;
+  @:table var User:User;
+  @:table var Post:Post;
+  @:table var PostTags:PostTags;
+  @:table var Types:Types;
+  @:table var Geometry:Geometry;
+  @:table var Schema:Schema;
+  @:table var StringTypes:StringTypes;
+  @:table('alias') var PostAlias:Post;
 }
 
 abstract AInt(Int) from Int to Int {}

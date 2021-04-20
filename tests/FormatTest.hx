@@ -6,6 +6,7 @@ import tink.sql.format.Sanitizer;
 import tink.sql.format.SqlFormatter;
 import tink.unit.Assert.assert;
 import tink.sql.drivers.MySql;
+import tink.sql.Database;
 
 using tink.CoreApi;
 
@@ -14,13 +15,13 @@ using tink.CoreApi;
 @:access(tink.sql.format.SqlFormatter)
 class FormatTest extends TestWithDb {
 
-	var uniqueDb:UniqueDb;
+	var uniqueDb:Database<UniqueDb>;
 	var sanitizer:Sanitizer;
 	var formatter:SqlFormatter<{}, {}>;
 
 	public function new(driver, db) {
 		super(driver, db);
-		uniqueDb = UniqueDb.create('test', driver);
+		uniqueDb = new Database<UniqueDb>('test', driver);
 		sanitizer = MySql.getSanitizer(null);
 		formatter = new SqlFormatter();
 	}
@@ -142,8 +143,9 @@ class FakeTable implements  TableInfo {
 		return [];
 }
 
-@:tables(UniqueTable)
-class UniqueDb extends tink.sql.Database {}
+interface UniqueDb {
+	@:table var UniqueTable:UniqueTable;
+}
 
 typedef UniqueTable = {
   @:unique var u1(default, null):VarChar<123>;
