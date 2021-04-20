@@ -37,7 +37,7 @@ class PostgreSql implements Driver {
     this.settings = settings;
   }
 
-  public function open<Db:DatabaseInfo>(name:String, info:Db):Connection<Db> {
+  public function open<Db>(name:String, info:DatabaseInfo):Connection<Db> {
     var pool = new Pool({
       user: settings.user,
       password: settings.password,
@@ -50,15 +50,15 @@ class PostgreSql implements Driver {
   }
 }
 
-class PostgreSqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sanitizer {
+class PostgreSqlConnection<Db> implements Connection<Db> implements Sanitizer {
   var pool:Pool;
-  var db:Db;
+  var info:DatabaseInfo;
   var formatter:PostgreSqlFormatter;
   var parser:ResultParser<Db>;
   var streamBatch:Int = 50;
 
-  public function new(db, pool) {
-    this.db = db;
+  public function new(info, pool) {
+    this.info = info;
     this.pool = pool;
     this.formatter = new PostgreSqlFormatter();
     this.parser = new ResultParser();

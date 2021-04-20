@@ -147,9 +147,7 @@ class MySqlConnection<Db> implements Connection<Db> implements Sanitizer {
             next: function () return parse(iterator.next())
           });
         }));
-      case CreateTable(_, _) | DropTable(_) | AlterTable(_, _):
-        fetch().next(function(_) return Noise);
-      case Transaction(op):
+      case Transaction(_) | CreateTable(_, _) | DropTable(_) | AlterTable(_, _):
         fetch().next(function(_) return Noise);
       case Insert(_):
         fetch().next(function(res) return new Id(res.insertId));
@@ -209,10 +207,6 @@ class MySqlConnection<Db> implements Connection<Db> implements Sanitizer {
         return field.buffer();
       default: next();
     }
-  }
-  
-  public function isolate():Pair<Connection<Db>, CallbackLink> {
-    return new Pair((this:Connection<Db>), null);
   }
 }
 

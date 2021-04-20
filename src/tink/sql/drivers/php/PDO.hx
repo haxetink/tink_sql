@@ -30,7 +30,7 @@ class PDOMysql implements Driver {
   function or<T>(value:Null<T>, byDefault: T)
     return value == null ? byDefault : value;
 
-  public function open<Db:DatabaseInfo>(name:String, info:Db):Connection<Db> {
+  public function open<Db>(name:String, info:DatabaseInfo):Connection.ConnectionPool<Db> {
     return new PDOConnection(
       info,
       new MySqlFormatter(), 
@@ -53,7 +53,7 @@ class PDOSqlite implements Driver {
   public function new(?fileForName:String->String)
     this.fileForName = fileForName;
 
-  public function open<Db:DatabaseInfo>(name:String, info:Db):Connection<Db> {
+  public function open<Db>(name:String, info:DatabaseInfo):Connection.ConnectionPool<Db> {
     return new PDOConnection(
       info,
       new SqliteFormatter(), 
@@ -67,15 +67,15 @@ class PDOSqlite implements Driver {
   }
 }
 
-class PDOConnection<Db:DatabaseInfo> implements Connection<Db> implements Sanitizer {
+class PDOConnection<Db> implements Connection.ConnectionPool<Db> implements Sanitizer {
 
-  var db:Db;
+  var info:DatabaseInfo;
   var cnx:PDO;
   var formatter:Formatter<{}, {}>;
   var parser:ResultParser<Db>;
 
-  public function new(db, formatter, cnx) {
-    this.db = db;
+  public function new(info, formatter, cnx) {
+    this.info = info;
     this.cnx = cnx;
     cnx.setAttribute(PDO.ATTR_ERRMODE, PDO.ERRMODE_EXCEPTION);
     this.formatter = formatter;
@@ -112,7 +112,7 @@ class PDOConnection<Db:DatabaseInfo> implements Connection<Db> implements Saniti
             next: function () return parse(row)
           });
         }));
-      case CreateTable(_, _) | DropTable(_) | AlterTable(_, _):
+      case Transaction(_) | CreateTable(_, _) | DropTable(_) | AlterTable(_, _):
         fetch().next(function(_) return Noise);
       case Insert(_):
         fetch().next(function(_) return new Id(Std.parseInt(cnx.lastInsertId())));
@@ -162,5 +162,9 @@ class PDOConnection<Db:DatabaseInfo> implements Connection<Db> implements Saniti
           Failure(new Error(e.getCode(), e.getMessage()));
       default: throw 'Cannot iterate this query';
     }
+  }
+  
+  public function isolate():Pair<Connection<Db>, CallbackLink> {
+    return new Pair((this:Connection<Db>), null);
   }
 }

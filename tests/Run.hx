@@ -28,17 +28,17 @@ class Run extends TestWithDb {
     var dbMysql = new Database<Db>('test', mysql);
 
     #if nodejs
-    // var postgres = new tink.sql.drivers.node.PostgreSql({
-    //   host: env('POSTGRES_HOST', '127.0.0.1'),
-    //   user: env('POSTGRES_USER', 'postgres'),
-    //   password: env('POSTGRES_PASSWORD', 'postgres'),
-    //   database: env('POSTGRES_DB', 'test'),
-    // });
-    // var dbPostgres = new Db('test', postgres);
+    var postgres = new tink.sql.drivers.node.PostgreSql({
+      host: env('POSTGRES_HOST', '127.0.0.1'),
+      user: env('POSTGRES_USER', 'postgres'),
+      password: env('POSTGRES_PASSWORD', 'postgres'),
+      database: env('POSTGRES_DB', 'test'),
+    });
+    var dbPostgres = new Db('test', postgres);
     #end
 
-    // var sqlite = new Sqlite(function(db) return ':memory:');
-    // var dbSqlite = new Db('test', sqlite);
+    var sqlite = new Sqlite(function(db) return ':memory:');
+    var dbSqlite = new Database<Db>('test', sqlite);
 
     loadFixture('init');
     Runner.run(TestBatch.make([
@@ -60,17 +60,17 @@ class Run extends TestWithDb {
       new TransactionTest(mysql, dbMysql),
 
       #if nodejs
-      // new Run(postgres, dbPostgres),
+      new Run(postgres, dbPostgres),
       #end
 
-      // new TypeTest(sqlite, dbSqlite),
-      // new SelectTest(sqlite, dbSqlite),
-      // new FormatTest(sqlite, dbSqlite),
-      // //new StringTest(sqlite, dbSqlite),
-      // new ExprTest(sqlite, dbSqlite),
-      // new Run(sqlite, dbSqlite),
-      // new SubQueryTest(sqlite, dbSqlite),
-      // new TestIssue104()
+      new TypeTest(sqlite, dbSqlite),
+      new SelectTest(sqlite, dbSqlite),
+      new FormatTest(sqlite, dbSqlite),
+      //new StringTest(sqlite, dbSqlite),
+      new ExprTest(sqlite, dbSqlite),
+      new Run(sqlite, dbSqlite),
+      new SubQueryTest(sqlite, dbSqlite),
+      new TestIssue104()
     ])).handle(Runner.exit);
   }
   
