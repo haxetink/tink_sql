@@ -52,7 +52,7 @@ class GeometryTest extends TestWithDb {
 			});
 	}
 	
-	public function distance() {
+	public function distance0() {
 		return db.Geometry.insertOne({
 			point: point(1.0, 2.0),
 			lineString: new LineString([point(1.0, 2.0), point(2.0, 3.0)]),
@@ -62,6 +62,25 @@ class GeometryTest extends TestWithDb {
 			.next(function(row) {
 				asserts.assert(row.point.latitude == 1.0);
 				asserts.assert(row.point.longitude == 2.0);
+				return asserts.done();
+			});
+	}
+
+	public function distanceZero180() {
+		return db.Geometry.insertOne({
+			point: point(0, 0),
+			optionalPoint: point(0, 180),
+			lineString: new LineString([point(1.0, 2.0), point(2.0, 3.0)]),
+			polygon: new Polygon([new LineString([point(1.0, 2.0), point(2.0, 3.0), point(3.0, 4.0), point(1.0, 2.0)])]),
+		})
+			.next(_ -> db.Geometry.select(f -> {
+				distance: Functions.stDistanceSphere(f.point, f.optionalPoint)
+			}).first())
+			.next(function(row) {
+				// do not use `==` to compare directly since MySQL and Postgres (and probably other DBs) implement stDistanceSphere differently
+				// https://dba.stackexchange.com/questions/191266/mysql-gis-functions-strange-results-from-st-distance-sphere
+				asserts.assert(row.distance > 20015000);
+				asserts.assert(row.distance < 20016000);
 				return asserts.done();
 			});
 	}
