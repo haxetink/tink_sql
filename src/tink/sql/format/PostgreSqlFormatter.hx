@@ -24,12 +24,12 @@ class PostgreSqlFormatter extends SqlFormatter<PostgreSqlColumnInfo, PostgreSqlK
         sql('INT').add(addDefault(d));
 
       // https://postgis.net/docs/manual-3.1/postgis_usage.html#Geography_Basics
-      case DPoint: 'geography(POINT)';
-      case DLineString: 'geography(LINESTRING)';
-      case DPolygon: 'geography(POLYGON)';
-      case DMultiPoint: 'geography(MULTIPOINT)';
-      case DMultiLineString: 'geography(MULTILINESTRING)';
-      case DMultiPolygon: 'geography(MULTIPOLYGON)';
+      case DPoint: 'geometry';
+      case DLineString: 'geometry';
+      case DPolygon: 'geometry';
+      case DMultiPoint: 'geometry';
+      case DMultiLineString: 'geometry';
+      case DMultiPolygon: 'geometry';
 
       case _:
         super.type(type);
@@ -51,8 +51,8 @@ class PostgreSqlFormatter extends SqlFormatter<PostgreSqlColumnInfo, PostgreSqlK
         'ST_GeomFromText(\'${v.toWkt()}\',4326)';
 
       // need to cast geography to geometry
-      case EField(_, _, VGeometry(_)):
-        super.expr(e, printTableName).concat(sql("::geometry"));
+      // case EField(_, _, VGeometry(_)):
+      //   super.expr(e, printTableName).concat(sql("::geometry"));
 
       // the functions are named differently in postgis
       case ECall("ST_Distance_Sphere", args, type, parenthesis):

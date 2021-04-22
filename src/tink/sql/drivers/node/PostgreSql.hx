@@ -120,7 +120,7 @@ class PostgreSqlConnection<Db:DatabaseInfo> implements Connection<Db> implements
   var typeParsers:TypeParsers = {
     getTypeParser: function(dataTypeID:Int, format:String) {
       return switch [dataTypeID, format] {
-        case [18656, "text"]:
+        case [17992, "text"]:
           function(v) {
             var g = tink.sql.drivers.node.wkx.Geometry.parse(Buffer.from(v, "hex")).toGeoJSON();
             // trace(g);
