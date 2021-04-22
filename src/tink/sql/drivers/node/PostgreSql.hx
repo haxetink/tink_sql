@@ -113,7 +113,39 @@ class PostgreSqlConnection<Db:DatabaseInfo> implements Connection<Db> implements
       case Insert(_):
         {text: sql, rowMode: "array"};
       default:
-        {text: sql};
+        {text: sql, types: typeParsers};
+    }
+  }
+
+  var typeParsers:TypeParsers = {
+    getTypeParser: function(dataTypeID:Int, format:String) {
+      return switch [dataTypeID, format] {
+        case [18656, "text"]:
+          function(v) {
+            var g = tink.sql.drivers.node.wkx.Geometry.parse(Buffer.from(v, "hex")).toGeoJSON();
+            // trace(g);
+            return geoJsonToTink(g);
+          }
+        case _:
+          Pg.types.getTypeParser(dataTypeID, format);
+      }
+    }
+  }
+
+  static function geoJsonToTink(geoJson:Dynamic):Dynamic {
+    return switch (geoJson.type:geojson.GeometryType<Dynamic>) {
+      case Point:
+        tink.s2d.Point.fromGeoJson(geoJson);
+      case LineString:
+        (geoJson:geojson.LineString).points;
+      case Polygon:
+        tink.s2d.Polygon.fromGeoJson(geoJson);
+      case MultiPoint:
+        (geoJson:geojson.MultiPoint).points;
+      case MultiLineString:
+        (geoJson:geojson.MultiLineString).lines.map(l -> l.points);
+      case MultiPolygon:
+        tink.s2d.MultiPolygon.fromGeoJson(geoJson);
     }
   }
 
@@ -126,6 +158,10 @@ class PostgreSqlConnection<Db:DatabaseInfo> implements Connection<Db> implements
   }
 }
 
+private typedef TypeParsers = {
+  function getTypeParser(dataTypeID:Int, format:String):String->Dynamic;
+}
+
 private typedef ClientConfig = {
   ?user:String,
   ?host:String,
@@ -134,7 +170,7 @@ private typedef ClientConfig = {
   ?port:Int,
   ?connectionString:String,
   ?ssl:Dynamic,
-  ?types:Dynamic,
+  ?types:TypeParsers,
   ?statement_timeout:Int,
   ?query_timeout:Int,
   ?connectionTimeoutMillis:Int,
@@ -153,11 +189,19 @@ private typedef QueryOptions = {
   ?values:Array<Dynamic>,
   ?name:String,
   ?rowMode:String,
-  ?types:Dynamic,
+  ?types:TypeParsers,
 }
 
 private typedef Submittable = {
   function submit(connection:Dynamic):Void;
+}
+
+@:jsRequire("pg")
+private extern class Pg {
+  static public var types(default, null):{
+    public function setTypeParser(oid:Int, parser:String->Dynamic):Void;
+    public function getTypeParser(oid:Int, format:String):String->Dynamic;
+  }
 }
 
 // https://node-postgres.com/api/pool
@@ -208,10 +252,15 @@ private extern class Result {
 private extern class Cursor extends EventEmitter<Cursor> {
   public function new(text:String, values:Dynamic, ?config:{
     ?rowMode:String,
-    ?types:Dynamic,
+    ?types:TypeParsers,
   }):Void;
   public function read(rowCount:Int, callback:JsError->Array<Dynamic>->Result->Void):Void;
   public function close(?cb:?JsError->Void):Void;
   public function submit(connection:Dynamic):Void;
 }
 #end
+
+private typedef GeoJSONOptions = {
+  ?shortCrs:Bool,
+  ?longCrs:Bool,
+}
