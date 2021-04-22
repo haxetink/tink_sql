@@ -23,8 +23,42 @@ class PostgreSqlFormatter extends SqlFormatter<PostgreSqlColumnInfo, PostgreSqlK
       case DInt(Default, _, _, d):
         sql('INT').add(addDefault(d));
 
+      // https://postgis.net/docs/manual-3.1/postgis_usage.html#Geography_Basics
+      case DPoint: 'geography(POINT)';
+      case DLineString: 'geography(LINESTRING)';
+      case DPolygon: 'geography(POLYGON)';
+      case DMultiPoint: 'geography(MULTIPOINT)';
+      case DMultiLineString: 'geography(MULTILINESTRING)';
+      case DMultiPolygon: 'geography(MULTIPOLYGON)';
+
       case _:
         super.type(type);
+    }
+
+  override function expr(e:ExprData<Dynamic>, printTableName = true):Statement
+    return switch e {
+      case EValue(v, VGeometry(Point)):
+        'ST_GeomFromText(\'${v.toWkt()}\',4326)';
+      case EValue(v, VGeometry(LineString)):
+        'ST_GeomFromText(\'${v.toWkt()}\',4326)';
+      case EValue(v, VGeometry(Polygon)):
+        'ST_GeomFromText(\'${v.toWkt()}\',4326)';
+      case EValue(v, VGeometry(MultiPoint)):
+        'ST_GeomFromText(\'${v.toWkt()}\',4326)';
+      case EValue(v, VGeometry(MultiLineString)):
+        'ST_GeomFromText(\'${v.toWkt()}\',4326)';
+      case EValue(v, VGeometry(MultiPolygon)):
+        'ST_GeomFromText(\'${v.toWkt()}\',4326)';
+
+      // need to cast geography to geometry
+      case EField(_, _, VGeometry(_)):
+        super.expr(e, printTableName).concat(sql("::geometry"));
+
+      // the functions are named differently in postgis
+      case ECall("ST_Distance_Sphere", args, type, parenthesis):
+        super.expr(ECall("ST_DistanceSphere", args, type, parenthesis), printTableName);
+
+      default: super.expr(e, printTableName);
     }
 
   override function defineColumn(column:Column):Statement
