@@ -54,6 +54,8 @@ class Run extends TestWithDb {
       #end
 
       #if nodejs
+      new TypeTest(postgres, dbPostgres),
+      new FormatTest(postgres, dbPostgres),
       new Run(postgres, dbPostgres),
       new GeometryTest(postgres, dbPostgres),
       #end

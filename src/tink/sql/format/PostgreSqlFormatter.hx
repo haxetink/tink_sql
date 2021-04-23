@@ -13,15 +13,27 @@ using Lambda;
 class PostgreSqlFormatter extends SqlFormatter<PostgreSqlColumnInfo, PostgreSqlKeyInfo> {
   override function type(type: DataType):Statement
     return switch type {
+      case DBool(d):
+        sql('BOOLEAN').add(addDefault(d));
+      case DDouble(d):
+        sql('DOUBLE PRECISION').add(addDefault(d));
+
       // There is no unsigned data types in postgres...
       case DInt(Tiny, _, _, d):
-        sql('TINYINT').add(addDefault(d));
+        sql('SMALLINT').add(addDefault(d)); // There is no TINYINT in postgres
       case DInt(Small, _, _, d):
         sql('SMALLINT').add(addDefault(d));
       case DInt(Medium, _, _, d):
         sql('MEDIUMINT').add(addDefault(d));
       case DInt(Default, _, _, d):
         sql('INT').add(addDefault(d));
+
+      case DBlob(_):
+        'BYTEA';
+      case DDate(d):
+        sql('DATE').add(addDefault(d));
+      case DDateTime(d):
+        sql('TIMESTAMP').add(addDefault(d));
 
       // https://postgis.net/docs/manual-3.1/postgis_usage.html#Geography_Basics
       case DPoint: 'geometry';

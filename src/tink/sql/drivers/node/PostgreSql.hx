@@ -66,9 +66,11 @@ class PostgreSqlConnection<Db:DatabaseInfo> implements Connection<Db> implements
 
   public function value(v:Any):String
     return if (Std.is(v, Date))
-      'DATE_ADD(FROM_UNIXTIME(0), INTERVAL ${(v:Date).getTime()/1000} SECOND)';
+      'to_timestamp(${(v:Date).getTime()/1000})';
     else if (Std.is(v, String))
       Client.escapeLiteral(v);
+    else if (Std.is(v, Bytes))
+      "'\\x" + (cast v:Bytes).toHex() + "'";
     else
       v;
 
