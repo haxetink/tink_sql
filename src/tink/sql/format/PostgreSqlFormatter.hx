@@ -70,6 +70,10 @@ class PostgreSqlFormatter extends SqlFormatter<PostgreSqlColumnInfo, PostgreSqlK
       case ECall("ST_Distance_Sphere", args, type, parenthesis):
         super.expr(ECall("ST_DistanceSphere", args, type, parenthesis), printTableName);
 
+      // https://www.postgresql.org/docs/13/functions-conditional.html#FUNCTIONS-COALESCE-NVL-IFNULL
+      case ECall('IFNULL', args, type, parenthesis):
+        super.expr(ECall("COALESCE", args, type, parenthesis), printTableName);
+
       default: super.expr(e, printTableName);
     }
 
