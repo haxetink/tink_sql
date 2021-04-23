@@ -22,22 +22,21 @@ class Table<T> {
 
 class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db> 
     extends Selectable<Fields, Filter, Row, Db>
-    implements TableInfo
 {
   
   public var name(default, null):TableName<Row>;
   var alias:Null<String>;
-  var columns:Array<Column>;
+  public final info:AdhocTableInfo;
   
-  function new(cnx, name, alias, fields, ?columns) {
+  function new(cnx, name, alias, fields, info) {
     this.name = name;
     this.alias = alias;
     this.fields = fields;
-    this.columns = columns;
+    this.info = info;
     super(
       cnx,
       fields,
-      TTable(this),
+      TTable(info),
       function (f:Filter) return (cast f : Fields->Condition)(fields) //TODO: raise issue on Haxe tracker and remove the cast once resolved
     );
   }
@@ -45,14 +44,14 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
   // Query
   
   public function create(ifNotExists = false)
-    return cnx.execute(CreateTable(this, ifNotExists));
+    return cnx.execute(CreateTable(info, ifNotExists));
   
   public function drop()
-    return cnx.execute(DropTable(this));
+    return cnx.execute(DropTable(info));
 
   public function diffSchema(destructive = false) {
-    var schema = new Schema(getColumns(), getKeys());
-    return (cnx.execute(ShowColumns(this)) && cnx.execute(ShowIndex(this)))
+    var schema = new Schema(info.getColumns(), info.getKeys());
+    return (cnx.execute(ShowColumns(info)) && cnx.execute(ShowIndex(info)))
       .next(function(res)
         return new Schema(res.a, res.b)
           .diff(schema, cnx.getFormatter())
@@ -69,30 +68,31 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
         case AddKey(_): post = changes.slice(i); break;
         case v: pre.push(v);
       }
-    return cnx.execute(AlterTable(this, pre)).next(function(_)
+    return cnx.execute(AlterTable(info, pre)).next(function(_)
       return 
-        if (post.length > 0) cnx.execute(AlterTable(this, post))
+        if (post.length > 0) cnx.execute(AlterTable(info, post))
         else Noise
     );
   }
   
   public function insertMany(rows:Array<Row>, ?options): Promise<Id<Row>>
     return if (rows.length == 0) cast Promise.NULL
-      else cnx.execute(Insert({
-        table: this, 
-        data: Literal(rows), 
-        ignore: if (options == null) false else options.ignore
-      }));
+      else insert(Literal(rows), options);
     
   public function insertOne(row:Row, ?options): Promise<Id<Row>>
-    return insertMany([row], options);
+    return insert(Literal([row]), options);
     
   public function insertSelect(selected:Selected<Dynamic, Dynamic, Row, Db>, ?options): Promise<Id<Row>>
+    return insert(Select(selected.toSelectOp()), options);
+      
+  function insert(data, ?options:{?ignore:Bool, ?replace:Bool}): Promise<Id<Row>> {
     return cnx.execute(Insert({
-        table: this, 
-        data: Select(selected.toSelectOp()), 
-        ignore: if (options == null) false else options.ignore
-      }));
+      table: info, 
+      data: data, 
+      ignore: options != null && !!options.ignore,
+      replace: options != null && !!options.replace,
+    }));
+  }
     
   public function update(f:Fields->Update<Row>, options:{ where: Filter, ?max:Int })
     return switch f(this.fields) {
@@ -100,7 +100,7 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
         Promise.lift({rowsAffected: 0});
       case patch:
         cnx.execute(Update({
-          table: this,
+          table: info,
           set: patch,
           where: toCondition(options.where),
           max: options.max
@@ -109,39 +109,16 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
   
   public function delete(options:{ where: Filter, ?max:Int })
     return cnx.execute(Delete({
-      from: this, 
+      from: info, 
       where: toCondition(options.where),
       max: options.max
     }));
-
-
-  // TableInfo
-
-  @:noCompletion 
-  public function getName():String 
-    return name;
-
-  @:noCompletion
-  public function getAlias():Null<String>
-    return alias;
-
-  @:noCompletion 
-  public function getColumns():Array<Column> 
-    return columns;
-  
-  @:noCompletion 
-  public function columnNames():Array<String>
-    return getColumns().map(function(f) return f.name);
-
-  @:noCompletion 
-  public function getKeys():Array<Key> 
-    throw 'not implemented';
 
   // Alias
 
   macro public function as(e:Expr, alias:String) {
     return switch haxe.macro.Context.typeof(e) {
-      case TInst(_.get() => { superClass: _.params => [fields, _, row, _] }, _):
+      case TInst(_.get() => { pack: pack, name: name, superClass: _.params => [fields, _, row, _] }, _):
         var fieldsType = fields.toComplex({direct: true});
         var filterType = (macro function ($alias:$fieldsType):tink.sql.Expr.Condition return tink.sql.Expr.ExprData.EValue(true, tink.sql.Expr.ExprType.VBool)).typeof().sure();
         var path: haxe.macro.TypePath = 
@@ -163,7 +140,7 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
           default: throw "assert";
         }
         var fieldObj = EObjectDecl(aliasFields).at(e.pos);
-        macro @:privateAccess new $path($e.cnx, $e.name, $v{alias}, $fieldObj, $e.getColumns());
+        macro @:privateAccess new $path($e.cnx, $e.name, $v{alias}, $fieldObj, @:privateAccess ${tink.sql.macros.Helper.typePathToExpr({pack: pack, name: name}, e.pos)}.makeInfo($e.name, $v{alias}));
       default: e.reject();
     }
   }
@@ -182,4 +159,44 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
 abstract TableName<Row>(String) to String {
   public inline function new(s)
     this = s;
+}
+
+
+
+class AdhocTableInfo implements TableInfo {
+  final name:String;
+  final alias:String;
+  final _getColumns:()->Array<Column>;
+  final _columnNames:()->Array<String>;
+  final _getKeys:()->Array<Key>;
+  
+  public function new(name, alias, getColumns, columnNames, getKeys) {
+    this.name = name;
+    this.alias = alias;
+    _getColumns = getColumns;
+    _columnNames = columnNames;
+    _getKeys = getKeys;
+  }
+
+  // TableInfo
+
+  @:noCompletion 
+  public function getName():String 
+    return name;
+
+  @:noCompletion
+  public function getAlias():Null<String>
+    return alias;
+
+  @:noCompletion 
+  public function getColumns():Array<Column> 
+    return _getColumns();
+  
+  @:noCompletion 
+  public function columnNames():Array<String>
+    return _columnNames();
+
+  @:noCompletion 
+  public function getKeys():Array<Key> 
+    return _getKeys();
 }

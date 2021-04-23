@@ -121,6 +121,12 @@ class MySqlFormatter extends SqlFormatter<MysqlColumnInfo, MysqlKeyInfo> {
       case AddKey(key):
         sql('ADD').add(defineKey(key));
     }
+    
+  override function insertInto<Db, Row:{}>(insert:InsertOperation<Db, Row>) {
+    return sql(insert.replace ? 'REPLACE' : 'INSERT')
+      .add('IGNORE', insert.ignore)
+      .add('INTO');
+  }
 
   override function expr(e:ExprData<Dynamic>, printTableName = true):Statement
     return switch e {

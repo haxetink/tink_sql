@@ -73,7 +73,8 @@ typedef DeleteOperation<Row:{}> = {
 typedef InsertOperation<Db, Row:{}> = {
   table:TableInfo,
   data:InsertData<Db, Row>,
-  ?ignore:Bool
+  ?ignore:Bool, // mysql only: INSERT IGNORE
+  ?replace:Bool, // mysql only: REPLACE INTO
 }
 
 enum InsertData<Db, Row:{}> {

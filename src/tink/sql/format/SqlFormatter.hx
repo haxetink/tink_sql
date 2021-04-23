@@ -143,13 +143,13 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
       ))
     );
 
-
+  function insertInto<Db, Row:{}>(insert:InsertOperation<Db, Row>) {
+    return sql('INSERT INTO');
+  }
+    
   function insert<Db, Row:{}>(insert:InsertOperation<Db, Row>) {
-    var q = sql('INSERT')
-      .add('IGNORE', insert.ignore)
-      .add('INTO')
-      .addIdent(insert.table.getName());
-      
+    var q = insertInto(insert).addIdent(insert.table.getName());
+    
     return switch insert.data {
       case Literal(rows):
         var writableColumns = insert.table.getColumns().filter(function(c) return c.writable);

@@ -244,18 +244,14 @@ class TableBuilder {
             macro class $cName<Db> extends tink.sql.Table.TableSource<$fieldsAlias, $filterType, $rowAlias, Db> {
 
               public function new(cnx, tableName, ?alias) {
-                super(cnx, new tink.sql.Table.TableName(tableName), alias, ${EObjectDecl(fieldsExprFields).at(ctx.pos)});
+                final name = new tink.sql.Table.TableName(tableName);
+                super(cnx, name, alias, ${EObjectDecl(fieldsExprFields).at(ctx.pos)}, makeInfo(name, alias));
               }
 
               static var COLUMN_NAMES = $v{names};
               static var COLUMNS = $a{fieldsValues};
               static var KEYS = $v{keys.get()};
-              @:noCompletion override public function getColumns()
-                return COLUMNS;
-              @:noCompletion override public function columnNames()
-                return COLUMN_NAMES;
-              @:noCompletion override public function getKeys()
-                return KEYS;
+              static function makeInfo(name, alias) return new tink.sql.Table.AdhocTableInfo(name, alias, () -> COLUMNS, () -> COLUMN_NAMES, () -> KEYS);
             }
 
           default:
