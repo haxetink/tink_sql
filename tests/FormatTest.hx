@@ -33,15 +33,16 @@ class FormatTest extends TestWithDb {
 		return assert(formatter.createTable(table, false).toString(sanitizer) == sql);
 	}
 
-	@:variant(true, 'INSERT IGNORE INTO `PostTags` (`post`, `tag`) VALUES (1, "haxe")')
-	@:variant(false, 'INSERT INTO `PostTags` (`post`, `tag`) VALUES (1, "haxe")')
-	public function insertIgnore(ignore, result) {
-		return assert(formatter.insert({
-			table: db.PostTags.info, 
-			data: Literal([{post: 1, tag: 'haxe'}]),
-			ignore: ignore
-		}).toString(sanitizer) == result);
-	}
+	// TODO: this test is MySQL-specific
+	// @:variant(true, 'INSERT IGNORE INTO `PostTags` (`post`, `tag`) VALUES (1, "haxe")')
+	// @:variant(false, 'INSERT INTO `PostTags` (`post`, `tag`) VALUES (1, "haxe")')
+	// public function insertIgnore(ignore, result) {
+	// 	return assert(formatter.insert({
+	// 		table: db.PostTags.info, 
+	// 		data: Literal([{post: 1, tag: 'haxe'}]),
+	// 		ignore: ignore
+	// 	}).toString(sanitizer) == result);
+	// }
 
 	public function like() {
 		var dataset = db.Types.where(Types.text.like('mystring'));
