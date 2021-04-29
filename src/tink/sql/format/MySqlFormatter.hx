@@ -130,6 +130,8 @@ class MySqlFormatter extends SqlFormatter<MysqlColumnInfo, MysqlKeyInfo> {
 
   override function expr(e:ExprData<Dynamic>, printTableName = true):Statement
     return switch e {
+      case null:
+        'NULL';
       case EValue(v, VGeometry(Point)):
         'ST_GeomFromText(\'${v.toWkt()}\',4326)';
       case EValue(v, VGeometry(LineString)):
