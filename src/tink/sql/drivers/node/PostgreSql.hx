@@ -92,7 +92,7 @@ class PostgreSqlConnection<Db:DatabaseInfo> implements Connection<Db> implements
         var parse:DynamicAccess<Any>->{} = parser.queryParser(query, formatter.isNested(query));
         stream(queryOptions(query)).map(parse);
       case Insert(_):
-        fetch().next(function(res) return res.rows.length > 0 ? new Id(res.rows[0][0]) : Promise.NOISE);
+        fetch().next(function(res):Promise<Dynamic> return res.rows.length > 0 ? new Id(res.rows[0][0]) : Promise.NOISE);
       case Update(_):
         fetch().next(function(res) return {rowsAffected: res.rowCount});
       case Delete(_):
