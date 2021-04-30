@@ -353,6 +353,8 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
 
   function expr(e:ExprData<Dynamic>, printTableName = true):Statement
     return switch e {
+      case null | EValue(null, _):
+        'NULL';
       case EUnOp(op, a, false):
         unOp(op).add(expr(a, printTableName));
       case EUnOp(op, a, true):
@@ -375,8 +377,6 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
           ? empty() 
           : ident(table).sql('.')
         ).ident(name);
-      case EValue(null, _):
-        'NULL';
       case EValue(v, VBool):
         value(v);
       case EValue(v, VString):
