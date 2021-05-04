@@ -7,12 +7,14 @@ import haxe.io.Bytes;
 using StringTools;
 
 private typedef Impl = 
-  #if nodejs
+  #if macro
+    tink.sql.drivers.macro.Dummy;
+  #elseif nodejs
     tink.sql.drivers.node.MySql;
   #elseif php
     tink.sql.drivers.php.PDO.PDOMysql;
   #else
-    tink.sql.drivers.sys.MySql;
+    tink.sql.drivers.sys.MySql; 
   #end
 
 private class MySqlSanitizer implements Sanitizer {

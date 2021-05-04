@@ -186,7 +186,7 @@ class Limited<Fields, Result:{}, Db> extends Dataset<Fields, Result, Db> {
 class Dataset<Fields, Result:{}, Db> {
 
   var cnx:Connection<Db>;
-
+  
   function new(cnx)
     this.cnx = cnx;
 

@@ -37,7 +37,7 @@ class PostgreSql implements Driver {
     this.settings = settings;
   }
 
-  public function open<Db:DatabaseInfo>(name:String, info:Db):Connection<Db> {
+  public function open<Db>(name:String, info:DatabaseInfo):Connection.ConnectionPool<Db> {
     var pool = new Pool({
       user: settings.user,
       password: settings.password,
@@ -50,15 +50,15 @@ class PostgreSql implements Driver {
   }
 }
 
-class PostgreSqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sanitizer {
+class PostgreSqlConnection<Db> implements Connection.ConnectionPool<Db> implements Sanitizer {
   var pool:Pool;
-  var db:Db;
+  var info:DatabaseInfo;
   var formatter:PostgreSqlFormatter;
   var parser:ResultParser<Db>;
   var streamBatch:Int = 50;
 
-  public function new(db, pool) {
-    this.db = db;
+  public function new(info, pool) {
+    this.info = info;
     this.pool = pool;
     this.formatter = new PostgreSqlFormatter();
     this.parser = new ResultParser();
@@ -90,7 +90,7 @@ class PostgreSqlConnection<Db:DatabaseInfo> implements Connection<Db> implements
         var parse:DynamicAccess<Any>->{} = parser.queryParser(query, formatter.isNested(query));
         stream(queryOptions(query)).map(parse);
       case Insert(_):
-        fetch().next(function(res) return res.rows.length > 0 ? new Id(res.rows[0][0]) : Promise.NOISE);
+        fetch().next(function(res) return res.rows.length > 0 ? new Id(res.rows[0][0]) : cast Promise.NULL);
       case Update(_):
         fetch().next(function(res) return {rowsAffected: res.rowCount});
       case Delete(_):
@@ -123,6 +123,11 @@ class PostgreSqlConnection<Db:DatabaseInfo> implements Connection<Db> implements
         .then(r -> resolve(Success(Stream.ofIterator(r.rows.iterator()))))
         .catchError(err -> resolve(Failure(err)));
     });
+  }
+  
+  
+  public function isolate():Pair<Connection<Db>, CallbackLink> {
+    throw 'TODO';
   }
 }
 

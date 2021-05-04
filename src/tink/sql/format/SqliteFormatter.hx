@@ -36,4 +36,6 @@ class SqliteFormatter extends SqlFormatter<{}, {}> {
       .add(format(union.right))
       .add(limit(union.limit));
 
+  override function beginTransaction()
+    return 'BEGIN TRANSACTION';
 }

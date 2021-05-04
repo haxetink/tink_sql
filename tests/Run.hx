@@ -7,6 +7,7 @@ import tink.unit.AssertionBuffer;
 import tink.unit.*;
 import tink.testrunner.*;
 import tink.sql.drivers.*;
+import tink.sql.Database;
 
 using tink.CoreApi;
 
@@ -38,6 +39,7 @@ class Run extends TestWithDb {
 
     loadFixture('init');
     Runner.run(TestBatch.make([
+      // ====== mysql ======
       new TypeTest(mysql, dbMysql),
       new SelectTest(mysql, dbMysql),
       new FormatTest(mysql, dbMysql),
@@ -52,11 +54,15 @@ class Run extends TestWithDb {
       #if nodejs
       new ProcedureTest(mysql, dbMysql),
       #end
+      
+      new TransactionTest(mysql, dbMysql),
 
+      // ====== postgres ======
       #if nodejs
       new Run(postgres, dbPostgres),
       #end
 
+      // ====== sqlite ======
       new TypeTest(sqlite, dbSqlite),
       new SelectTest(sqlite, dbSqlite),
       new FormatTest(sqlite, dbSqlite),
@@ -64,6 +70,7 @@ class Run extends TestWithDb {
       new ExprTest(sqlite, dbSqlite),
       new Run(sqlite, dbSqlite),
       new SubQueryTest(sqlite, dbSqlite),
+      new TransactionTest(sqlite, dbSqlite),
       new TestIssue104()
     ])).handle(Runner.exit);
   }
@@ -112,9 +119,9 @@ class Run extends TestWithDb {
 
 
   public function info() {
-    asserts.assert(db.name == 'test');
-    asserts.assert(sorted(db.tableNames()).join(',') == 'Geometry,Post,PostTags,Schema,StringTypes,Types,User,alias');
-    asserts.assert(sorted(db.tableInfo('Post').columnNames()).join(',') == 'author,content,id,title');
+    asserts.assert(db.getName() == 'test');
+    asserts.assert(sorted(db.getInfo().tableNames()).join(',') == 'Geometry,Post,PostTags,Schema,StringTypes,Types,User,alias');
+    asserts.assert(sorted(db.getInfo().tableInfo('Post').columnNames()).join(',') == 'author,content,id,title');
     return asserts.done();
   }
 

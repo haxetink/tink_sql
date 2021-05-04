@@ -1,6 +1,7 @@
 package;
 
 import tink.sql.Driver;
+import tink.sql.Database;
 
 class TestWithDb {
 	
