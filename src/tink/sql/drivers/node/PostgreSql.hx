@@ -55,6 +55,7 @@ class PostgreSqlResultParser<Db> extends ResultParser<Db> {
   override function parseValue(value:Dynamic, type:ExprType<Dynamic>): Any {
     if (value == null) return null;
     return switch type {
+      case null: super.parseValue(value, type);
       case ExprType.VGeometry(_):
         var g = tink.sql.drivers.node.wkx.Geometry.parse(Buffer.from(value, "hex")).toGeoJSON();
         // trace(g);
