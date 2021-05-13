@@ -49,6 +49,8 @@ class PostgreSqlFormatter extends SqlFormatter<PostgreSqlColumnInfo, PostgreSqlK
 
   override function expr(e:ExprData<Dynamic>, printTableName = true):Statement
     return switch e {
+      case null | EValue(null, _):
+        super.expr(e, printTableName);
       case EValue(v, VGeometry(Point)):
         'ST_GeomFromText(\'${v.toWkt()}\',4326)';
       case EValue(v, VGeometry(LineString)):
