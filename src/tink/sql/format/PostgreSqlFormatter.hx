@@ -103,9 +103,24 @@ class PostgreSqlFormatter extends SqlFormatter<PostgreSqlColumnInfo, PostgreSqlK
     return null;
   }
 
+  static function isAutoInc(c:Column) {
+    return c.type.match(DInt(_, _, true, _));
+  }
+
   override function insert<Db, Row:{}>(insert:InsertOperation<Db, Row>) {
+    switch insert.data {
+      case Select(op) if (op.selection != null):
+        for (c in insert.table.getColumns())
+          if (isAutoInc(c)) {
+            if (op.selection[c.name] != null)
+              throw 'Auto-inc col ${c.name} can only accept null during insert';
+            op.selection.remove(c.name);
+          }
+      case _:
+        // pass
+    }
     var p = getAutoIncPrimaryKeyCol(insert.table);
-    return if (p == null ) {
+    return if (p == null) {
       super.insert(insert);
     } else {
       super.insert(insert).add(sql("RETURNING").addIdent(p.name));
