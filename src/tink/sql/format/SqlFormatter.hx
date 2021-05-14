@@ -152,15 +152,16 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
     
     return switch insert.data {
       case Literal(rows):
+        var writableColumns = insert.table.getColumns().filter(function(c) return c.writable);
         q
           .addParenthesis(
             separated(
-              insert.table.columnNames()
+              writableColumns.map(function(c) return c.name)
                 .map(ident)
             )
           )
           .add('VALUES')
-          .add(separated(rows.map(insertRow.bind(insert.table.getColumns()))));
+          .add(separated(rows.map(insertRow.bind(writableColumns))));
       case Select(op):
         var columns = switch [op.from, op.selection] {
           case [TTable(table), null]:

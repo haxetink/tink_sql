@@ -151,7 +151,8 @@ class MySqlFormatter extends SqlFormatter<MysqlColumnInfo, MysqlKeyInfo> {
     return {  
       name: res.Field,
       nullable: res.Null == 'YES',
-      type: parseType(res.Type, res.Extra.indexOf('auto_increment') > -1, res.Default)
+      type: parseType(res.Type, res.Extra.indexOf('auto_increment') > -1, res.Default),
+      writable: res.Extra.indexOf('GENERATED') == -1,
     }
 
   override public function parseKeys(keys:Array<MysqlKeyInfo>):Array<Key> {
