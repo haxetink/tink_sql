@@ -131,7 +131,7 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
 
 
   function stream<T>(options: QueryOptions):Stream<T, Error> {
-    return (Future.async(function(cb) {
+		return (Future #if (tink_core >= "2") .irreversible #else .async #end (function(cb) {
       pool.getConnection(function(err, cnx) {
         if(err != null) {
           cb(Failure(Error.ofJsError(err)));
@@ -141,11 +141,11 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
           cb(Success(stream));
         }
       });
-    }, true):Promise<tink.streams.RealStream<T>>);
+    } #if (tink_core < "2") , true #end):Promise<tink.streams.RealStream<T>>);
   }
 
   function run<T>(options: QueryOptions):Promise<T>
-    return Future.async(function (cb) {
+		return Future #if (tink_core >= "2") .irreversible #else .async #end(function (cb) {
       pool.getConnection(function(err, cnx) {
         if(err != null)
           cb(toError(err));
