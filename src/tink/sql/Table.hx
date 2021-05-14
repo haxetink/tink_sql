@@ -76,7 +76,7 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
   }
   
   public function insertMany(rows:Array<Row>, ?options): Promise<Id<Row>>
-    return if (rows.length == 0) cast Promise.NULL
+    return if (rows.length == 0) cast Promise #if (tink_core >= "2") .NOISE #else .NULL #end
       else insert(Literal(rows), options);
     
   public function insertOne(row:Row, ?options): Promise<Id<Row>>
