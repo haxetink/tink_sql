@@ -52,14 +52,27 @@ class PostgreSql implements Driver {
 }
 
 class PostgreSqlResultParser<Db> extends ResultParser<Db> {
+  override function parseGeometryValue<T, C>(bytes:Bytes):Any {
+    return switch tink.spatial.Parser.ewkb(bytes).geometry {
+      case S2D(Point(v)): v;
+      case S2D(LineString(v)): v;
+      case S2D(Polygon(v)): v;
+      case S2D(MultiPoint(v)): v;
+      case S2D(MultiLineString(v)): v;
+      case S2D(MultiPolygon(v)): v;
+      case S2D(GeometryCollection(v)): v;
+      case v: throw 'expected 2d geometries';
+    }
+  }
+
   override function parseValue(value:Dynamic, type:ExprType<Dynamic>): Any {
     if (value == null) return null;
     return switch type {
       case null: super.parseValue(value, type);
       case ExprType.VGeometry(_):
-        var g = tink.sql.drivers.node.wkx.Geometry.parse(Buffer.from(value, "hex")).toGeoJSON();
+        var g = parseGeometryValue(Bytes.ofHex(value));
         // trace(g);
-        return geoJsonToTink(g);
+        return g;
       default: super.parseValue(value, type);
     }
   }
