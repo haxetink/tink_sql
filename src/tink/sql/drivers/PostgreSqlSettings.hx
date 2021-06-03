@@ -5,5 +5,4 @@ typedef PostgreSqlSettings = {
   @:optional var port(default, null):Int;
   var user(default, null):String;
   var password(default, null):String;
-  @:optional var database(default, null):String;
 }

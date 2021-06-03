@@ -26,6 +26,7 @@ using tink.CoreApi;
 
 typedef PostgreSqlNodeSettings = {
   > PostgreSqlSettings,
+  ?ssl:PostgresSslConfig,
 }
 
 class PostgreSql implements Driver {
@@ -44,6 +45,7 @@ class PostgreSql implements Driver {
       password: settings.password,
       host: settings.host,
       port: settings.port,
+      ssl: settings.ssl,
       database: name,
     });
 
@@ -178,6 +180,14 @@ private typedef TypeParsers = {
   function getTypeParser(dataTypeID:Int, format:String):String->Dynamic;
 }
 
+typedef PostgresSslConfig = haxe.extern.EitherType<Bool, {
+  ?rejectUnauthorized:Bool,
+  ?sslca:String,
+  ?sslkey:String,
+  ?sslcert:String,
+  ?sslrootcert:String,
+}>;
+
 private typedef ClientConfig = {
   ?user:String,
   ?host:String,
@@ -185,7 +195,7 @@ private typedef ClientConfig = {
   ?password:String,
   ?port:Int,
   ?connectionString:String,
-  ?ssl:Dynamic,
+  ?ssl:PostgresSslConfig,
   ?types:TypeParsers,
   ?statement_timeout:Int,
   ?query_timeout:Int,
