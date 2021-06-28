@@ -334,6 +334,9 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
       case And: 'AND';
       case Equals: '=';
       case Greater: '>';
+      case LessThan: '<';
+      case GreaterOrEquals: '>=';
+      case LessThanOrEquals: '<=';
       case Like: 'LIKE';
       case In: 'IN';
     }
