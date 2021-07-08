@@ -75,6 +75,7 @@ typedef InsertOperation<Db, Row:{}> = {
   data:InsertData<Db, Row>,
   ?ignore:Bool, // mysql only: INSERT IGNORE
   ?replace:Bool, // mysql only: REPLACE INTO
+  ?update:Update<Row>, // mysql only: ON DUPLICATE KEY UPDATE
 }
 
 enum InsertData<Db, Row:{}> {

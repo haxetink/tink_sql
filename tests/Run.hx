@@ -51,6 +51,7 @@ class Run extends TestWithDb {
       #if nodejs
       new ProcedureTest(mysql, dbMysql),
       #end
+      new OnDuplicateKeyTest(mysql, dbMysql),
 
       #if nodejs
       new TypeTest(postgres, dbPostgres),

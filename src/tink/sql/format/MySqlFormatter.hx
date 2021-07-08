@@ -128,6 +128,19 @@ class MySqlFormatter extends SqlFormatter<MysqlColumnInfo, MysqlKeyInfo> {
       .add('INTO');
   }
 
+  override function insert<Db, Row:{}>(insert:InsertOperation<Db, Row>) {
+    return insert.update == null ?
+      super.insert(insert) :
+      super.insert(insert)
+        .add('ON DUPLICATE KEY UPDATE')
+        .space()
+        .separated(insert.update.map(function (set) {
+          return ident(set.field.name)
+            .add('=')
+            .add(expr(set.expr, false));
+        }));
+  }
+
   override function expr(e:ExprData<Dynamic>, printTableName = true):Statement
     return switch e {
       case null:
