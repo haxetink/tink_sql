@@ -30,7 +30,6 @@ class UpsertTest extends TestWithDb {
 		return db.User.where(r -> r.name == "Alice")
 			.first()
 			.next(currentAlice -> {
-				trace(currentAlice);
 				db.User.insertOne({
 					id: currentAlice.id,
 					name: currentAlice.name,
