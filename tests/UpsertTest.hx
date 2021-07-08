@@ -9,7 +9,7 @@ import tink.sql.expr.Functions;
 using tink.CoreApi;
 
 @:asserts
-class OnDuplicateKeyTest extends TestWithDb {
+class UpsertTest extends TestWithDb {
 	@:setup @:access(Run)
 	public function setup() {
 		var run = new Run(driver, db);

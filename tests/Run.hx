@@ -51,7 +51,7 @@ class Run extends TestWithDb {
       #if nodejs
       new ProcedureTest(mysql, dbMysql),
       #end
-      new OnDuplicateKeyTest(mysql, dbMysql),
+      new UpsertTest(mysql, dbMysql),
 
       #if nodejs
       new TypeTest(postgres, dbPostgres),
@@ -60,7 +60,7 @@ class Run extends TestWithDb {
       new ExprTest(postgres, dbPostgres),
       new Run(postgres, dbPostgres),
       new GeometryTest(postgres, dbPostgres),
-      new OnDuplicateKeyTest(postgres, dbPostgres),
+      new UpsertTest(postgres, dbPostgres),
       #end
 
       new TypeTest(sqlite, dbSqlite),
