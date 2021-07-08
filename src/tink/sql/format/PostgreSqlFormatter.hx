@@ -88,21 +88,6 @@ class PostgreSqlFormatter extends SqlFormatter<PostgreSqlColumnInfo, PostgreSqlK
         super.defineColumn(column);
     }
 
-  static function getAutoIncPrimaryKeyCol(table:TableInfo) {
-    for (key in table.getKeys()) {
-      switch key {
-        case Primary([colName]): // is a single col primary key
-          var col = table.getColumns().find(col -> col.name == colName);
-          if (col.type.match(DInt(_, _, true))) { // is auto inc
-            return col;
-          }
-        default:
-          // pass
-      }
-    }
-    return null;
-  }
-
   static function isAutoInc(c:Column) {
     return c.type.match(DInt(_, _, true, _));
   }
@@ -120,7 +105,7 @@ class PostgreSqlFormatter extends SqlFormatter<PostgreSqlColumnInfo, PostgreSqlK
         // pass
     }
 
-    var p = getAutoIncPrimaryKeyCol(insert.table);
+    var p = SqlFormatter.getAutoIncPrimaryKeyCol(insert.table);
     var statement = super.insert(insert);
 
     if (insert.update != null) {
