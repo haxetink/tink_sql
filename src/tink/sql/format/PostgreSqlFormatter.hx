@@ -119,12 +119,28 @@ class PostgreSqlFormatter extends SqlFormatter<PostgreSqlColumnInfo, PostgreSqlK
       case _:
         // pass
     }
+
     var p = getAutoIncPrimaryKeyCol(insert.table);
-    return if (p == null) {
-      super.insert(insert);
-    } else {
-      super.insert(insert).add(sql("RETURNING").addIdent(p.name));
+    var statement = super.insert(insert);
+
+    if (insert.update != null) {
+      statement = statement
+        .add('ON CONFLICT')
+        .addParenthesis(p.name)
+        .add('DO UPDATE SET')
+        .space()
+        .separated(insert.update.map(function (set) {
+          return ident(set.field.name)
+            .add('=')
+            .add(expr(set.expr, false));
+        }));
     }
+
+    if (p != null) {
+      statement = statement.add(sql("RETURNING").addIdent(p.name));
+    }
+
+    return statement;
   }
 
   override function insertRow(columns:Iterable<Column>, row:DynamicAccess<Any>):Statement

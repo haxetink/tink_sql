@@ -60,6 +60,7 @@ class Run extends TestWithDb {
       new ExprTest(postgres, dbPostgres),
       new Run(postgres, dbPostgres),
       new GeometryTest(postgres, dbPostgres),
+      new OnDuplicateKeyTest(postgres, dbPostgres),
       #end
 
       new TypeTest(sqlite, dbSqlite),
