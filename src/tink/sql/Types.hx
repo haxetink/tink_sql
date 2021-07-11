@@ -30,10 +30,7 @@ abstract Id<T>(Int) to Int {
 
   public inline function new(v)
     this = v;
-
-  @:from static inline function ofStringly<T>(s:tink.Stringly):Id<T>
-    return new Id(s);
-
+  
   @:from static inline function ofInt<T>(i:Int):Id<T>
     return new Id(i);
 
