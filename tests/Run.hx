@@ -51,6 +51,7 @@ class Run extends TestWithDb {
       #if nodejs
       new ProcedureTest(mysql, dbMysql),
       #end
+      new InsertIgnoreTest(mysql, dbMysql),
       new UpsertTest(mysql, dbMysql),
 
       #if nodejs
@@ -60,6 +61,7 @@ class Run extends TestWithDb {
       new ExprTest(postgres, dbPostgres),
       new Run(postgres, dbPostgres),
       new GeometryTest(postgres, dbPostgres),
+      new InsertIgnoreTest(postgres, dbPostgres),
       new UpsertTest(postgres, dbPostgres),
       #end
 

@@ -108,6 +108,13 @@ class PostgreSqlFormatter extends SqlFormatter<PostgreSqlColumnInfo, PostgreSqlK
     var pKeys = SqlFormatter.getPrimaryKeys(insert.table);
     var statement = super.insert(insert);
 
+    if (insert.ignore) {
+      statement = statement
+        .add('ON CONFLICT')
+        .addParenthesis(separated(pKeys.map(k -> ident(k.name))))
+        .add('DO NOTHING');
+    }
+
     if (insert.update != null) {
       statement = statement
         .add('ON CONFLICT')
