@@ -40,8 +40,8 @@ class UpsertTest extends TestWithDb {
 			db.Clap.drop(),
 		]);
 	}
-	
-	public function insert()
+
+	public function insertSimple()
 		return db.User.where(r -> r.name == "Alice")
 			.first()
 			.next(currentAlice -> {
@@ -60,6 +60,27 @@ class UpsertTest extends TestWithDb {
 					asserts.done();
 				});
 			});
+
+	public function insertValue() {
+		var newEmail = "bob@gmail.com";
+		return db.User.where(r -> r.name == "Bob")
+			.first()
+			.next(bob -> {
+				db.User.insertOne({
+					id: bob.id,
+					name: bob.name,
+					email: newEmail,
+					location: bob.location
+				}, {
+					update: u -> [u.email.set(Functions.values(u.email))],
+				}).next(_ -> {
+					db.User.where(r -> r.id == bob.id).first();
+				}).next(bob -> {
+					asserts.assert(bob.email == newEmail);
+					asserts.done();
+				});
+			});
+	}
 
 	public function compositePrimaryKey() {
 		return db.User.where(r -> r.name == "Christa").first()

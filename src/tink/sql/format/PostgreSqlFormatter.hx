@@ -68,6 +68,14 @@ class PostgreSqlFormatter extends SqlFormatter<PostgreSqlColumnInfo, PostgreSqlK
       // case EField(_, _, VGeometry(_)):
       //   super.expr(e, printTableName).concat(sql("::geometry"));
 
+      case ECall("VALUES", [e], type, parenthesis):
+        switch (e:ExprData<Dynamic>) {
+          case EField(_, name, type):
+            sql('EXCLUDED.').ident(name);
+          case _:
+            throw "assert";
+        }
+
       // the functions are named differently in postgis
       case ECall("ST_Distance_Sphere", args, type, parenthesis):
         super.expr(ECall("ST_DistanceSphere", args, type, parenthesis), printTableName);

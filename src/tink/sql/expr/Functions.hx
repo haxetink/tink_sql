@@ -37,4 +37,16 @@ class Functions {
 
   public static function exists(q:Dataset<Dynamic, Dynamic, Dynamic>):Condition
     return ECall('EXISTS ', cast [q.toExpr()], VBool, false);
+
+  /**
+   * MySQL:
+   * Refer to column values from the INSERT portion of the INSERT ... ON DUPLICATE KEY UPDATE statement.
+   * https://dev.mysql.com/doc/refman/8.0/en/insert-on-duplicate.html
+   * 
+   * Postgres:
+   * Traslates to `EXCLUDED.$field`.
+   * https://www.postgresql.org/docs/current/sql-insert.html
+   */
+  public static function values<D,O>(e:Field<D,O>)
+    return ECall("VALUES", cast [e], VTypeOf(e), true);
 }
