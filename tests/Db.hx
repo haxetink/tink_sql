@@ -8,7 +8,6 @@ typedef User = {
   public var email(default, null):VarChar<50>;
   public var location(default, null):Null<VarChar<32>>;
 }
-
 typedef Post = {
   @:autoIncrement @:primary public var id(default, null):Id<Post>;
   public var author(default, null):Id<User>;
@@ -19,6 +18,12 @@ typedef Post = {
 typedef PostTags = {
   public var post(default, null):Id<Post>;
   public var tag(default, null):VarChar<50>;
+}
+
+typedef Clap = {
+  @:primary public var user(default, null):Id<User>;
+  @:primary public var post(default, null):Id<Post>;
+  public var count(default, null):Int;
 }
 
 typedef Types = {
@@ -109,7 +114,7 @@ typedef StringTypes = {
   public var textLong(default, null): LongText;
 }
 
-@:tables(User, Post, PostTags, Types, Geometry, Schema, StringTypes)
+@:tables(User, Post, PostTags, Clap, Types, Geometry, Schema, StringTypes)
 class Db extends tink.sql.Database {
   @:procedure var func:Int->{x:Int, point:tink.s2d.Point};
   @:table('alias') var PostAlias: Post;
