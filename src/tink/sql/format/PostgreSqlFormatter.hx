@@ -105,22 +105,23 @@ class PostgreSqlFormatter extends SqlFormatter<PostgreSqlColumnInfo, PostgreSqlK
         // pass
     }
 
-    var p = SqlFormatter.getAutoIncPrimaryKeyCol(insert.table);
+    var pKeys = SqlFormatter.getPrimaryKeys(insert.table);
     var statement = super.insert(insert);
 
     if (insert.update != null) {
       statement = statement
         .add('ON CONFLICT')
-        .addParenthesis(p.name)
+        .addParenthesis(separated(pKeys.map(k -> ident(k.name))))
         .add('DO UPDATE SET')
         .space()
         .separated(insert.update.map(function (set) {
           return ident(set.field.name)
             .add('=')
-            .add(expr(set.expr, false));
+            .add(expr(set.expr, true));
         }));
     }
 
+    var p = SqlFormatter.getAutoIncPrimaryKeyCol(insert.table);
     if (p != null) {
       statement = statement.add(sql("RETURNING").addIdent(p.name));
     }

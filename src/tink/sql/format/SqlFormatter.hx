@@ -448,6 +448,19 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
     }
     return null;
   }
+
+  static public function getPrimaryKeys(table:TableInfo) {
+    for (key in table.getKeys()) {
+      switch key {
+        case Primary(colNames):
+          var cols = table.getColumns();
+          return colNames.map(colName -> cols.find(col -> col.name == colName));
+        default:
+          // pass
+      }
+    }
+    return [];
+  }
 }
 
 typedef SqlType = {
