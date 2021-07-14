@@ -91,7 +91,7 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
       data: data, 
       ignore: options != null && !!options.ignore,
       replace: options != null && !!options.replace,
-      update: options != null ? options.update(this.fields) : null,
+      update: options != null && options.update != null ? options.update(this.fields) : null,
     }));
   }
 
