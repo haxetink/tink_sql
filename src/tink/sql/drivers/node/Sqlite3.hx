@@ -81,6 +81,9 @@ class Sqlite3Connection<Db:DatabaseInfo> implements Connection<Db> {
         });
       case CreateTable(_, _) | DropTable(_) | AlterTable(_, _):
         run(query).next(function(_) return Noise);
+      case TruncateTable(table):
+        // https://sqlite.org/lang_delete.html#the_truncate_optimization
+        run(Delete({from: table})).next(function(_) return Noise);
       case Insert(_):
         run(query).next(function(res) return new Id(res.lastID));
       case Update(_) | Delete(_):

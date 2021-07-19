@@ -112,7 +112,7 @@ class PDOConnection<Db:DatabaseInfo> implements Connection<Db> implements Saniti
             next: function () return parse(row)
           });
         }));
-      case CreateTable(_, _) | DropTable(_) | AlterTable(_, _):
+      case CreateTable(_, _) | DropTable(_) | AlterTable(_, _) | TruncateTable(_):
         fetch().next(function(_) return Noise);
       case Insert(_):
         fetch().next(function(_) return new Id(Std.parseInt(cnx.lastInsertId())));

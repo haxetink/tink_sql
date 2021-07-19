@@ -17,6 +17,7 @@ enum Query<Db, Result> {
   CallProcedure<Row:{}>(call:CallOperation<Row>):Query<Db, RealStream<Row>>;
   CreateTable<Row:{}>(table:TableInfo, ?ifNotExists:Bool):Query<Db, Promise<Noise>>;
   DropTable<Row:{}>(table:TableInfo):Query<Db, Promise<Noise>>;
+  TruncateTable<Row:{}>(table:TableInfo):Query<Db, Promise<Noise>>;
   AlterTable<Row:{}>(table:TableInfo, changes:Array<AlterTableOperation>):Query<Db, Promise<Noise>>;
   ShowColumns<Row:{}>(from:TableInfo):Query<Db, Promise<Array<Column>>>;
   ShowIndex<Row:{}>(from:TableInfo):Query<Db, Promise<Array<Key>>>;

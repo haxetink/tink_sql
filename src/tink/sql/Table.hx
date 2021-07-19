@@ -49,6 +49,9 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
   public function drop()
     return cnx.execute(DropTable(info));
 
+  public function truncate()
+    return cnx.execute(TruncateTable(info));
+
   public function diffSchema(destructive = false) {
     var schema = new Schema(info.getColumns(), info.getKeys());
     return (cnx.execute(ShowColumns(info)) && cnx.execute(ShowIndex(info)))
