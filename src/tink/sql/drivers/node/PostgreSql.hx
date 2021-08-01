@@ -144,7 +144,7 @@ class PostgreSqlConnection<Db:DatabaseInfo> implements Connection<Db> implements
         fetch().next(function(res) return {rowsAffected: res.rowCount});
       case Delete(_):
         fetch().next(function(res) return {rowsAffected: res.rowCount});
-      case CreateTable(_, _) | DropTable(_) | AlterTable(_, _):
+      case CreateTable(_, _) | DropTable(_) | AlterTable(_, _) | TruncateTable(_):
         fetch().next(function(r) {
           return Noise;
         });

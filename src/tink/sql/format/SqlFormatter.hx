@@ -21,6 +21,7 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
     return switch query {
       case CreateTable(table, ifNotExists): createTable(table, ifNotExists);
       case DropTable(table): dropTable(table);
+      case TruncateTable(table): truncateTable(table);
       case Insert(op): insert(op);
       case Select(op): select(op);
       case Union(op): union(op);
@@ -123,6 +124,9 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
 
   function dropTable(table:TableInfo)
     return sql('DROP TABLE').addIdent(table.getName());
+
+  function truncateTable(table:TableInfo)
+    return sql('TRUNCATE TABLE').addIdent(table.getName());
 
   function insertRow(columns:Iterable<Column>, row:DynamicAccess<Any>):Statement
     return parenthesis(

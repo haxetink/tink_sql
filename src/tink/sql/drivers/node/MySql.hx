@@ -98,7 +98,7 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
             next: function () return parse(iterator.next())
           });
         }));
-      case CreateTable(_, _) | DropTable(_) | AlterTable(_, _):
+      case CreateTable(_, _) | DropTable(_) | AlterTable(_, _) | TruncateTable(_):
         fetch().next(function(_) return Noise);
       case Insert(_):
         fetch().next(function(res) return new Id(res.insertId));
