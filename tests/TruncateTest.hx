@@ -3,7 +3,7 @@ package;
 @:asserts
 class TruncateTest extends TestWithDb {
 
-	@:before
+	@:before @:access(Run)
 	public function before()
 		return db.User.create()
 			.next(_ -> new Run(driver, db).insertUsers());
