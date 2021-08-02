@@ -48,6 +48,7 @@ class Run extends TestWithDb {
       new Run(mysql, dbMysql),
       new SchemaTest(mysql, dbMysql),
       new SubQueryTest(mysql, dbMysql),
+      new TruncateTest(mysql, dbMysql),
       #if nodejs
       new ProcedureTest(mysql, dbMysql),
       #end
@@ -59,6 +60,7 @@ class Run extends TestWithDb {
       new ExprTest(postgres, dbPostgres),
       new Run(postgres, dbPostgres),
       new GeometryTest(postgres, dbPostgres),
+      new TruncateTest(postgres, dbPostgres),
       #end
 
       new TypeTest(sqlite, dbSqlite),
@@ -68,6 +70,9 @@ class Run extends TestWithDb {
       new ExprTest(sqlite, dbSqlite),
       new Run(sqlite, dbSqlite),
       new SubQueryTest(sqlite, dbSqlite),
+      #if nodejs
+      new TruncateTest(sqlite, dbSqlite),
+      #end
       new TestIssue104()
     ])).handle(Runner.exit);
   }
