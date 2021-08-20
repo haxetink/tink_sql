@@ -73,7 +73,7 @@ typedef DeleteOperation<Row:{}> = {
 typedef InsertOperation<Db, Row:{}> = {
   table:TableInfo,
   data:InsertData<Db, Row>,
-  ?ignore:Bool, // mysql: INSERT IGNORE, postgres: ON CONFLICT (primary key) DO NOTHING
+  ?ignore:Bool, // mysql: INSERT IGNORE, postgres: ON CONFLICT DO NOTHING
   ?replace:Bool, // mysql only: REPLACE INTO
   ?update:Update<Row>, // mysql: ON DUPLICATE KEY UPDATE, postgres: ON CONFLICT (primary key) DO UPDATE SET
 }
