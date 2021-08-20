@@ -87,16 +87,17 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
     
   public function insertSelect(selected:Selected<Dynamic, Dynamic, Row, Db>, ?options): Promise<Id<Row>>
     return insert(Select(selected.toSelectOp()), options);
-      
-  function insert(data, ?options:{?ignore:Bool, ?replace:Bool}): Promise<Id<Row>> {
+
+  function insert(data, ?options:{?ignore:Bool, ?replace:Bool, ?update:Fields->Update<Row>}): Promise<Id<Row>> {
     return cnx.execute(Insert({
       table: info, 
       data: data, 
       ignore: options != null && !!options.ignore,
       replace: options != null && !!options.replace,
+      update: options != null && options.update != null ? options.update(this.fields) : null,
     }));
   }
-    
+
   public function update(f:Fields->Update<Row>, options:{ where: Filter, ?max:Int })
     return switch f(this.fields) {
       case []:

@@ -68,6 +68,14 @@ class PostgreSqlFormatter extends SqlFormatter<PostgreSqlColumnInfo, PostgreSqlK
       // case EField(_, _, VGeometry(_)):
       //   super.expr(e, printTableName).concat(sql("::geometry"));
 
+      case ECall("VALUES", [e], type, parenthesis):
+        switch (e:ExprData<Dynamic>) {
+          case EField(_, name, type):
+            sql('EXCLUDED.').ident(name);
+          case _:
+            throw "assert";
+        }
+
       // the functions are named differently in postgis
       case ECall("ST_Distance_Sphere", args, type, parenthesis):
         super.expr(ECall("ST_DistanceSphere", args, type, parenthesis), printTableName);
@@ -88,21 +96,6 @@ class PostgreSqlFormatter extends SqlFormatter<PostgreSqlColumnInfo, PostgreSqlK
         super.defineColumn(column);
     }
 
-  static function getAutoIncPrimaryKeyCol(table:TableInfo) {
-    for (key in table.getKeys()) {
-      switch key {
-        case Primary([colName]): // is a single col primary key
-          var col = table.getColumns().find(col -> col.name == colName);
-          if (col.type.match(DInt(_, _, true))) { // is auto inc
-            return col;
-          }
-        default:
-          // pass
-      }
-    }
-    return null;
-  }
-
   static function isAutoInc(c:Column) {
     return c.type.match(DInt(_, _, true, _));
   }
@@ -119,12 +112,34 @@ class PostgreSqlFormatter extends SqlFormatter<PostgreSqlColumnInfo, PostgreSqlK
       case _:
         // pass
     }
-    var p = getAutoIncPrimaryKeyCol(insert.table);
-    return if (p == null) {
-      super.insert(insert);
-    } else {
-      super.insert(insert).add(sql("RETURNING").addIdent(p.name));
+
+    var statement = super.insert(insert);
+
+    if (insert.ignore) {
+      statement = statement
+        .add('ON CONFLICT DO NOTHING');
     }
+
+    if (insert.update != null) {
+      var pKeys = SqlFormatter.getPrimaryKeys(insert.table);
+      statement = statement
+        .add('ON CONFLICT')
+        .addParenthesis(separated(pKeys.map(k -> ident(k.name))))
+        .add('DO UPDATE SET')
+        .space()
+        .separated(insert.update.map(function (set) {
+          return ident(set.field.name)
+            .add('=')
+            .add(expr(set.expr, true));
+        }));
+    }
+
+    var p = SqlFormatter.getAutoIncPrimaryKeyCol(insert.table);
+    if (p != null) {
+      statement = statement.add(sql("RETURNING").addIdent(p.name));
+    }
+
+    return statement;
   }
 
   override function insertRow(columns:Iterable<Column>, row:DynamicAccess<Any>):Statement

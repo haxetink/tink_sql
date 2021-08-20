@@ -438,6 +438,33 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
   public function parseKeys(keys:Array<KeyInfo>):Array<Key>
     throw 'implement';
 
+  static public function getAutoIncPrimaryKeyCol(table:TableInfo) {
+    for (key in table.getKeys()) {
+      switch key {
+        case Primary([colName]): // is a single col primary key
+          var col = table.getColumns().find(col -> col.name == colName);
+          if (col.type.match(DInt(_, _, true))) { // is auto inc
+            return col;
+          }
+        default:
+          // pass
+      }
+    }
+    return null;
+  }
+
+  static public function getPrimaryKeys(table:TableInfo) {
+    for (key in table.getKeys()) {
+      switch key {
+        case Primary(colNames):
+          var cols = table.getColumns();
+          return colNames.map(colName -> cols.find(col -> col.name == colName));
+        default:
+          // pass
+      }
+    }
+    return [];
+  }
 }
 
 typedef SqlType = {

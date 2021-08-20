@@ -52,6 +52,8 @@ class Run extends TestWithDb {
       #if nodejs
       new ProcedureTest(mysql, dbMysql),
       #end
+      new InsertIgnoreTest(mysql, dbMysql),
+      new UpsertTest(mysql, dbMysql),
 
       #if nodejs
       new TypeTest(postgres, dbPostgres),
@@ -61,6 +63,8 @@ class Run extends TestWithDb {
       new Run(postgres, dbPostgres),
       new GeometryTest(postgres, dbPostgres),
       new TruncateTest(postgres, dbPostgres),
+      new InsertIgnoreTest(postgres, dbPostgres),
+      new UpsertTest(postgres, dbPostgres),
       #end
 
       new TypeTest(sqlite, dbSqlite),
@@ -122,7 +126,7 @@ class Run extends TestWithDb {
 
   public function info() {
     asserts.assert(db.name == 'test');
-    asserts.assert(sorted(db.tableNames()).join(',') == 'Geometry,Post,PostTags,Schema,StringTypes,Types,User,alias');
+    asserts.assert(sorted(db.tableNames()).join(',') == 'Clap,Geometry,Post,PostTags,Schema,StringTypes,Types,User,alias');
     asserts.assert(sorted(db.tableInfo('Post').columnNames()).join(',') == 'author,content,id,title');
     return asserts.done();
   }
