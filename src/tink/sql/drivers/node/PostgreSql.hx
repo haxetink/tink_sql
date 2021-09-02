@@ -170,7 +170,10 @@ class PostgreSqlConnection<Db:DatabaseInfo> implements Connection<Db> implements
   function stream<T>(options: QueryOptions):Stream<T, Error> {
     return Future.irreversible(resolve -> {
       pool.query(options)
-        .then(r -> resolve(Success(Stream.ofIterator(r.rows.iterator()))))
+        .then(r -> resolve(Success(
+          // don't use `Stream.ofIterator`, which may cause a `RangeError: Maximum call stack size exceeded` for large results
+          Stream.ofNodeStream(r.command, Readable.from(cast r.rows))
+        )))
         .catchError(err -> resolve(Failure(err)));
     });
   }
