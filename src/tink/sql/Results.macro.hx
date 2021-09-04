@@ -36,7 +36,6 @@ class Results {
           
           def.kind = TDStructure;
           def.pack = ['tink', 'sql'];
-          trace(new haxe.macro.Printer().printTypeDefinition(def));
           def;
         case v:
           ctx.pos.error('[tink.sql.Results] Expected anonymous structure, but got $v');
