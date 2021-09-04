@@ -10,55 +10,6 @@ using tink.MacroApi;
 
 class TableBuilder {
 
-  static function resultField(fieldType: ComplexType, field: ClassField): Field {
-    return {
-      pos: field.pos,
-      name: field.name,
-      #if haxe4
-      access: if (field.isFinal) [AFinal] else [],
-      kind: 
-        if (field.isFinal) FVar(fieldType) 
-        else FProp('default', 'never', fieldType),
-      #else
-      kind: FProp('default', 'never', fieldType),
-      #end
-      meta: {
-        var m = [];
-        if(field.meta.extract(':optional').length > 0) 
-          m.push({name: ':optional', pos: field.pos});
-        m;
-      },
-    }
-  }
-
-  static function fieldsType(fieldType: ComplexType, rowType: ComplexType, field: ClassField): Field {
-    return {
-      pos: field.pos,
-      name: field.name,
-      kind: FProp('default', 'never', macro : tink.sql.Expr.Field<$fieldType, $rowType>)
-    }
-  }
-
-  @:allow(tink.sql.macros.FieldsBuilder)
-  static function buildFieldTypes(fields:Array<ClassField>) {
-    var fieldTypes = [
-      for (field in fields) 
-        field.name => field.type.reduce().toComplex()
-    ];
-    var rowType = TAnonymous([
-      for (field in fields)
-        resultField(fieldTypes[field.name], field)
-    ]);
-    var fieldsType = TAnonymous([
-      for (field in fields)
-        fieldsType(fieldTypes[field.name], rowType, field)
-    ]);
-    return {
-      rowType: rowType,
-      fieldsType: fieldsType
-    }
-  }
-
   static function build() {
     return BuildCache.getType('tink.sql.Table', function (ctx:BuildContext) {
       return
@@ -71,9 +22,9 @@ class TableBuilder {
                 fieldsValues = [],
                 keys = new KeyStore();
 
-            var types = buildFieldTypes(fields);
-            var rowType = types.rowType;
-            var fieldsType = types.fieldsType;
+            var modelCt = original.toComplex();
+            var rowType = macro:tink.sql.Results<$modelCt>;
+            var fieldsType = macro:tink.sql.Fields<$modelCt>;
 
             for (f in fields) {
               var fType = f.type.reduce().toComplex(),
