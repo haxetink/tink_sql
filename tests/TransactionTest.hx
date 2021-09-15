@@ -7,13 +7,13 @@ import tink.sql.Transaction;
 class TransactionTest extends TestWithDb {
 
   @:before
-	public function createTable() return db.User.create();
-	
-	@:after
-	public function dropTable() return db.User.drop();
-	
+  public function createTable() return db.User.create();
+  
+  @:after
+  public function dropTable() return db.User.drop();
+  
   public function shouldCommit()
-		return db.transaction(function (trx) {
+    return db.transaction(function (trx) {
       return trx.User.insertOne({
         id: cast null,
         name: '', email: '', location: ''

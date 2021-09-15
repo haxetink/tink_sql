@@ -55,21 +55,25 @@ class Run extends TestWithDb {
       new ProcedureTest(mysql, dbMysql),
       #end
       
+      // new ConnectionTest(mysql, dbMysql),
       new TransactionTest(mysql, dbMysql),
       new InsertIgnoreTest(mysql, dbMysql),
       new UpsertTest(mysql, dbMysql),
 
       // ====== postgres ======
       #if nodejs
-      // new TypeTest(postgres, dbPostgres),
-      // new SelectTest(postgres, dbPostgres),
-      // new FormatTest(postgres, dbPostgres),
-      // new ExprTest(postgres, dbPostgres),
-      // new Run(postgres, dbPostgres),
-      // new GeometryTest(postgres, dbPostgres),
-      // new TruncateTest(postgres, dbPostgres),
-      // new InsertIgnoreTest(postgres, dbPostgres),
-      // new UpsertTest(postgres, dbPostgres),
+      new TypeTest(postgres, dbPostgres),
+      new SelectTest(postgres, dbPostgres),
+      new FormatTest(postgres, dbPostgres),
+      new ExprTest(postgres, dbPostgres),
+      new Run(postgres, dbPostgres),
+      new GeometryTest(postgres, dbPostgres),
+      new TruncateTest(postgres, dbPostgres),
+      
+      new ConnectionTest(postgres, dbPostgres),
+      // new TransactionTest(postgres, dbPostgres),
+      new InsertIgnoreTest(postgres, dbPostgres),
+      new UpsertTest(postgres, dbPostgres),
       #end
 
       // ====== sqlite ======

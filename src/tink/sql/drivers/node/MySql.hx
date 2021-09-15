@@ -104,13 +104,16 @@ class MySqlConnectionPool<Db> implements Connection.ConnectionPool<Db> {
   
   function getNativeConnection() {
     return new Promise((resolve, reject) -> {
+      var cancelled = false;
       pool.getConnection((err, cnx) -> {
-        if(err != null)
+        if(cancelled)
+          cnx.release();
+        else if(err != null)
           reject(Error.ofJsError(err));
         else
           resolve(cnx);
       });
-      null;
+      () -> cancelled = true; // there is no mechanism to undo getConnection, so we set a flag and release the connection as soon as it is obtained
     });
   }
 }
@@ -206,7 +209,7 @@ class MySqlConnection<Db> implements Connection<Db> implements Sanitizer {
           if (err != null) reject(Error.ofJsError(err));
           else resolve(cast res);
         });
-        null;
+        null; // irreversible, we always want to wait for the query to finish
       });
     });
 
