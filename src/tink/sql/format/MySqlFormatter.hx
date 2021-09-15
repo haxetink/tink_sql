@@ -121,9 +121,30 @@ class MySqlFormatter extends SqlFormatter<MysqlColumnInfo, MysqlKeyInfo> {
       case AddKey(key):
         sql('ADD').add(defineKey(key));
     }
+    
+  override function insertInto<Db, Row:{}>(insert:InsertOperation<Db, Row>) {
+    return sql(insert.replace ? 'REPLACE' : 'INSERT')
+      .add('IGNORE', insert.ignore)
+      .add('INTO');
+  }
+
+  override function insert<Db, Row:{}>(insert:InsertOperation<Db, Row>) {
+    return insert.update == null ?
+      super.insert(insert) :
+      super.insert(insert)
+        .add('ON DUPLICATE KEY UPDATE')
+        .space()
+        .separated(insert.update.map(function (set) {
+          return ident(set.field.name)
+            .add('=')
+            .add(expr(set.expr, false));
+        }));
+  }
 
   override function expr(e:ExprData<Dynamic>, printTableName = true):Statement
     return switch e {
+      case null:
+        'NULL';
       case EValue(v, VGeometry(Point)):
         'ST_GeomFromText(\'${v.toWkt()}\',4326)';
       case EValue(v, VGeometry(LineString)):
@@ -143,7 +164,8 @@ class MySqlFormatter extends SqlFormatter<MysqlColumnInfo, MysqlKeyInfo> {
     return {  
       name: res.Field,
       nullable: res.Null == 'YES',
-      type: parseType(res.Type, res.Extra.indexOf('auto_increment') > -1, res.Default)
+      type: parseType(res.Type, res.Extra.indexOf('auto_increment') > -1, res.Default),
+      writable: res.Extra.indexOf('GENERATED') == -1,
     }
 
   override public function parseKeys(keys:Array<MysqlKeyInfo>):Array<Key> {

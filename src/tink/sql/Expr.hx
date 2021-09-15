@@ -48,6 +48,9 @@ enum BinOp<A, B, Ret> {
   Div<T:Float>:BinOp<T, T, Float>;
 
   Greater<T>:BinOp<T, T, Bool>;
+  GreaterOrEquals<T>:BinOp<T, T, Bool>;
+  LessThan<T>:BinOp<T, T, Bool>;
+  LessThanOrEquals<T>:BinOp<T, T, Bool>;
   Equals<T>:BinOp<T, T, Bool>;
   And:BinOp<Bool, Bool, Bool>;
   Or:BinOp<Bool, Bool, Bool>;
@@ -104,25 +107,25 @@ typedef Set<T> = Dataset<SingleField<T, Dynamic>, Dynamic, Dynamic>;
       return EBinOp(Greater, a, b);
 
     @:op(a < b) static function lt<T:Float>(a:Expr<T>, b:Expr<T>):Condition
-      return EBinOp(Greater, b, a);
+      return EBinOp(LessThan, a, b);
 
     @:op(a >= b) static function gte<T:Float>(a:Expr<T>, b:Expr<T>):Condition
-      return not(EBinOp(Greater, b, a));
+      return EBinOp(GreaterOrEquals, a, b);
 
     @:op(a <= b) static function lte<T:Float>(a:Expr<T>, b:Expr<T>):Condition
-      return not(EBinOp(Greater, a, b));
+      return EBinOp(LessThanOrEquals, a, b);
 
     @:op(a > b) static function gtDate(a:Expr<Date>, b:Expr<Date>):Condition
       return EBinOp(Greater, a, b);
 
     @:op(a < b) static function ltDate(a:Expr<Date>, b:Expr<Date>):Condition
-      return EBinOp(Greater, b, a);
+      return EBinOp(LessThan, a, b);
 
     @:op(a >= b) static function gteDate(a:Expr<Date>, b:Expr<Date>):Condition
-      return not(EBinOp(Greater, b, a));
+      return EBinOp(GreaterOrEquals, a, b);
 
     @:op(a <= b) static function lteDate(a:Expr<Date>, b:Expr<Date>):Condition
-      return not(EBinOp(Greater, a, b));
+      return EBinOp(LessThanOrEquals, a, b);
   //} endregion
 
   //{ region arithmetics for constants

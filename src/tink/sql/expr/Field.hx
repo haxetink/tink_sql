@@ -66,25 +66,25 @@ abstract Field<Data, Owner>(Expr<Data>) to Expr<Data> {
       return EBinOp(Greater, a, b);
 
     @:op(a < b) static function lt<T:Float, X, Y>(a:Field<T, X>, b:Field<T, Y>):Condition
-      return EBinOp(Greater, b, a);
+      return EBinOp(LessThan, a, b);
 
     @:op(a >= b) static function gte<T:Float, X, Y>(a:Field<T, X>, b:Field<T, Y>):Condition
-      return !(b > a);
+      return EBinOp(GreaterOrEquals, a, b);
 
     @:op(a <= b) static function lte<T:Float, X, Y>(a:Field<T, X>, b:Field<T, Y>):Condition
-      return !(a > b);
+      return EBinOp(LessThanOrEquals, a, b);
 
     @:op(a > b) static function gtDate<X, Y>(a:Field<Date, X>, b:Field<Date, Y>):Condition
       return EBinOp(Greater, a, b);
 
     @:op(a < b) static function ltDate<X, Y>(a:Field<Date, X>, b:Field<Date, Y>):Condition
-      return EBinOp(Greater, b, a);
+      return EBinOp(LessThan, a, b);
 
     @:op(a >= b) static function gteDate<X, Y>(a:Field<Date, X>, b:Field<Date, Y>):Condition
-      return !(b > a);
+      return EBinOp(GreaterOrEquals, a, b);
 
     @:op(a <= b) static function lteDate<X, Y>(a:Field<Date, X>, b:Field<Date, Y>):Condition
-      return !(a > b);
+      return EBinOp(LessThanOrEquals, a, b);
   //} endregion
 
   //{ region arithmetics for constants

@@ -16,7 +16,8 @@ interface TableInfo {
 typedef Column = {
   name:String,
   nullable:Bool,
-  type:DataType
+  type:DataType,
+  writable:Bool,
 }
 
 enum Key {

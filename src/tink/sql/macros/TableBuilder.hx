@@ -10,60 +10,11 @@ using tink.MacroApi;
 
 class TableBuilder {
 
-  static function resultField(fieldType: ComplexType, field: ClassField): Field {
-    return {
-      pos: field.pos,
-      name: field.name,
-      #if haxe4
-      access: if (field.isFinal) [AFinal] else [],
-      kind: 
-        if (field.isFinal) FVar(fieldType) 
-        else FProp('default', 'never', fieldType),
-      #else
-      kind: FProp('default', 'never', fieldType),
-      #end
-      meta: {
-        var m = [];
-        if(field.meta.extract(':optional').length > 0) 
-          m.push({name: ':optional', pos: field.pos});
-        m;
-      },
-    }
-  }
-
-  static function fieldsType(fieldType: ComplexType, rowType: ComplexType, field: ClassField): Field {
-    return {
-      pos: field.pos,
-      name: field.name,
-      kind: FProp('default', 'never', macro : tink.sql.Expr.Field<$fieldType, $rowType>)
-    }
-  }
-
-  @:allow(tink.sql.macros.FieldsBuilder)
-  static function buildFieldTypes(fields:Array<ClassField>) {
-    var fieldTypes = [
-      for (field in fields) 
-        field.name => field.type.reduce().toComplex()
-    ];
-    var rowType = TAnonymous([
-      for (field in fields)
-        resultField(fieldTypes[field.name], field)
-    ]);
-    var fieldsType = TAnonymous([
-      for (field in fields)
-        fieldsType(fieldTypes[field.name], rowType, field)
-    ]);
-    return {
-      rowType: rowType,
-      fieldsType: fieldsType
-    }
-  }
-
   static function build() {
     return BuildCache.getType('tink.sql.Table', function (ctx:BuildContext) {
       return
         switch ctx.type {
-          case TAnonymous(_.get() => { fields: [{ kind: FVar(_, _), name: name, type: Context.followWithAbstracts(_)  => TAnonymous(_.get().fields => fields) }] } ):
+          case TAnonymous(_.get() => { fields: [{ kind: FVar(_, _), name: name, type: model = Context.followWithAbstracts(_)  => TAnonymous(_.get().fields => fields) }] } ):
             var cName = ctx.name;
             var names = [for (f in fields) f.name];
 
@@ -71,9 +22,9 @@ class TableBuilder {
                 fieldsValues = [],
                 keys = new KeyStore();
 
-            var types = buildFieldTypes(fields);
-            var rowType = types.rowType;
-            var fieldsType = types.fieldsType;
+            var modelCt = model.toComplex();
+            var rowType = macro:tink.sql.Results<$modelCt>;
+            var fieldsType = macro:tink.sql.Fields<$modelCt>;
 
             for (f in fields) {
               var fType = f.type.reduce().toComplex(),
@@ -83,6 +34,7 @@ class TableBuilder {
               fieldsValues.push({
                 var name = macro $v{fName};
                 var nullable = f.meta.has(':optional');
+                var writable = !f.meta.has(':generated');
                 var defaultValue = switch meta.get(':byDefault') {
                   case null: macro null;
                   case [[value]]: value;
@@ -206,7 +158,8 @@ class TableBuilder {
                 macro @:pos(f.pos) {
                   name: $name,
                   nullable: $v{nullable},
-                  type: ${type}
+                  type: ${type},
+                  writable: $v{writable},
                 }
               });
 
@@ -235,8 +188,17 @@ class TableBuilder {
               return module.concat([name]).join('.').asComplexType();
             }
             // Typedef fields and result so we get readable error messages
-            var fieldsAlias = define(fieldsType, '${cName}_Fields');
-            var rowAlias = define(rowType, '${cName}_Result');
+            var readableName = switch model {
+              case TType(_.get() => {module: m, name: n}, _): 
+                var parts = m.split('.');
+                if(parts[parts.length - 1] != n) parts.push(n);
+                parts.push(cName.substr(5));
+                parts.join('_');
+              case _:
+                cName; // unreachable
+            }
+            var fieldsAlias = define(fieldsType, 'FieldsOf_${readableName}');
+            var rowAlias = define(rowType, 'ResultOf_${readableName}');
             var filterType = (macro function ($name:$fieldsAlias):tink.sql.Expr.Condition return tink.sql.Expr.ExprData.EValue(true, tink.sql.Expr.ExprType.VBool)).typeof().sure().toComplex({ direct: true });
 
             macro class $cName<Db> extends tink.sql.Table.TableSource<$fieldsAlias, $filterType, $rowAlias, Db> {

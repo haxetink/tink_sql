@@ -78,6 +78,7 @@ var db = new Db('db_name', driver);
  - Table setup
     - `db.User.create(): Promise<Noise>;`
     - `db.User.drop(): Promise<Noise>;`
+    - `db.User.truncate(): Promise<Noise>;`
  - Selecting
     - `db.User.count(): Promise<Int>;`
     - `db.User.all(limit, orderBy): Promise<Array<User>>;`

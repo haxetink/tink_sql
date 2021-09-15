@@ -36,6 +36,7 @@ class Schema {
       case DInt(bits, signed, true, defaultValue): {
         name: column.name, 
         nullable: column.nullable, 
+        writable: column.writable, 
         type: DInt(bits, signed, false, defaultValue)
       }
       default: column;

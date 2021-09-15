@@ -29,9 +29,8 @@ class Run extends TestWithDb {
       host: env('POSTGRES_HOST', '127.0.0.1'),
       user: env('POSTGRES_USER', 'postgres'),
       password: env('POSTGRES_PASSWORD', 'postgres'),
-      database: env('POSTGRES_DB', 'test'),
     });
-    var dbPostgres = new Db('test', postgres);
+    var dbPostgres = new Db(env('POSTGRES_DB', 'test'), postgres);
     #end
 
     var sqlite = new Sqlite(function(db) return ':memory:');
@@ -51,15 +50,26 @@ class Run extends TestWithDb {
       new Run(mysql, dbMysql),
       new SchemaTest(mysql, dbMysql),
       new SubQueryTest(mysql, dbMysql),
+      new TruncateTest(mysql, dbMysql),
       #if nodejs
       new ProcedureTest(mysql, dbMysql),
       #end
       
       new TransactionTest(mysql, dbMysql),
+      new InsertIgnoreTest(mysql, dbMysql),
+      new UpsertTest(mysql, dbMysql),
 
       // ====== postgres ======
       #if nodejs
-      new Run(postgres, dbPostgres),
+      // new TypeTest(postgres, dbPostgres),
+      // new SelectTest(postgres, dbPostgres),
+      // new FormatTest(postgres, dbPostgres),
+      // new ExprTest(postgres, dbPostgres),
+      // new Run(postgres, dbPostgres),
+      // new GeometryTest(postgres, dbPostgres),
+      // new TruncateTest(postgres, dbPostgres),
+      // new InsertIgnoreTest(postgres, dbPostgres),
+      // new UpsertTest(postgres, dbPostgres),
       #end
 
       // ====== sqlite ======
@@ -71,6 +81,9 @@ class Run extends TestWithDb {
       new Run(sqlite, dbSqlite),
       new SubQueryTest(sqlite, dbSqlite),
       new TransactionTest(sqlite, dbSqlite),
+      #if nodejs
+      new TruncateTest(sqlite, dbSqlite),
+      #end
       new TestIssue104()
     ])).handle(Runner.exit);
   }
@@ -120,7 +133,7 @@ class Run extends TestWithDb {
 
   public function info() {
     asserts.assert(db.getName() == 'test');
-    asserts.assert(sorted(db.getInfo().tableNames()).join(',') == 'Geometry,Post,PostTags,Schema,StringTypes,Types,User,alias');
+    asserts.assert(sorted(db.getInfo().tableNames()).join(',') == 'Clap,Geometry,Post,PostTags,Schema,StringTypes,Types,User,alias');
     asserts.assert(sorted(db.getInfo().tableInfo('Post').columnNames()).join(',') == 'author,content,id,title');
     return asserts.done();
   }

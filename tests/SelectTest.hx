@@ -4,6 +4,7 @@ import tink.unit.Assert.assert;
 import tink.sql.OrderBy;
 import Db;
 import tink.sql.Fields;
+import tink.sql.expr.Functions;
 
 using tink.CoreApi;
 
@@ -31,7 +32,8 @@ class SelectTest extends TestWithDb {
 	public function teardown() {
 		return Promise.inParallel([
 			db.Post.drop(),
-			db.User.drop()
+			db.User.drop(),
+			db.PostTags.drop(),
 		]);
 	}
 	
@@ -43,11 +45,21 @@ class SelectTest extends TestWithDb {
 				name: User.name
 			})
 			.where(Post.title == 'test')
-			.groupBy(function (fields) return [fields.Post.id])
-			.having(User.name == 'Alice')
 			.first()
 			.next(function(row) {
 				return assert(row.title == 'test' && row.name == 'Alice');
+			});
+
+	public function selectGroupBy()
+		return db.Post
+			.select({
+				count: Functions.count(),
+			})
+			.groupBy(function (fields) return [fields.author])
+			.having(function (fields) return Functions.count() > 1)
+			.first()
+			.next(function(row) {
+				return assert(row.count == 3);
 			});
 
 	public function selectWithFunction() {
@@ -64,20 +76,20 @@ class SelectTest extends TestWithDb {
 			});
 	}
 
-    public function selectWithIfNull() 
-        // test IFNULL: only Bob has location == null (translated to "Unknown" here)
-        return db.User
-            .select({ 
-                name: User.name,
-                location: tink.sql.expr.Functions.ifNull( User.location, "Unknown"),
-            })
-            .all()
-            .next( function(a) {
-                for (o in a) {
-                    asserts.assert( (o.name == "Bob") == (o.location == "Unknown") );
-                }
-                return asserts.done();
-            })
-        ;
+	public function selectWithIfNull() 
+			// test IFNULL: only Bob has location == null (translated to "Unknown" here)
+			return db.User
+					.select({ 
+							name: User.name,
+							location: tink.sql.expr.Functions.ifNull( User.location, "Unknown"),
+					})
+					.all()
+					.next( function(a) {
+							for (o in a) {
+									asserts.assert( (o.name == "Bob") == (o.location == "Unknown") );
+							}
+							return asserts.done();
+					})
+			;
 
 }

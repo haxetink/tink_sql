@@ -12,7 +12,7 @@ using tink.CoreApi;
 class ResultParser<Db> {
   public function new() {}
   
-  inline function parseGeometryValue<T, C>(bytes:Bytes):Any {
+  function parseGeometryValue<T, C>(bytes:Bytes):Any {
     return switch tink.spatial.Parser.wkb(bytes.sub(4, bytes.length - 4)) {
       case S2D(Point(v)): v;
       case S2D(LineString(v)): v;

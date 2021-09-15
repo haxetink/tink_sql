@@ -49,6 +49,9 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
   public function drop()
     return cnx.execute(DropTable(info));
 
+  public function truncate()
+    return cnx.execute(TruncateTable(info));
+
   public function diffSchema(destructive = false) {
     var schema = new Schema(info.getColumns(), info.getKeys());
     return (cnx.execute(ShowColumns(info)) && cnx.execute(ShowIndex(info)))
@@ -76,23 +79,25 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
   }
   
   public function insertMany(rows:Array<Row>, ?options): Promise<Id<Row>>
-    return if (rows.length == 0) cast Promise.NULL
-      else cnx.execute(Insert({
-        table: info, 
-        data: Literal(rows), 
-        ignore: if (options == null) false else options.ignore
-      }));
+    return if (rows.length == 0) cast Promise #if (tink_core >= "2") .NOISE #else .NULL #end
+      else insert(Literal(rows), options);
     
   public function insertOne(row:Row, ?options): Promise<Id<Row>>
-    return insertMany([row], options);
+    return insert(Literal([row]), options);
     
   public function insertSelect(selected:Selected<Dynamic, Dynamic, Row, Db>, ?options): Promise<Id<Row>>
+    return insert(Select(selected.toSelectOp()), options);
+
+  function insert(data, ?options:{?ignore:Bool, ?replace:Bool, ?update:Fields->Update<Row>}): Promise<Id<Row>> {
     return cnx.execute(Insert({
-        table: info, 
-        data: Select(selected.toSelectOp()), 
-        ignore: if (options == null) false else options.ignore
-      }));
-    
+      table: info, 
+      data: data, 
+      ignore: options != null && !!options.ignore,
+      replace: options != null && !!options.replace,
+      update: options != null && options.update != null ? options.update(this.fields) : null,
+    }));
+  }
+
   public function update(f:Fields->Update<Row>, options:{ where: Filter, ?max:Int })
     return switch f(this.fields) {
       case []:

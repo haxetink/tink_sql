@@ -112,7 +112,7 @@ class PDOConnection<Db> implements Connection.ConnectionPool<Db> implements Sani
             next: function () return parse(row)
           });
         }));
-      case Transaction(_) | CreateTable(_, _) | DropTable(_) | AlterTable(_, _):
+      case Transaction(_) | CreateTable(_, _) | DropTable(_) | AlterTable(_, _) | TruncateTable(_):
         fetch().next(function(_) return Noise);
       case Insert(_):
         fetch().next(function(_) return new Id(Std.parseInt(cnx.lastInsertId())));

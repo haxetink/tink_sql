@@ -161,7 +161,7 @@ class MySqlConnection<Db> implements Connection<Db> implements Sanitizer {
             next: function () return parse(iterator.next())
           });
         }));
-      case Transaction(_) | CreateTable(_, _) | DropTable(_) | AlterTable(_, _):
+      case Transaction(_) | CreateTable(_, _) | DropTable(_) | AlterTable(_, _) | TruncateTable(_):
         fetch().next(function(_) return Noise);
       case Insert(_):
         fetch().next(function(res) return new Id(res.insertId));

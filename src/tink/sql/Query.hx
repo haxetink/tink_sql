@@ -18,6 +18,7 @@ enum Query<Db, Result> {
   CallProcedure<Row:{}>(call:CallOperation<Row>):Query<Db, RealStream<Row>>;
   CreateTable<Row:{}>(table:TableInfo, ?ifNotExists:Bool):Query<Db, Promise<Noise>>;
   DropTable<Row:{}>(table:TableInfo):Query<Db, Promise<Noise>>;
+  TruncateTable<Row:{}>(table:TableInfo):Query<Db, Promise<Noise>>;
   AlterTable<Row:{}>(table:TableInfo, changes:Array<AlterTableOperation>):Query<Db, Promise<Noise>>;
   ShowColumns<Row:{}>(from:TableInfo):Query<Db, Promise<Array<Column>>>;
   ShowIndex<Row:{}>(from:TableInfo):Query<Db, Promise<Array<Key>>>;
@@ -75,7 +76,9 @@ typedef DeleteOperation<Row:{}> = {
 typedef InsertOperation<Db, Row:{}> = {
   table:TableInfo,
   data:InsertData<Db, Row>,
-  ?ignore:Bool
+  ?ignore:Bool, // mysql: INSERT IGNORE, postgres: ON CONFLICT DO NOTHING
+  ?replace:Bool, // mysql only: REPLACE INTO
+  ?update:Update<Row>, // mysql: ON DUPLICATE KEY UPDATE, postgres: ON CONFLICT (primary key) DO UPDATE SET
 }
 
 enum InsertData<Db, Row:{}> {

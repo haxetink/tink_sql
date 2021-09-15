@@ -168,7 +168,7 @@ class SubQueryTest extends TestWithDb {
 	
 	public function insertSelectFromSelection() {
 		return db.User.insertSelect(db.User.select({
-			id: EValue(null, VTypeOf(User.id)), // TODO: need a better way to construct a NULL expr
+			id: null,
 			name: User.name,
 			email: User.email,
 			location: User.location,

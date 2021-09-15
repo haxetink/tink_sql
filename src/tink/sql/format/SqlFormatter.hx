@@ -22,6 +22,7 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
       // case Multi(queries): queries.map(format).join('; ');
       case CreateTable(table, ifNotExists): createTable(table, ifNotExists);
       case DropTable(table): dropTable(table);
+      case TruncateTable(table): truncateTable(table);
       case Insert(op): insert(op);
       case Select(op): select(op);
       case Union(op): union(op);
@@ -126,6 +127,9 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
   function dropTable(table:TableInfo)
     return sql('DROP TABLE').addIdent(table.getName());
 
+  function truncateTable(table:TableInfo)
+    return sql('TRUNCATE TABLE').addIdent(table.getName());
+
   function insertRow(columns:Iterable<Column>, row:DynamicAccess<Any>):Statement
     return parenthesis(
       separated(columns.map(
@@ -145,24 +149,25 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
       ))
     );
 
-
+  function insertInto<Db, Row:{}>(insert:InsertOperation<Db, Row>) {
+    return sql('INSERT INTO');
+  }
+    
   function insert<Db, Row:{}>(insert:InsertOperation<Db, Row>) {
-    var q = sql('INSERT')
-      .add('IGNORE', insert.ignore)
-      .add('INTO')
-      .addIdent(insert.table.getName());
-      
+    var q = insertInto(insert).addIdent(insert.table.getName());
+    
     return switch insert.data {
       case Literal(rows):
+        var writableColumns = insert.table.getColumns().filter(function(c) return c.writable);
         q
           .addParenthesis(
             separated(
-              insert.table.columnNames()
+              writableColumns.map(function(c) return c.name)
                 .map(ident)
             )
           )
           .add('VALUES')
-          .add(separated(rows.map(insertRow.bind(insert.table.getColumns()))));
+          .add(separated(rows.map(insertRow.bind(writableColumns))));
       case Select(op):
         var columns = switch [op.from, op.selection] {
           case [TTable(table), null]:
@@ -345,6 +350,9 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
       case And: 'AND';
       case Equals: '=';
       case Greater: '>';
+      case LessThan: '<';
+      case GreaterOrEquals: '>=';
+      case LessThanOrEquals: '<=';
       case Like: 'LIKE';
       case In: 'IN';
     }
@@ -364,6 +372,8 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
 
   function expr(e:ExprData<Dynamic>, printTableName = true):Statement
     return switch e {
+      case null | EValue(null, _):
+        'NULL';
       case EUnOp(op, a, false):
         unOp(op).add(expr(a, printTableName));
       case EUnOp(op, a, true):
@@ -386,8 +396,6 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
           ? empty() 
           : ident(table).sql('.')
         ).ident(name);
-      case EValue(null, _):
-        'NULL';
       case EValue(v, VBool):
         value(v);
       case EValue(v, VString):
@@ -442,6 +450,33 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
   public function parseKeys(keys:Array<KeyInfo>):Array<Key>
     throw 'implement';
 
+  static public function getAutoIncPrimaryKeyCol(table:TableInfo) {
+    for (key in table.getKeys()) {
+      switch key {
+        case Primary([colName]): // is a single col primary key
+          var col = table.getColumns().find(col -> col.name == colName);
+          if (col.type.match(DInt(_, _, true))) { // is auto inc
+            return col;
+          }
+        default:
+          // pass
+      }
+    }
+    return null;
+  }
+
+  static public function getPrimaryKeys(table:TableInfo) {
+    for (key in table.getKeys()) {
+      switch key {
+        case Primary(colNames):
+          var cols = table.getColumns();
+          return colNames.map(colName -> cols.find(col -> col.name == colName));
+        default:
+          // pass
+      }
+    }
+    return [];
+  }
 }
 
 typedef SqlType = {

@@ -11,6 +11,7 @@ import haxe.io.Bytes;
 import tink.sql.Query;
 import tink.sql.Info;
 import tink.sql.Types;
+import tink.sql.Expr;
 import tink.sql.format.Sanitizer;
 import tink.streams.Stream;
 import tink.sql.format.PostgreSqlFormatter;
@@ -25,6 +26,7 @@ using tink.CoreApi;
 
 typedef PostgreSqlNodeSettings = {
   > PostgreSqlSettings,
+  ?ssl:PostgresSslConfig,
 }
 
 class PostgreSql implements Driver {
@@ -43,6 +45,7 @@ class PostgreSql implements Driver {
       password: settings.password,
       host: settings.host,
       port: settings.port,
+      ssl: settings.ssl,
       database: name,
     });
 
@@ -50,25 +53,71 @@ class PostgreSql implements Driver {
   }
 }
 
+class PostgreSqlResultParser<Db> extends ResultParser<Db> {
+  override function parseGeometryValue<T, C>(bytes:Bytes):Any {
+    return switch tink.spatial.Parser.ewkb(bytes).geometry {
+      case S2D(Point(v)): v;
+      case S2D(LineString(v)): v;
+      case S2D(Polygon(v)): v;
+      case S2D(MultiPoint(v)): v;
+      case S2D(MultiLineString(v)): v;
+      case S2D(MultiPolygon(v)): v;
+      case S2D(GeometryCollection(v)): v;
+      case v: throw 'expected 2d geometries';
+    }
+  }
+
+  override function parseValue(value:Dynamic, type:ExprType<Dynamic>): Any {
+    if (value == null) return null;
+    return switch type {
+      case null: super.parseValue(value, type);
+      case ExprType.VGeometry(_):
+        var g = parseGeometryValue(Bytes.ofHex(value));
+        // trace(g);
+        return g;
+      default: super.parseValue(value, type);
+    }
+  }
+
+  static function geoJsonToTink(geoJson:Dynamic):Dynamic {
+    return switch (geoJson.type:geojson.GeometryType<Dynamic>) {
+      case Point:
+        tink.s2d.Point.fromGeoJson(geoJson);
+      case LineString:
+        (geoJson:geojson.LineString).points;
+      case Polygon:
+        tink.s2d.Polygon.fromGeoJson(geoJson);
+      case MultiPoint:
+        (geoJson:geojson.MultiPoint).points;
+      case MultiLineString:
+        (geoJson:geojson.MultiLineString).lines.map(l -> l.points);
+      case MultiPolygon:
+        tink.s2d.MultiPolygon.fromGeoJson(geoJson);
+    }
+  }
+}
+
 class PostgreSqlConnection<Db> implements Connection.ConnectionPool<Db> implements Sanitizer {
   var pool:Pool;
   var info:DatabaseInfo;
   var formatter:PostgreSqlFormatter;
-  var parser:ResultParser<Db>;
+  var parser:PostgreSqlResultParser<Db>;
   var streamBatch:Int = 50;
 
   public function new(info, pool) {
     this.info = info;
     this.pool = pool;
     this.formatter = new PostgreSqlFormatter();
-    this.parser = new ResultParser();
+    this.parser = new PostgreSqlResultParser();
   }
 
   public function value(v:Any):String
     return if (Std.is(v, Date))
-      'DATE_ADD(FROM_UNIXTIME(0), INTERVAL ${(v:Date).getTime()/1000} SECOND)';
+      'to_timestamp(${(v:Date).getTime()/1000})';
     else if (Std.is(v, String))
       Client.escapeLiteral(v);
+    else if (Std.is(v, Bytes))
+      "'\\x" + (cast v:Bytes).toHex() + "'";
     else
       v;
 
@@ -90,12 +139,12 @@ class PostgreSqlConnection<Db> implements Connection.ConnectionPool<Db> implemen
         var parse:DynamicAccess<Any>->{} = parser.queryParser(query, formatter.isNested(query));
         stream(queryOptions(query)).map(parse);
       case Insert(_):
-        fetch().next(function(res) return res.rows.length > 0 ? new Id(res.rows[0][0]) : cast Promise.NULL);
+        fetch().next(function(res):Promise<Dynamic> return res.rows.length > 0 ? new Id(res.rows[0][0]) : Promise.NOISE);
       case Update(_):
         fetch().next(function(res) return {rowsAffected: res.rowCount});
       case Delete(_):
         fetch().next(function(res) return {rowsAffected: res.rowCount});
-      case CreateTable(_, _) | DropTable(_) | AlterTable(_, _):
+      case CreateTable(_, _) | DropTable(_) | AlterTable(_, _) | TruncateTable(_):
         fetch().next(function(r) {
           return Noise;
         });
@@ -117,10 +166,14 @@ class PostgreSqlConnection<Db> implements Connection.ConnectionPool<Db> implemen
     }
   }
 
+
   function stream<T>(options: QueryOptions):Stream<T, Error> {
     return Future.irreversible(resolve -> {
       pool.query(options)
-        .then(r -> resolve(Success(Stream.ofIterator(r.rows.iterator()))))
+        .then(r -> resolve(Success(
+          // don't use `Stream.ofIterator`, which may cause a `RangeError: Maximum call stack size exceeded` for large results
+          Stream.ofNodeStream(r.command, Readable.from(cast r.rows))
+        )))
         .catchError(err -> resolve(Failure(err)));
     });
   }
@@ -131,6 +184,18 @@ class PostgreSqlConnection<Db> implements Connection.ConnectionPool<Db> implemen
   }
 }
 
+private typedef TypeParsers = {
+  function getTypeParser(dataTypeID:Int, format:String):String->Dynamic;
+}
+
+typedef PostgresSslConfig = haxe.extern.EitherType<Bool, {
+  ?rejectUnauthorized:Bool,
+  ?sslca:String,
+  ?sslkey:String,
+  ?sslcert:String,
+  ?sslrootcert:String,
+}>;
+
 private typedef ClientConfig = {
   ?user:String,
   ?host:String,
@@ -138,8 +203,8 @@ private typedef ClientConfig = {
   ?password:String,
   ?port:Int,
   ?connectionString:String,
-  ?ssl:Dynamic,
-  ?types:Dynamic,
+  ?ssl:PostgresSslConfig,
+  ?types:TypeParsers,
   ?statement_timeout:Int,
   ?query_timeout:Int,
   ?connectionTimeoutMillis:Int,
@@ -158,11 +223,19 @@ private typedef QueryOptions = {
   ?values:Array<Dynamic>,
   ?name:String,
   ?rowMode:String,
-  ?types:Dynamic,
+  ?types:TypeParsers,
 }
 
 private typedef Submittable = {
   function submit(connection:Dynamic):Void;
+}
+
+@:jsRequire("pg")
+private extern class Pg {
+  static public var types(default, null):{
+    public function setTypeParser(oid:Int, parser:String->Dynamic):Void;
+    public function getTypeParser(oid:Int, format:String):String->Dynamic;
+  }
 }
 
 // https://node-postgres.com/api/pool
@@ -213,10 +286,15 @@ private extern class Result {
 private extern class Cursor extends EventEmitter<Cursor> {
   public function new(text:String, values:Dynamic, ?config:{
     ?rowMode:String,
-    ?types:Dynamic,
+    ?types:TypeParsers,
   }):Void;
   public function read(rowCount:Int, callback:JsError->Array<Dynamic>->Result->Void):Void;
   public function close(?cb:?JsError->Void):Void;
   public function submit(connection:Dynamic):Void;
 }
 #end
+
+private typedef GeoJSONOptions = {
+  ?shortCrs:Bool,
+  ?longCrs:Bool,
+}

@@ -35,15 +35,16 @@ class FormatTest extends TestWithDb {
 		return assert(formatter.createTable(table, false).toString(sanitizer) == sql);
 	}
 
-	@:variant(true, 'INSERT IGNORE INTO `PostTags` (`post`, `tag`) VALUES (1, "haxe")')
-	@:variant(false, 'INSERT INTO `PostTags` (`post`, `tag`) VALUES (1, "haxe")')
-	public function insertIgnore(ignore, result) {
-		return assert(formatter.insert({
-			table: db.PostTags.info, 
-			data: Literal([{post: 1, tag: 'haxe'}]),
-			ignore: ignore
-		}).toString(sanitizer) == result);
-	}
+	// TODO: this test is MySQL-specific
+	// @:variant(true, 'INSERT IGNORE INTO `PostTags` (`post`, `tag`) VALUES (1, "haxe")')
+	// @:variant(false, 'INSERT INTO `PostTags` (`post`, `tag`) VALUES (1, "haxe")')
+	// public function insertIgnore(ignore, result) {
+	// 	return assert(formatter.insert({
+	// 		table: db.PostTags.info, 
+	// 		data: Literal([{post: 1, tag: 'haxe'}]),
+	// 		ignore: ignore
+	// 	}).toString(sanitizer) == result);
+	// }
 
 	public function like() {
 		var dataset = db.Types.where(Types.text.like('mystring'));
@@ -117,10 +118,10 @@ class FakeTable1 extends FakeTable {
 
 	override function getColumns():Iterable<Column>
 		return [
-			{name: 'id', nullable: false, type: DInt(Default, false, true)},
-			{name: 'username', nullable: false, type: DString(50)},
-			{name: 'admin', nullable: false, type: DBool()},
-			{name: 'age', nullable: true, type: DInt(Default, false, false)},
+			{name: 'id', nullable: false, writable: true, type: DInt(Default, false, true)},
+			{name: 'username', nullable: false, writable: true, type: DString(50)},
+			{name: 'admin', nullable: false, writable: true, type: DBool()},
+			{name: 'age', nullable: true, writable: true, type: DInt(Default, false, false)},
 		];
 }
 
