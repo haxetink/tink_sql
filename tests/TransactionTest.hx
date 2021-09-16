@@ -3,6 +3,8 @@ package;
 import tink.unit.Assert.assert;
 import tink.sql.Transaction;
 
+using tink.CoreApi;
+
 @:asserts
 class TransactionTest extends TestWithDb {
 
@@ -12,31 +14,38 @@ class TransactionTest extends TestWithDb {
   @:after
   public function dropTable() return db.User.drop();
   
-  public function shouldCommit()
-    return db.transaction(function (trx) {
-      return trx.User.insertOne({
+  public function commit() {
+    return db.transaction(trx -> {
+      trx.User.insertOne({
         id: cast null,
         name: '', email: '', location: ''
-      }).next(function (id) {
-        return Commit(id);
-      });
-    }).next(function (res) {
-      return assert(res.equals(Commit(1)));
-    });
-
-  public function shouldRollback()
-    return db.transaction(function (trx) {
-      return trx.User.insertOne({
+      }).next(id -> Commit(id));
+    })
+      .next(res -> assert(res.equals(Commit(1))))
+      .next(_ -> db.User.all())
+      .next(res -> assert(res.length == 1));
+  }
+  
+  public function rollback() {
+    return db.transaction(trx -> {
+      trx.User.insertOne({
         id: cast null,
         name: '', email: '', location: ''
-      }).next(function (id) {
-        return Rollback;
-      });
-    }).next(function (res)
-      return db.User.all()
-    ).next(function (res) {
-      // trace(res);
-      return assert(res.length == 0);
-    });
+      }).next(_ -> Rollback);
+    })
+      .next(_ -> db.User.all())
+      .next(res -> assert(res.length == 0));
+  }
+  
+  public function aborted() {
+    return db.transaction(trx -> {
+      trx.User.insertOne({
+        id: cast null,
+        name: '', email: '', location: ''
+      }).next(_ -> new Error('Aborted'));
+    })
+      .flatMap(_ -> db.User.all()).asPromise()
+      .next(res -> assert(res.length == 0));
+  }
 
 }
