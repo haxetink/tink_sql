@@ -71,7 +71,7 @@ class Run extends TestWithDb {
       new TruncateTest(postgres, dbPostgres),
       
       new ConnectionTest(postgres, dbPostgres),
-      // new TransactionTest(postgres, dbPostgres),
+      new TransactionTest(postgres, dbPostgres),
       new InsertIgnoreTest(postgres, dbPostgres),
       new UpsertTest(postgres, dbPostgres),
       #end

@@ -27,6 +27,7 @@ using tink.CoreApi;
 typedef PostgreSqlNodeSettings = {
   > PostgreSqlSettings,
   ?ssl:PostgresSslConfig,
+  ?max:Int,
 }
 
 class PostgreSql implements Driver {
@@ -46,10 +47,14 @@ class PostgreSql implements Driver {
       host: settings.host,
       port: settings.port,
       ssl: settings.ssl,
+      max: switch settings.max {
+        case null: 1;
+        case v: v;
+      },
       database: name,
     });
 
-    return new PostgreSqlConnection(info, pool);
+    return new PostgreSqlConnectionPool(info, pool);
   }
 }
 
@@ -97,18 +102,69 @@ class PostgreSqlResultParser<Db> extends ResultParser<Db> {
   }
 }
 
-class PostgreSqlConnection<Db> implements Connection.ConnectionPool<Db> implements Sanitizer {
+class PostgreSqlConnectionPool<Db> implements Connection.ConnectionPool<Db> {
   var pool:Pool;
   var info:DatabaseInfo;
   var formatter:PostgreSqlFormatter;
   var parser:PostgreSqlResultParser<Db>;
   var streamBatch:Int = 50;
-
+  
   public function new(info, pool) {
     this.info = info;
     this.pool = pool;
     this.formatter = new PostgreSqlFormatter();
     this.parser = new PostgreSqlResultParser();
+  }
+  
+  public function getFormatter()
+    return formatter;
+  
+  public function execute<Result>(query:Query<Db, Result>):Result {
+    final cnx = getNativeConnection();
+    return new PostgreSqlConnection(info, cnx, true).execute(query);
+  }
+  
+  public function isolate():Pair<Connection<Db>, CallbackLink> {
+    final cnx = getNativeConnection();
+    return new Pair(
+      (new PostgreSqlConnection(info, cnx, false):Connection<Db>),
+      (() -> cnx.handle(o -> switch o {
+        case Success(native): native.release();
+        case Failure(_): // nothing to do
+      }):CallbackLink)
+    );
+  }
+  
+  function getNativeConnection() {
+    return new Promise((resolve, reject) -> {
+      var cancelled = false;
+      pool.connect().then(
+        client -> {
+          if(cancelled)
+            client.release();
+          else
+            resolve(client);
+        },
+        err -> reject(Error.ofJsError(err))
+      );
+      () -> cancelled = true; // there is no mechanism to undo connect, so we set a flag and release the client as soon as it is obtained
+    });
+  }
+}
+class PostgreSqlConnection<Db> implements Connection<Db> implements Sanitizer {
+  var client:Promise<Client>;
+  var info:DatabaseInfo;
+  var formatter:PostgreSqlFormatter;
+  var parser:PostgreSqlResultParser<Db>;
+  var streamBatch:Int = 50;
+  var autoRelease:Bool;
+
+  public function new(info, client, autoRelease) {
+    this.info = info;
+    this.client = client;
+    this.formatter = new PostgreSqlFormatter();
+    this.parser = new PostgreSqlResultParser();
+    this.autoRelease = autoRelease;
   }
 
   public function value(v:Any):String
@@ -131,9 +187,7 @@ class PostgreSqlConnection<Db> implements Connection.ConnectionPool<Db> implemen
     return Failure(Error.withData(error.message, error));
 
   public function execute<Result>(query:Query<Db,Result>):Result {
-    inline function fetch() return pool
-      .query(queryOptions(query))
-      .toPromise();
+    inline function fetch() return run(queryOptions(query));
     return switch query {
       case Select(_) | Union(_):
         var parse:DynamicAccess<Any>->{} = parser.queryParser(query, formatter.isNested(query));
@@ -144,10 +198,8 @@ class PostgreSqlConnection<Db> implements Connection.ConnectionPool<Db> implemen
         fetch().next(function(res) return {rowsAffected: res.rowCount});
       case Delete(_):
         fetch().next(function(res) return {rowsAffected: res.rowCount});
-      case CreateTable(_, _) | DropTable(_) | AlterTable(_, _) | TruncateTable(_):
-        fetch().next(function(r) {
-          return Noise;
-        });
+      case Transaction(_) | CreateTable(_, _) | DropTable(_) | AlterTable(_, _) | TruncateTable(_):
+        fetch().next(function(r) return Noise);
       case _:
         throw query.getName() + " has not been implemented";
     }
@@ -167,21 +219,24 @@ class PostgreSqlConnection<Db> implements Connection.ConnectionPool<Db> implemen
   }
 
 
-  function stream<T>(options: QueryOptions):Stream<T, Error> {
-    return Future.irreversible(resolve -> {
-      pool.query(options)
-        .then(r -> resolve(Success(
-          // don't use `Stream.ofIterator`, which may cause a `RangeError: Maximum call stack size exceeded` for large results
-          Stream.ofNodeStream(r.command, Readable.from(cast r.rows))
-        )))
-        .catchError(err -> resolve(Failure(err)));
-    });
+  function stream(options: QueryOptions):Stream<Any, Error> {
+    // TODO: use the 'row' event for streaming
+    return client.next(
+      client -> client.query(options)
+        .toPromise()
+        // don't use `Stream.ofIterator`, which may cause a `RangeError: Maximum call stack size exceeded` for large results
+        .next(r -> Stream.ofNodeStream(r.command, Readable.from(cast r.rows), {onEnd: autoRelease ? () -> client.release() : null}))
+    );
   }
   
+  function run(options: QueryOptions):Promise<Result>
+    return client.next(
+      client -> client.query(options)
+        .toPromise()
+        .asFuture()
+        .withSideEffect(_ -> if(autoRelease) client.release())
+    );
   
-  public function isolate():Pair<Connection<Db>, CallbackLink> {
-    throw 'TODO';
-  }
 }
 
 private typedef TypeParsers = {
