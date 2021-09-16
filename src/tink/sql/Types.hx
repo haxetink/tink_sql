@@ -31,6 +31,7 @@ abstract Id<T>(Int) to Int {
   public inline function new(v)
     this = v;
 
+  @:deprecated('See https://github.com/haxetink/tink_sql/pull/94')
   @:from static inline function ofStringly<T>(s:tink.Stringly):Id<T>
     return new Id(s);
 
