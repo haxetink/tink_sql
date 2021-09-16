@@ -5,6 +5,11 @@
 
 This library embeds SQL right into the Haxe language. Think LINQ (not the syntax sugar, but the framework).
 
+**Breaking Change (2021-09-16)**
+
+[Transaction](#transactions) is now supported with a minor breaking change.
+Migration guide: https://github.com/haxetink/tink_sql/pull/130#issuecomment-822971910 
+
 ## Motivation
 
 Most developers tend to dislike SQL, at least for a significant part of their career. A symptom of that are ever-repeating attempts to hide the database layer behind ORMs, with very limited success.
@@ -100,3 +105,22 @@ var db = new Db('db_name', driver);
     - `db.User.stream(limit, orderBy): tink.streams.RealStream<User>;`
 
 ... to be continued ...
+
+## Transactions
+
+```haxe
+// transaction with a commit
+db.transaction(trx -> {
+  trx.User.insertOne(...).next(id -> Commit(id)); // user is inserted
+});
+
+// transaction with explicit rollback
+db.transaction(trx -> {
+  trx.User.insertOne(...).next(_ -> Rollback); // user insert is rolled back
+});
+
+// transaction with implicit rollback upon error
+db.transaction(trx -> {
+  trx.User.insertOne(...).next(_ -> new Error('Aborted')); // user insert is rolled back
+});
+```
