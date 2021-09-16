@@ -55,7 +55,7 @@ class Run extends TestWithDb {
       new ProcedureTest(mysql, dbMysql),
       #end
       
-      // new ConnectionTest(mysql, dbMysql),
+      new ConnectionTest(mysql, dbMysql),
       new TransactionTest(mysql, dbMysql),
       new InsertIgnoreTest(mysql, dbMysql),
       new UpsertTest(mysql, dbMysql),
@@ -80,7 +80,7 @@ class Run extends TestWithDb {
       new TypeTest(sqlite, dbSqlite),
       new SelectTest(sqlite, dbSqlite),
       new FormatTest(sqlite, dbSqlite),
-      //new StringTest(sqlite, dbSqlite),
+      new StringTest(sqlite, dbSqlite),
       new ExprTest(sqlite, dbSqlite),
       new Run(sqlite, dbSqlite),
       new SubQueryTest(sqlite, dbSqlite),
