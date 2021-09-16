@@ -32,16 +32,16 @@ typedef PostgreSqlNodeSettings = {
 
 class PostgreSql implements Driver {
   
-  public var type(default, null):Driver.DriverType = PostgreSql;
+  public final type:Driver.DriverType = PostgreSql;
   
-  var settings:PostgreSqlNodeSettings;
+  final settings:PostgreSqlNodeSettings;
 
   public function new(settings) {
     this.settings = settings;
   }
 
   public function open<Db>(name:String, info:DatabaseInfo):Connection.ConnectionPool<Db> {
-    var pool = new Pool({
+    final pool = new Pool({
       user: settings.user,
       password: settings.password,
       host: settings.host,
@@ -76,10 +76,7 @@ class PostgreSqlResultParser<Db> extends ResultParser<Db> {
     if (value == null) return null;
     return switch type {
       case null: super.parseValue(value, type);
-      case ExprType.VGeometry(_):
-        var g = parseGeometryValue(Bytes.ofHex(value));
-        // trace(g);
-        return g;
+      case ExprType.VGeometry(_): parseGeometryValue(Bytes.ofHex(value));
       default: super.parseValue(value, type);
     }
   }
@@ -103,11 +100,11 @@ class PostgreSqlResultParser<Db> extends ResultParser<Db> {
 }
 
 class PostgreSqlConnectionPool<Db> implements Connection.ConnectionPool<Db> {
-  var pool:Pool;
-  var info:DatabaseInfo;
-  var formatter:PostgreSqlFormatter;
-  var parser:PostgreSqlResultParser<Db>;
-  var streamBatch:Int = 50;
+  final pool:Pool;
+  final info:DatabaseInfo;
+  final formatter:PostgreSqlFormatter;
+  final parser:PostgreSqlResultParser<Db>;
+  final streamBatch:Int = 50;
   
   public function new(info, pool) {
     this.info = info;
@@ -152,12 +149,12 @@ class PostgreSqlConnectionPool<Db> implements Connection.ConnectionPool<Db> {
   }
 }
 class PostgreSqlConnection<Db> implements Connection<Db> implements Sanitizer {
-  var client:Promise<Client>;
-  var info:DatabaseInfo;
-  var formatter:PostgreSqlFormatter;
-  var parser:PostgreSqlResultParser<Db>;
-  var streamBatch:Int = 50;
-  var autoRelease:Bool;
+  final client:Promise<Client>;
+  final info:DatabaseInfo;
+  final formatter:PostgreSqlFormatter;
+  final parser:PostgreSqlResultParser<Db>;
+  final streamBatch:Int = 50;
+  final autoRelease:Bool;
 
   public function new(info, client, autoRelease) {
     this.info = info;
@@ -190,23 +187,23 @@ class PostgreSqlConnection<Db> implements Connection<Db> implements Sanitizer {
     inline function fetch() return run(queryOptions(query));
     return switch query {
       case Select(_) | Union(_):
-        var parse:DynamicAccess<Any>->{} = parser.queryParser(query, formatter.isNested(query));
+        final parse:DynamicAccess<Any>->{} = parser.queryParser(query, formatter.isNested(query));
         stream(queryOptions(query)).map(parse);
       case Insert(_):
-        fetch().next(function(res):Promise<Dynamic> return res.rows.length > 0 ? new Id(res.rows[0][0]) : Promise.NOISE);
+        fetch().next(res -> res.rows.length > 0 ? Promise.resolve(new Id(res.rows[0][0])) : (Promise.NOISE:Promise<Dynamic>));
       case Update(_):
-        fetch().next(function(res) return {rowsAffected: res.rowCount});
+        fetch().next(res -> {rowsAffected: res.rowCount});
       case Delete(_):
-        fetch().next(function(res) return {rowsAffected: res.rowCount});
+        fetch().next(res -> {rowsAffected: res.rowCount});
       case Transaction(_) | CreateTable(_, _) | DropTable(_) | AlterTable(_, _) | TruncateTable(_):
-        fetch().next(function(r) return Noise);
+        fetch().next(r -> Noise);
       case _:
         throw query.getName() + " has not been implemented";
     }
   }
 
   function queryOptions(query:Query<Db, Dynamic>): QueryOptions {
-    var sql = formatter.format(query).toString(this);
+    final sql = formatter.format(query).toString(this);
     #if sql_debug
     trace(sql);
     #end

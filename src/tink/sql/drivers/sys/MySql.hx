@@ -6,7 +6,7 @@ import tink.sql.Info;
 
 class MySql implements Driver {
   
-  public var type(default, null):Driver.DriverType = MySql;
+  public final type:Driver.DriverType = MySql;
   
   var settings:MySqlSettings;
 

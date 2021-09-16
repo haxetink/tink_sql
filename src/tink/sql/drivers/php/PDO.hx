@@ -20,7 +20,7 @@ import php.db.PDOException;
 using tink.CoreApi;
 
 class PDOMysql implements Driver {
-  public var type(default, null):Driver.DriverType = MySql;
+  public final type:Driver.DriverType = MySql;
   
   var settings:MySqlSettings;
 
@@ -46,7 +46,7 @@ class PDOMysql implements Driver {
 }
 
 class PDOSqlite implements Driver {
-  public var type(default, null):Driver.DriverType = Sqlite;
+  public final type:Driver.DriverType = Sqlite;
   
   var fileForName: String->String;
   

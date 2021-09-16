@@ -18,7 +18,7 @@ using tink.CoreApi;
 
 class Sqlite3 implements Driver {
 
-  public var type(default, null):Driver.DriverType = Sqlite;
+  public final type:Driver.DriverType = Sqlite;
   
   var fileForName: String->String;
   

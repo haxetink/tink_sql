@@ -2,7 +2,7 @@ package tink.sql;
 
 import tink.sql.Info.DatabaseInfo;
 interface Driver { 
-  var type(default, null):DriverType;
+  final type:DriverType;
   function open<Db>(name:String, info:DatabaseInfo):Connection.ConnectionPool<Db>;
 }
 

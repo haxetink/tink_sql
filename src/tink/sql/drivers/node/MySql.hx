@@ -27,16 +27,16 @@ typedef NodeSettings = MySqlSettings & {
 
 class MySql implements Driver {
   
-  public var type(default, null):Driver.DriverType = MySql;
+  public final type:Driver.DriverType = MySql;
   
-  var settings:NodeSettings;
+  final settings:NodeSettings;
 
   public function new(settings) {
     this.settings = settings;
   }
 
   public function open<Db>(name:String, info:DatabaseInfo):Connection.ConnectionPool<Db> {
-    var pool = NativeDriver.createPool({
+    final pool = NativeDriver.createPool({
       user: settings.user,
       password: settings.password,
       host: settings.host,
@@ -69,10 +69,10 @@ class MySql implements Driver {
 }
 
 class MySqlConnectionPool<Db> implements Connection.ConnectionPool<Db> {
-  var info:DatabaseInfo;
-  var pool:NativeConnectionPool;
-  var formatter:MySqlFormatter;
-  var parser:ResultParser<Db>;
+  final info:DatabaseInfo;
+  final pool:NativeConnectionPool;
+  final formatter:MySqlFormatter;
+  final parser:ResultParser<Db>;
   
 
   public function new(info, pool) {
@@ -119,11 +119,11 @@ class MySqlConnectionPool<Db> implements Connection.ConnectionPool<Db> {
 }
 class MySqlConnection<Db> implements Connection<Db> implements Sanitizer {
 
-  var info:DatabaseInfo;
-  var cnx:Promise<NativeConnection>;
-  var formatter:MySqlFormatter;
-  var parser:ResultParser<Db>;
-  var autoRelease:Bool;
+  final info:DatabaseInfo;
+  final cnx:Promise<NativeConnection>;
+  final formatter:MySqlFormatter;
+  final parser:ResultParser<Db>;
+  final autoRelease:Bool;
 
   public function new(info, cnx, autoRelease) {
     this.info = info;
@@ -152,37 +152,35 @@ class MySqlConnection<Db> implements Connection<Db> implements Sanitizer {
     inline function fetch<T>(): Promise<T> return run(queryOptions(query));
     return switch query {
       case Select(_) | Union(_):
-        var parse:DynamicAccess<Any>->{} = parser.queryParser(query, formatter.isNested(query));
+        final parse:DynamicAccess<Any>->{} = parser.queryParser(query, formatter.isNested(query));
         stream(queryOptions(query)).map(parse);
 
       case CallProcedure(_):
-        Stream.promise(fetch().next(function (res:Array<Array<Any>>) {
-          var iterator = res[0].iterator();
-          var parse = parser.queryParser(query, formatter.isNested(query));
-          return Stream.ofIterator({
-            hasNext: function() return iterator.hasNext(),
-            next: function () return parse(iterator.next())
+        Stream.promise(fetch().next((res:Array<Array<Any>>) -> {
+          final iterator = res[0].iterator();
+          final parse = parser.queryParser(query, formatter.isNested(query));
+          Stream.ofIterator({
+            hasNext: () -> iterator.hasNext(),
+            next:  () -> parse(iterator.next())
           });
         }));
       case Transaction(_) | CreateTable(_, _) | DropTable(_) | AlterTable(_, _) | TruncateTable(_):
-        fetch().next(function(_) return Noise);
+        fetch().next(_ -> Noise);
       case Insert(_):
-        fetch().next(function(res) return new Id(res.insertId));
+        fetch().next(res -> new Id(res.insertId));
       case Update(_):
-        fetch().next(function(res) return {rowsAffected: (res.changedRows: Int)});
+        fetch().next(res -> {rowsAffected: (res.changedRows: Int)});
       case Delete(_):
-        fetch().next(function(res) return {rowsAffected: (res.affectedRows: Int)});
+        fetch().next(res -> {rowsAffected: (res.affectedRows: Int)});
       case ShowColumns(_):
-        fetch().next(function(res:Array<MysqlColumnInfo>)
-          return res.map(formatter.parseColumn)
-        );
+        fetch().next((res:Array<MysqlColumnInfo>) -> res.map(formatter.parseColumn));
       case ShowIndex(_):
         fetch().next(formatter.parseKeys);
     }
   }
 
   function queryOptions(query:Query<Db, Dynamic>): QueryOptions {
-    var sql = formatter.format(query).toString(this);
+    final sql = formatter.format(query).toString(this);
     #if sql_debug
     trace(sql);
     #end
@@ -196,7 +194,7 @@ class MySqlConnection<Db> implements Connection<Db> implements Sanitizer {
 
   function stream<T>(options: QueryOptions):Stream<T, Error> {
     return cnx.next(cnx -> {
-      var query = cnx.query(options);
+      final query = cnx.query(options);
       Stream.ofNodeStream('query', query.stream({highWaterMark: 1024}), {onEnd: autoRelease ? cnx.release : null});
     });
   }
