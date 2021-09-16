@@ -19,6 +19,7 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
 
   public function format<Db, Result>(query:Query<Db, Result>):Statement
     return switch query {
+      // case Multi(queries): queries.map(format).join('; ');
       case CreateTable(table, ifNotExists): createTable(table, ifNotExists);
       case DropTable(table): dropTable(table);
       case TruncateTable(table): truncateTable(table);
@@ -27,6 +28,7 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
       case Union(op): union(op);
       case Update(op): update(op);
       case Delete(op): delete(op);
+      case Transaction(op): transaction(op);
       case CallProcedure(op): call(op);
       default: throw 'Query not supported in currrent formatter: $query';
     }
@@ -326,6 +328,16 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
 
   function call<Row:{}>(op:CallOperation<Row>):Statement
     throw 'implement';
+
+  function transaction(transaction:TransactionOperation)
+    return switch transaction {
+      case Start: beginTransaction();
+      case Commit: 'COMMIT';
+      case Rollback: 'ROLLBACK';
+    }
+    
+  function beginTransaction()
+    return 'START TRANSACTION';
 
   function binOp(o:BinOp<Dynamic, Dynamic, Dynamic>):Statement
     return switch o {

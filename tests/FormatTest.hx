@@ -6,10 +6,12 @@ import tink.sql.format.Sanitizer;
 import tink.sql.format.SqlFormatter;
 import tink.unit.Assert.assert;
 import tink.sql.drivers.MySql;
+import tink.sql.Database;
 
 using tink.CoreApi;
 
 @:allow(tink.unit)
+@:asserts
 @:access(tink.sql.format.SqlFormatter)
 class FormatTest extends TestWithDb {
 
@@ -66,6 +68,13 @@ class FormatTest extends TestWithDb {
 			from: @:privateAccess dataset.target, 
 			where: @:privateAccess dataset.condition.where
 		}).toString(sanitizer) == 'SELECT * FROM `Types` WHERE false');
+	}
+
+	@:asserts public function transaction() {
+		asserts.assert(formatter.transaction(Start) == 'START TRANSACTION');
+		asserts.assert(formatter.transaction(Rollback) == 'ROLLBACK');
+		asserts.assert(formatter.transaction(Commit) == 'COMMIT');
+		return asserts.done();
 	}
 
 	public function tableAlias() {
@@ -135,8 +144,10 @@ class FakeTable implements  TableInfo {
 		return [];
 }
 
-@:tables(UniqueTable)
-class UniqueDb extends tink.sql.Database {}
+typedef UniqueDb = Database<UniqueDef>;
+interface UniqueDef extends tink.sql.DatabaseDefinition {
+	@:table var UniqueTable:UniqueTable;
+}
 
 typedef UniqueTable = {
   @:unique var u1(default, null):VarChar<123>;

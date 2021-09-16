@@ -42,7 +42,7 @@ class StdConnection<Db:DatabaseInfo> implements Connection<Db> {
             next: function () return parse(res.next())
           });
         }));
-      case CreateTable(_, _) | DropTable(_) | AlterTable(_, _) | TruncateTable(_):
+      case Transaction(_) | CreateTable(_, _) | DropTable(_) | AlterTable(_, _) | TruncateTable(_):
         fetch().next(function(_) return Noise);
       case Insert(_):
         fetch().next(function(_) return new Id(cnx.lastInsertId()));

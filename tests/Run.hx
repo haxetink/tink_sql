@@ -7,6 +7,7 @@ import tink.unit.AssertionBuffer;
 import tink.unit.*;
 import tink.testrunner.*;
 import tink.sql.drivers.*;
+import tink.sql.Database;
 
 using tink.CoreApi;
 
@@ -37,6 +38,7 @@ class Run extends TestWithDb {
 
     loadFixture('init');
     Runner.run(TestBatch.make([
+      // ====== mysql ======
       new TypeTest(mysql, dbMysql),
       new SelectTest(mysql, dbMysql),
       new FormatTest(mysql, dbMysql),
@@ -52,9 +54,13 @@ class Run extends TestWithDb {
       #if nodejs
       new ProcedureTest(mysql, dbMysql),
       #end
+      
+      // new ConnectionTest(mysql, dbMysql),
+      new TransactionTest(mysql, dbMysql),
       new InsertIgnoreTest(mysql, dbMysql),
       new UpsertTest(mysql, dbMysql),
 
+      // ====== postgres ======
       #if nodejs
       new TypeTest(postgres, dbPostgres),
       new SelectTest(postgres, dbPostgres),
@@ -63,10 +69,14 @@ class Run extends TestWithDb {
       new Run(postgres, dbPostgres),
       new GeometryTest(postgres, dbPostgres),
       new TruncateTest(postgres, dbPostgres),
+      
+      new ConnectionTest(postgres, dbPostgres),
+      new TransactionTest(postgres, dbPostgres),
       new InsertIgnoreTest(postgres, dbPostgres),
       new UpsertTest(postgres, dbPostgres),
       #end
 
+      // ====== sqlite ======
       new TypeTest(sqlite, dbSqlite),
       new SelectTest(sqlite, dbSqlite),
       new FormatTest(sqlite, dbSqlite),
@@ -74,6 +84,7 @@ class Run extends TestWithDb {
       new ExprTest(sqlite, dbSqlite),
       new Run(sqlite, dbSqlite),
       new SubQueryTest(sqlite, dbSqlite),
+      new TransactionTest(sqlite, dbSqlite),
       #if nodejs
       new TruncateTest(sqlite, dbSqlite),
       #end
@@ -125,9 +136,9 @@ class Run extends TestWithDb {
 
 
   public function info() {
-    asserts.assert(db.name == 'test');
-    asserts.assert(sorted(db.tableNames()).join(',') == 'Clap,Geometry,Post,PostTags,Schema,StringTypes,Types,User,alias');
-    asserts.assert(sorted(db.tableInfo('Post').columnNames()).join(',') == 'author,content,id,title');
+    asserts.assert(db.getName() == 'test');
+    asserts.assert(sorted(db.getInfo().tableNames()).join(',') == 'Clap,Geometry,Post,PostTags,Schema,StringTypes,Types,User,alias');
+    asserts.assert(sorted(db.getInfo().tableInfo('Post').columnNames()).join(',') == 'author,content,id,title');
     return asserts.done();
   }
 

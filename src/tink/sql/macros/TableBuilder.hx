@@ -211,7 +211,8 @@ class TableBuilder {
               static var COLUMN_NAMES = $v{names};
               static var COLUMNS = $a{fieldsValues};
               static var KEYS = $v{keys.get()};
-              static function makeInfo(name, alias) return new tink.sql.Table.AdhocTableInfo(name, alias, () -> COLUMNS, () -> COLUMN_NAMES, () -> KEYS);
+              static var INFO = new tink.sql.Table.TableStaticInfo(COLUMNS, KEYS);
+              static function makeInfo(name, alias) return new tink.sql.Table.TableInstanceInfo(name, alias, @:privateAccess INFO.columns, @:privateAccess INFO.keys);
             }
 
           default:

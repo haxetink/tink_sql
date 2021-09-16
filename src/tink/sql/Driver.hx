@@ -3,7 +3,7 @@ package tink.sql;
 import tink.sql.Info.DatabaseInfo;
 interface Driver { 
   var type(default, null):DriverType;
-  function open<Db:DatabaseInfo>(name:String, info:Db):Connection<Db>;
+  function open<Db>(name:String, info:DatabaseInfo):Connection.ConnectionPool<Db>;
 }
 
 enum DriverType {

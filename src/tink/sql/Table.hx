@@ -26,7 +26,7 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
   
   public var name(default, null):TableName<Row>;
   var alias:Null<String>;
-  public final info:AdhocTableInfo;
+  public final info:TableInstanceInfo;
   
   function new(cnx, name, alias, fields, info) {
     this.name = name;
@@ -167,19 +167,37 @@ abstract TableName<Row>(String) to String {
 
 
 
-class AdhocTableInfo implements TableInfo {
+class TableStaticInfo {
+  
+  final columns:Array<Column>;
+  final keys:Array<Key>;
+  
+  public function new(columns, keys) {
+    this.columns = columns;
+    this.keys = keys;
+  }
+
+  @:noCompletion 
+  public function getColumns():Array<Column> 
+    return columns;
+  
+  @:noCompletion 
+  public function columnNames():Array<String>
+    return [for(c in columns) c.name];
+
+  @:noCompletion 
+  public function getKeys():Array<Key> 
+    return keys;
+}
+
+class TableInstanceInfo extends TableStaticInfo implements TableInfo {
   final name:String;
   final alias:String;
-  final _getColumns:()->Array<Column>;
-  final _columnNames:()->Array<String>;
-  final _getKeys:()->Array<Key>;
   
-  public function new(name, alias, getColumns, columnNames, getKeys) {
+  public function new(name, alias, columns, keys) {
+    super(columns, keys);
     this.name = name;
     this.alias = alias;
-    _getColumns = getColumns;
-    _columnNames = columnNames;
-    _getKeys = getKeys;
   }
 
   // TableInfo
@@ -191,16 +209,4 @@ class AdhocTableInfo implements TableInfo {
   @:noCompletion
   public function getAlias():Null<String>
     return alias;
-
-  @:noCompletion 
-  public function getColumns():Array<Column> 
-    return _getColumns();
-  
-  @:noCompletion 
-  public function columnNames():Array<String>
-    return _columnNames();
-
-  @:noCompletion 
-  public function getKeys():Array<Key> 
-    return _getKeys();
 }

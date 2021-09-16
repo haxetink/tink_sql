@@ -9,6 +9,7 @@ import tink.streams.RealStream;
 using tink.CoreApi;
 
 enum Query<Db, Result> {
+  // Multi(queries: Array<Query<Db, Any>>):Query<Db, Promise<Noise>>;
   Union<Row:{}>(union:UnionOperation<Db, Row>):Query<Db, RealStream<Row>>;
   Select<Row:{}>(select:SelectOperation<Db, Row>):Query<Db, RealStream<Row>>;
   Insert<Row:{}>(insert:InsertOperation<Db, Row>):Query<Db, Promise<Id<Row>>>;
@@ -21,6 +22,7 @@ enum Query<Db, Result> {
   AlterTable<Row:{}>(table:TableInfo, changes:Array<AlterTableOperation>):Query<Db, Promise<Noise>>;
   ShowColumns<Row:{}>(from:TableInfo):Query<Db, Promise<Array<Column>>>;
   ShowIndex<Row:{}>(from:TableInfo):Query<Db, Promise<Array<Key>>>;
+  Transaction(transaction:TransactionOperation):Query<Db, Promise<Noise>>;
 }
 
 typedef UnionOperation<Db, Row:{}> = {
@@ -90,4 +92,10 @@ enum AlterTableOperation {
   AlterColumn(to:Column, ?from:Column);
   DropColumn(col:Column);
   DropKey(key:Key);
+}
+
+enum TransactionOperation {
+  Start;
+  Commit;
+  Rollback;
 }

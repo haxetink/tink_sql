@@ -20,10 +20,9 @@ import #if haxe3 js.lib.Error #else js.Error #end as JsError;
 
 using tink.CoreApi;
 
-typedef NodeSettings = {
-  > MySqlSettings,
-  ?connectionLimit:Int,
-  ?ssl:EitherType<String, SecureContextOptions>,
+typedef NodeSettings = MySqlSettings & {
+  final ?connectionLimit:Int;
+  final ?ssl:EitherType<String, SecureContextOptions>;
 }
 
 class MySql implements Driver {
@@ -36,7 +35,7 @@ class MySql implements Driver {
     this.settings = settings;
   }
 
-  public function open<Db:DatabaseInfo>(name:String, info:Db):Connection<Db> {
+  public function open<Db>(name:String, info:DatabaseInfo):Connection.ConnectionPool<Db> {
     var pool = NativeDriver.createPool({
       user: settings.user,
       password: settings.password,
@@ -44,27 +43,94 @@ class MySql implements Driver {
       port: settings.port,
       database: name,
       timezone: settings.timezone,
-      connectionLimit: settings.connectionLimit,
+      connectionLimit: switch settings.connectionLimit {
+        case null: 1;
+        case v: v;
+      },
       charset: settings.charset,
       ssl: settings.ssl,
     });
+    
+    // pool.on('acquire', function (connection) {
+    //   js.Node.console.log('Connection ${connection.threadId} acquired');
+    // });
+    // pool.on('connection', function (connection) {
+    //   js.Node.console.log('Connection ${connection.threadId} created');
+    // });
+    // pool.on('enqueue', function () {
+    //   js.Node.console.log('Waiting for available connection slot');
+    // });
+    // pool.on('release', function (connection) {
+    //   js.Node.console.log('Connection ${connection.threadId} released');
+    // });
 
-    return new MySqlConnection(info, pool);
+    return new MySqlConnectionPool(info, pool);
   }
 }
 
-class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sanitizer {
-
+class MySqlConnectionPool<Db> implements Connection.ConnectionPool<Db> {
+  var info:DatabaseInfo;
   var pool:NativeConnectionPool;
-  var db:Db;
   var formatter:MySqlFormatter;
   var parser:ResultParser<Db>;
+  
 
-  public function new(db, pool) {
-    this.db = db;
+  public function new(info, pool) {
+    this.info = info;
     this.pool = pool;
     this.formatter = new MySqlFormatter();
     this.parser = new ResultParser();
+  }
+  
+  
+  public function getFormatter()
+    return formatter;
+  
+  public function execute<Result>(query:Query<Db, Result>):Result {
+    final cnx = getNativeConnection();
+    return new MySqlConnection(info, cnx, true).execute(query);
+  }
+  
+  public function isolate():Pair<Connection<Db>, CallbackLink> {
+    final cnx = getNativeConnection();
+    return new Pair(
+      (new MySqlConnection(info, cnx, false):Connection<Db>),
+      (() -> cnx.handle(o -> switch o {
+        case Success(native): native.release();
+        case Failure(_): // nothing to do
+      }):CallbackLink)
+    );
+  }
+  
+  function getNativeConnection() {
+    return new Promise((resolve, reject) -> {
+      var cancelled = false;
+      pool.getConnection((err, cnx) -> {
+        if(cancelled)
+          cnx.release();
+        else if(err != null)
+          reject(Error.ofJsError(err));
+        else
+          resolve(cnx);
+      });
+      () -> cancelled = true; // there is no mechanism to undo getConnection, so we set a flag and release the connection as soon as it is obtained
+    });
+  }
+}
+class MySqlConnection<Db> implements Connection<Db> implements Sanitizer {
+
+  var info:DatabaseInfo;
+  var cnx:Promise<NativeConnection>;
+  var formatter:MySqlFormatter;
+  var parser:ResultParser<Db>;
+  var autoRelease:Bool;
+
+  public function new(info, cnx, autoRelease) {
+    this.info = info;
+    this.cnx = cnx;
+    this.formatter = new MySqlFormatter();
+    this.parser = new ResultParser();
+    this.autoRelease = autoRelease;
   }
 
   public function value(v:Any):String
@@ -82,7 +148,7 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
   function toError<A>(error:JsError):Outcome<A, Error>
     return Failure(Error.withData(error.message, error));
 
-  public function execute<Result>(query:Query<Db,Result>):Result {
+  public function execute<Result>(query:Query<Db, Result>):Result {
     inline function fetch<T>(): Promise<T> return run(queryOptions(query));
     return switch query {
       case Select(_) | Union(_):
@@ -98,7 +164,7 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
             next: function () return parse(iterator.next())
           });
         }));
-      case CreateTable(_, _) | DropTable(_) | AlterTable(_, _) | TruncateTable(_):
+      case Transaction(_) | CreateTable(_, _) | DropTable(_) | AlterTable(_, _) | TruncateTable(_):
         fetch().next(function(_) return Noise);
       case Insert(_):
         fetch().next(function(res) return new Id(res.insertId));
@@ -128,33 +194,22 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
     }
   }
 
-
-
   function stream<T>(options: QueryOptions):Stream<T, Error> {
-		return (Future #if (tink_core >= "2") .irreversible #else .async #end (function(cb) {
-      pool.getConnection(function(err, cnx) {
-        if(err != null) {
-          cb(Failure(Error.ofJsError(err)));
-        } else {
-          var query = cnx.query(options);
-          var stream = Stream.ofNodeStream('query', query.stream({highWaterMark: 1024}), {onEnd: cnx.release});
-          cb(Success(stream));
-        }
-      });
-    } #if (tink_core < "2") , true #end):Promise<tink.streams.RealStream<T>>);
+    return cnx.next(cnx -> {
+      var query = cnx.query(options);
+      Stream.ofNodeStream('query', query.stream({highWaterMark: 1024}), {onEnd: autoRelease ? cnx.release : null});
+    });
   }
 
   function run<T>(options: QueryOptions):Promise<T>
-		return Future #if (tink_core >= "2") .irreversible #else .async #end(function (cb) {
-      pool.getConnection(function(err, cnx) {
-        if(err != null)
-          cb(toError(err));
-        else
-          cnx.query(options, function (err, res) {
-            if (err != null) cb(toError(err));
-            else cb(Success(cast res));
-            cnx.release();
-          });
+    return cnx.next(cnx -> {
+      new Promise((resolve, reject) -> {
+        cnx.query(options, (err, res) -> {
+          if(autoRelease) cnx.release();
+          if (err != null) reject(Error.ofJsError(err));
+          else resolve(cast res);
+        });
+        null; // irreversible, we always want to wait for the query to finish
       });
     });
 
@@ -170,30 +225,55 @@ class MySqlConnection<Db:DatabaseInfo> implements Connection<Db> implements Sani
       default: next();
     }
   }
-
 }
 
 @:jsRequire("mysql")
 private extern class NativeDriver {
   static function escape(value:Any):String;
   static function escapeId(ident:String):String;
-  static function createPool(config:Config):NativeConnectionPool;
+  static function createConnection(config:NativeConfig):NativeConnection;
+  static function createPool(config:NativePoolConfig):NativeConnectionPool;
 }
 
-private typedef Config = {>MySqlSettings,
-  public var database(default, null):String;
-  @:optional public var connectionLimit(default, null):Int;
-  @:optional public var charset(default, null):String;
-  @:optional public var ssl(default, null):Any;
+private typedef NativeConfig = {
+  final ?host:String;
+  final ?port:Int;
+  final ?localAddress:String;
+  final ?socketPath:String;
+  final ?user:String;
+  final ?password:String;
+  final ?database:String;
+  final ?charset:String;
+  final ?timezone:String;
+  final ?connectTimeout:Int;
+  final ?stringifyObjects:Bool;
+  final ?insecureAuth:Bool;
+  final ?typeCast:Bool;
+  final ?queryFormat:haxe.Constraints.Function;
+  final ?supportBigNumbers:Bool;
+  final ?bigNumberStrings:Bool;
+  final ?dateStrings:Bool;
+  final ?debug:Bool;
+  final ?trace:Bool;
+  final ?localInfile:Bool;
+  final ?multipleStatements:Bool;
+  final ?flags:String;
+  final ?ssl:Any;
+}
+private typedef NativePoolConfig = NativeConfig & {
+  final ?acquireTimeout:Int;
+  final ?waitForConnections:Int;
+  final ?connectionLimit:Int;
+  final ?queueLimit:Int;
 }
 
 private typedef QueryOptions = {
-  sql:String,
-  ?nestTables:Bool,
-  ?typeCast:Dynamic->(Void->Dynamic)->Dynamic
+  final sql:String;
+  final ?nestTables:Bool;
+  final ?typeCast:Dynamic->(Void->Dynamic)->Dynamic;
 }
 
-extern class NativeConnectionPool {
+extern class NativeConnectionPool extends js.node.events.EventEmitter<NativeConnectionPool> {
   function getConnection(cb:JsError->NativeConnection->Void):Void;
 }
 extern class NativeConnection {

@@ -9,9 +9,12 @@ private typedef Customer = {
 	public var avatar(default, null):VarChar<50>;
 }
 
-private class Db extends tink.sql.Database {
+interface D extends tink.sql.DatabaseDefinition {
 	@:table var fa_customer:Customer;
+}
 
+
+private class Db extends tink.sql.Database<D> {
 	public var user(get, never):tink.sql.Table<{fa_customer:Customer}>;
 
 	inline function get_user()
