@@ -21,6 +21,7 @@ class ConnectionTest extends TestWithDb {
     return db.User.drop();
   }
   
+  #if nodejs // this test is only useful for async runtimes
   public function release() {
     Promise.inParallel([addUser(0).next(_ -> new Error('Halt'))].concat([for(i in 1...10) addUser(i)]))
       .flatMap(o -> {
@@ -36,6 +37,7 @@ class ConnectionTest extends TestWithDb {
     
     return asserts;
   }
+  #end
   
   function addUser(i:Int) {
     return db.User.insertOne({
