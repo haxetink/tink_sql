@@ -18,9 +18,10 @@ class Database {
         public final __name:String;
         public final __info:tink.sql.Info.DatabaseInfo;
         public final __pool:tink.sql.Connection.ConnectionPool<$ct>;
+        public final __driver:tink.sql.Driver;
         
         public function new(name, driver:tink.sql.Driver) {
-          super(__pool = driver.open(__name = name, __info = INFO.instantiate(name)));
+          super(__pool = (__driver = driver).open(__name = name, __info = INFO.instantiate(name)));
         }
         
         public inline function getName() return __name;
