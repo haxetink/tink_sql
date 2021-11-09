@@ -54,6 +54,6 @@ class Functions {
   /**
    * JSON_VALUE was introduce in MySQL 8.0.21, not available in SQLite as of writing
    */
-  public static function jsonValue<T>(jsonDoc:Expr<Json>, path:Expr<String>, returnType:ExprType<T>):Expr<T>
-    return ECall('JSON_VALUE', cast [jsonDoc, path], returnType);
+  public static function jsonValue<T,R>(jsonDoc:Expr<Json<T>>, path:Expr<String>, returnType:ExprType<R>):Expr<R>
+    return ECall('JSON_VALUE', cast ([jsonDoc, path]:Array<Dynamic>), returnType);
 }
