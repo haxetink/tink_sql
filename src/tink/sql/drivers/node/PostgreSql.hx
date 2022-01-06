@@ -120,7 +120,12 @@ class PostgreSqlConnectionPool<Db> implements Connection.ConnectionPool<Db> {
     final cnx = getNativeConnection();
     return new PostgreSqlConnection(info, cnx, true).execute(query);
   }
-  
+
+  public function executeSql(sql:String):tink.core.Promise<tink.core.Noise> {
+    final cnx = getNativeConnection();
+    return new PostgreSqlConnection(info, cnx, true).executeSql(sql);
+  }
+
   public function isolate():Pair<Connection<Db>, CallbackLink> {
     final cnx = getNativeConnection();
     return new Pair(
@@ -233,7 +238,10 @@ class PostgreSqlConnection<Db> implements Connection<Db> implements Sanitizer {
         .asFuture()
         .withSideEffect(_ -> if(autoRelease) client.release())
     );
-  
+
+  public function executeSql(sql:String):tink.core.Promise<tink.core.Noise> {
+    return run({text: sql});
+  }
 }
 
 private typedef TypeParsers = {

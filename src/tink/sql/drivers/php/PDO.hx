@@ -139,6 +139,17 @@ class PDOConnection<Db> implements Connection.ConnectionPool<Db> implements Sani
         new Error(e.getCode(), e.getMessage());
   }
 
+  public function executeSql(sql:String):tink.core.Promise<tink.core.Noise> {
+    return Future.sync(
+      try {
+        cnx.exec(sql);
+        Success(Noise);
+      } catch (e: PDOException) {
+        Failure(Error.withData(e.getMessage(), e));
+      }
+    );
+  }
+
   // haxetink/tink_streams#20
   public function syncResult<R, T: {}>(query:Query<Db,R>): Outcome<Array<T>, Error> {
     return switch query {

@@ -127,8 +127,18 @@ class Sqlite3Connection<Db> implements Connection.ConnectionPool<Db> {
         );
       });
     });
-    
-  
+
+  public function executeSql(sql:String): Promise<tink.core.Noise> {
+    return Future.async(function(done) {
+      cnx.exec(sql, function(error) {
+        done(
+          if (error == null) Success(Noise) 
+          else toError(error)
+        );
+      });
+    });
+  }
+
   public function isolate():Pair<Connection<Db>, CallbackLink> {
     return new Pair((this:Connection<Db>), null);
   }
@@ -140,12 +150,14 @@ private extern class NativeSqlite3 {
   static var OPEN_CREATE:Int;
 }
 
+// https://github.com/mapbox/node-sqlite3/wiki/API
 @:jsRequire("sqlite3", "Database")
 private extern class Sqlite3Database {
   function new(file:String, ?mode: Int, ?callback:JsError->Void):Void;
   function run(sql:String, values:Array<Any>, callback:JsError->Void):Void;
   function all<Row:{}>(sql:String, values:Array<Any>, callback:JsError->Array<Row>->Void):Void;
   function prepare(sql:String, values:Array<Any>, callback:JsError->Void):PreparedStatement;
+  function exec(sql:String, callback:JsError->Void):Void;
 }
 
 private extern class PreparedStatement {

@@ -49,6 +49,7 @@ class MySql implements Driver {
       },
       charset: settings.charset,
       ssl: settings.ssl,
+      multipleStatements: true,
     });
     
     // pool.on('acquire', function (connection) {
@@ -116,6 +117,11 @@ class MySqlConnectionPool<Db> implements Connection.ConnectionPool<Db> {
       () -> cancelled = true; // there is no mechanism to undo getConnection, so we set a flag and release the connection as soon as it is obtained
     });
   }
+
+  public function executeSql(sql:String):tink.core.Promise<tink.core.Noise> {
+    final cnx = getNativeConnection();
+    return new MySqlConnection(info, cnx, true).executeSql(sql);
+  }
 }
 class MySqlConnection<Db> implements Connection<Db> implements Sanitizer {
 
@@ -177,6 +183,10 @@ class MySqlConnection<Db> implements Connection<Db> implements Sanitizer {
       case ShowIndex(_):
         fetch().next(formatter.parseKeys);
     }
+  }
+
+  public function executeSql(sql:String):tink.core.Promise<tink.core.Noise> {
+    return run({sql: sql});
   }
 
   function queryOptions(query:Query<Db, Dynamic>): QueryOptions {

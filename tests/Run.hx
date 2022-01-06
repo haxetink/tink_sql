@@ -36,72 +36,82 @@ class Run extends TestWithDb {
     var sqlite = new Sqlite(function(db) return ':memory:');
     var dbSqlite = new Db('test', sqlite);
 
-    loadFixture('init');
-    Runner.run(TestBatch.make([
-      // ====== mysql ======
-      new TypeTest(mysql, dbMysql),
-      new SelectTest(mysql, dbMysql),
-      new FormatTest(mysql, dbMysql),
-      #if !neko
-      new StringTest(mysql, dbMysql),
-      #end
-      new JsonTest(mysql, dbMysql),
-      new GeometryTest(mysql, dbMysql),
-      new ExprTest(mysql, dbMysql),
-      new Run(mysql, dbMysql),
-      new SchemaTest(mysql, dbMysql),
-      new SubQueryTest(mysql, dbMysql),
-      new TruncateTest(mysql, dbMysql),
+    Promise.inParallel([
+      loadFixture(dbMysql, 'init_mysql'),
       #if nodejs
-      new ProcedureTest(mysql, dbMysql),
+      loadFixture(dbPostgres, 'init_postgresql'),
       #end
-      
-      new ConnectionTest(mysql, dbMysql),
-      new TransactionTest(mysql, dbMysql),
-      new InsertIgnoreTest(mysql, dbMysql),
-      new UpsertTest(mysql, dbMysql),
+      loadFixture(dbSqlite, 'init_sqlite'),
+    ])
+      .next(_ -> 
+        Runner.run(TestBatch.make([
+          // ====== mysql ======
+          new TypeTest(mysql, dbMysql),
+          new SelectTest(mysql, dbMysql),
+          new FormatTest(mysql, dbMysql),
+          #if !neko
+          new StringTest(mysql, dbMysql),
+          #end
+          new JsonTest(mysql, dbMysql),
+          new GeometryTest(mysql, dbMysql),
+          new ExprTest(mysql, dbMysql),
+          new Run(mysql, dbMysql),
+          new SchemaTest(mysql, dbMysql),
+          new SubQueryTest(mysql, dbMysql),
+          new TruncateTest(mysql, dbMysql),
+          #if nodejs
+          new ProcedureTest(mysql, dbMysql),
+          #end
+          
+          new ConnectionTest(mysql, dbMysql),
+          new TransactionTest(mysql, dbMysql),
+          new InsertIgnoreTest(mysql, dbMysql),
+          new UpsertTest(mysql, dbMysql),
 
-      // ====== postgres ======
-      #if nodejs
-      new TypeTest(postgres, dbPostgres),
-      new SelectTest(postgres, dbPostgres),
-      new FormatTest(postgres, dbPostgres),
-      new ExprTest(postgres, dbPostgres),
-      new Run(postgres, dbPostgres),
-      new GeometryTest(postgres, dbPostgres),
-      new TruncateTest(postgres, dbPostgres),
-      
-      new ConnectionTest(postgres, dbPostgres),
-      new TransactionTest(postgres, dbPostgres),
-      new InsertIgnoreTest(postgres, dbPostgres),
-      new UpsertTest(postgres, dbPostgres),
-      #end
+          // ====== postgres ======
+          #if nodejs
+          new TypeTest(postgres, dbPostgres),
+          new SelectTest(postgres, dbPostgres),
+          new FormatTest(postgres, dbPostgres),
+          new ExprTest(postgres, dbPostgres),
+          new Run(postgres, dbPostgres),
+          new GeometryTest(postgres, dbPostgres),
+          new TruncateTest(postgres, dbPostgres),
+          
+          new ConnectionTest(postgres, dbPostgres),
+          new TransactionTest(postgres, dbPostgres),
+          new InsertIgnoreTest(postgres, dbPostgres),
+          new UpsertTest(postgres, dbPostgres),
+          #end
 
-      // ====== sqlite ======
-      new TypeTest(sqlite, dbSqlite),
-      new JsonTest(sqlite, dbSqlite),
-      new SelectTest(sqlite, dbSqlite),
-      new FormatTest(sqlite, dbSqlite),
-      new StringTest(sqlite, dbSqlite),
-      new ExprTest(sqlite, dbSqlite),
-      new Run(sqlite, dbSqlite),
-      new SubQueryTest(sqlite, dbSqlite),
-      new TransactionTest(sqlite, dbSqlite),
-      #if nodejs
-      new TruncateTest(sqlite, dbSqlite),
-      #end
-      new TestIssue104()
-    ])).handle(Runner.exit);
+          // ====== sqlite ======
+          new TypeTest(sqlite, dbSqlite),
+          new JsonTest(sqlite, dbSqlite),
+          new SelectTest(sqlite, dbSqlite),
+          new FormatTest(sqlite, dbSqlite),
+          new StringTest(sqlite, dbSqlite),
+          new ExprTest(sqlite, dbSqlite),
+          new Run(sqlite, dbSqlite),
+          new SubQueryTest(sqlite, dbSqlite),
+          new TransactionTest(sqlite, dbSqlite),
+          #if nodejs
+          new TruncateTest(sqlite, dbSqlite),
+          #end
+          new TestIssue104()
+        ]))
+      )
+      .handle(r -> Runner.exit(r.sure()));
   }
-  
+
   static function env(key, byDefault)
     return switch Sys.getEnv(key) {
       case null: byDefault; 
       case v: v;
     }
 
-  public static function loadFixture(file: String) {
-    Sys.command('node', ['tests/fixture', 'tests/fixture/$file.sql']);
+  public static function loadFixture(db:Db, file: String) {
+    final sql = sys.io.File.getContent('tests/fixture/$file.sql');
+    return db.__pool.executeSql(sql);
   }
 
   static function sorted<A>(i:Iterable<A>) {

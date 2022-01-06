@@ -8,19 +8,21 @@ import tink.sql.Info;
 class SchemaTest extends TestWithDb {
 
 	function check(asserts: AssertionBuffer, version, inspect) {
-		loadFixture('schema_$version');
-		var changes;
-		return db.Schema.diffSchema(true)
-			.next(function (changes) {
-				inspect(changes);
-				return changes;
-			})
-			.next(db.Schema.updateSchema)
-			.next(function (_) return db.Schema.diffSchema())
-			.next(function (diff) {
-				changes = diff;
-				asserts.assert(diff.length == 0);
-				return asserts.done();
+		return loadFixture(db, 'schema_$version')
+			.next(_ -> {
+				var changes;
+				return db.Schema.diffSchema(true)
+					.next(function (changes) {
+						inspect(changes);
+						return changes;
+					})
+					.next(db.Schema.updateSchema)
+					.next(function (_) return db.Schema.diffSchema())
+					.next(function (diff) {
+						changes = diff;
+						asserts.assert(diff.length == 0);
+						return asserts.done();
+					});
 			});
 	}
 
