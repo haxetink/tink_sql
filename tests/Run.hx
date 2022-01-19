@@ -44,14 +44,26 @@ class Run extends TestWithDb {
       .handle(r -> Runner.exit(r.sure()));
   }
 
+  static function max10Seconds(info:{ attempt: Int, error:Error, elapsed:Float }):Promise<Noise> return {
+    if (info.elapsed > 10 * 1000)
+      info.error;
+    else
+      Future.delay(1000, Noise);
+  }
+
   static function testMySql() {
-    final mysql = new MySql({
-      host: '127.0.0.1',
-      user: env('MYSQL_USERNAME', 'root'),
-      password: env('MYSQL_PASSWORD', '')
-    });
-    final dbMysql = new Db('test', mysql);
-    return loadFixture(dbMysql, 'init_mysql')
+    var mysql, dbMysql;
+    return Promise.retry(() -> try {
+      mysql = new MySql({
+        host: '127.0.0.1',
+        user: env('MYSQL_USERNAME', 'root'),
+        password: env('MYSQL_PASSWORD', '')
+      });
+      dbMysql = new Db('test', mysql);
+      loadFixture(dbMysql, 'init_mysql');
+    } catch(err) {
+      Promise.reject(Error.asError(err));
+    }, max10Seconds)
       .next(_ -> Runner.run(TestBatch.make([
         new TypeTest(mysql, dbMysql),
         new SelectTest(mysql, dbMysql),
@@ -85,7 +97,7 @@ class Run extends TestWithDb {
       password: env('POSTGRES_PASSWORD', 'postgres'),
     });
     final dbPostgres = new Db(env('POSTGRES_DB', 'test'), postgres);
-    return loadFixture(dbPostgres, 'init_postgresql')
+    return Promise.retry(()->loadFixture(dbPostgres, 'init_postgresql'), max10Seconds)
       .next(_ -> Runner.run(TestBatch.make([
         new TypeTest(postgres, dbPostgres),
         new SelectTest(postgres, dbPostgres),

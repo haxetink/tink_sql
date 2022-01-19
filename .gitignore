@@ -2,3 +2,9 @@
 /node_modules
 /yarn.lock
 /package-lock.json
+
+.envrc
+
+.tmp-earthly-out
+
+.DS_Store
