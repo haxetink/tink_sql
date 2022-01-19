@@ -9,98 +9,122 @@ import tink.testrunner.*;
 import tink.sql.drivers.*;
 import tink.sql.Database;
 
+using Lambda;
 using tink.CoreApi;
+
+enum abstract TestDbType(String) to String {
+  final MySql;
+  final PostgreSql;
+  final Sqlite;
+}
 
 @:asserts
 @:await
 @:allow(tink.unit)
 class Run extends TestWithDb {
-
   static function main() {
-    var mysql = new MySql({
-      host: '127.0.0.1',
-      user: env('DB_USERNAME', 'root'),
-      password: env('DB_PASSWORD', '')
-    });
-    var dbMysql = new Db('test', mysql);
+    final testDbTypes:Array<TestDbType> = cast env('TEST_DB_TYPES', [MySql, PostgreSql, Sqlite].join(',')).split(',');
 
+    Promise.inSequence([
+      for (dbType in testDbTypes)
+      switch (dbType) {
+        case MySql:
+          testMySql();
+        case PostgreSql:
+          testPostgreSql();
+        case Sqlite:
+          testSqlite();
+        case db:
+          throw "unknown db type: " + db;
+      }
+    ])
+      .next(results ->
+        results.fold((a, r) -> a.concat(r), [])
+      )
+      .handle(r -> Runner.exit(r.sure()));
+  }
+
+  static function testMySql() {
+    final mysql = new MySql({
+      host: '127.0.0.1',
+      user: env('MYSQL_USERNAME', 'root'),
+      password: env('MYSQL_PASSWORD', '')
+    });
+    final dbMysql = new Db('test', mysql);
+    return loadFixture(dbMysql, 'init_mysql')
+      .next(_ -> Runner.run(TestBatch.make([
+        new TypeTest(mysql, dbMysql),
+        new SelectTest(mysql, dbMysql),
+        new FormatTest(mysql, dbMysql),
+        #if !neko
+        new StringTest(mysql, dbMysql),
+        #end
+        new JsonTest(mysql, dbMysql),
+        new GeometryTest(mysql, dbMysql),
+        new ExprTest(mysql, dbMysql),
+        new Run(mysql, dbMysql),
+        new SchemaTest(mysql, dbMysql),
+        new SubQueryTest(mysql, dbMysql),
+        new TruncateTest(mysql, dbMysql),
+        #if nodejs
+        new ProcedureTest(mysql, dbMysql),
+        #end
+        
+        new ConnectionTest(mysql, dbMysql),
+        new TransactionTest(mysql, dbMysql),
+        new InsertIgnoreTest(mysql, dbMysql),
+        new UpsertTest(mysql, dbMysql),
+      ])));
+  }
+
+  static function testPostgreSql() {
     #if nodejs
-    var postgres = new tink.sql.drivers.node.PostgreSql({
+    final postgres = new tink.sql.drivers.node.PostgreSql({
       host: env('POSTGRES_HOST', '127.0.0.1'),
       user: env('POSTGRES_USER', 'postgres'),
       password: env('POSTGRES_PASSWORD', 'postgres'),
     });
-    var dbPostgres = new Db(env('POSTGRES_DB', 'test'), postgres);
+    final dbPostgres = new Db(env('POSTGRES_DB', 'test'), postgres);
+    return loadFixture(dbPostgres, 'init_postgresql')
+      .next(_ -> Runner.run(TestBatch.make([
+        new TypeTest(postgres, dbPostgres),
+        new SelectTest(postgres, dbPostgres),
+        new FormatTest(postgres, dbPostgres),
+        new ExprTest(postgres, dbPostgres),
+        new Run(postgres, dbPostgres),
+        new GeometryTest(postgres, dbPostgres),
+        new TruncateTest(postgres, dbPostgres),
+        
+        new ConnectionTest(postgres, dbPostgres),
+        new TransactionTest(postgres, dbPostgres),
+        new InsertIgnoreTest(postgres, dbPostgres),
+        new UpsertTest(postgres, dbPostgres),
+      ])));
+    #else
+    return Promise.resolve([]);
     #end
+  }
 
-    var sqlite = new Sqlite(function(db) return ':memory:');
-    var dbSqlite = new Db('test', sqlite);
+  static function testSqlite() {
+    final sqlite = new Sqlite(function(db) return ':memory:');
+    final dbSqlite = new Db('test', sqlite);
 
-    Promise.inParallel([
-      loadFixture(dbMysql, 'init_mysql'),
-      #if nodejs
-      loadFixture(dbPostgres, 'init_postgresql'),
-      #end
-      loadFixture(dbSqlite, 'init_sqlite'),
-    ])
-      .next(_ -> 
-        Runner.run(TestBatch.make([
-          // ====== mysql ======
-          new TypeTest(mysql, dbMysql),
-          new SelectTest(mysql, dbMysql),
-          new FormatTest(mysql, dbMysql),
-          #if !neko
-          new StringTest(mysql, dbMysql),
-          #end
-          new JsonTest(mysql, dbMysql),
-          new GeometryTest(mysql, dbMysql),
-          new ExprTest(mysql, dbMysql),
-          new Run(mysql, dbMysql),
-          new SchemaTest(mysql, dbMysql),
-          new SubQueryTest(mysql, dbMysql),
-          new TruncateTest(mysql, dbMysql),
-          #if nodejs
-          new ProcedureTest(mysql, dbMysql),
-          #end
-          
-          new ConnectionTest(mysql, dbMysql),
-          new TransactionTest(mysql, dbMysql),
-          new InsertIgnoreTest(mysql, dbMysql),
-          new UpsertTest(mysql, dbMysql),
-
-          // ====== postgres ======
-          #if nodejs
-          new TypeTest(postgres, dbPostgres),
-          new SelectTest(postgres, dbPostgres),
-          new FormatTest(postgres, dbPostgres),
-          new ExprTest(postgres, dbPostgres),
-          new Run(postgres, dbPostgres),
-          new GeometryTest(postgres, dbPostgres),
-          new TruncateTest(postgres, dbPostgres),
-          
-          new ConnectionTest(postgres, dbPostgres),
-          new TransactionTest(postgres, dbPostgres),
-          new InsertIgnoreTest(postgres, dbPostgres),
-          new UpsertTest(postgres, dbPostgres),
-          #end
-
-          // ====== sqlite ======
-          new TypeTest(sqlite, dbSqlite),
-          new JsonTest(sqlite, dbSqlite),
-          new SelectTest(sqlite, dbSqlite),
-          new FormatTest(sqlite, dbSqlite),
-          new StringTest(sqlite, dbSqlite),
-          new ExprTest(sqlite, dbSqlite),
-          new Run(sqlite, dbSqlite),
-          new SubQueryTest(sqlite, dbSqlite),
-          new TransactionTest(sqlite, dbSqlite),
-          #if nodejs
-          new TruncateTest(sqlite, dbSqlite),
-          #end
-          new TestIssue104()
-        ]))
-      )
-      .handle(r -> Runner.exit(r.sure()));
+    return loadFixture(dbSqlite, 'init_sqlite')
+      .next(_ -> Runner.run(TestBatch.make([
+        new TypeTest(sqlite, dbSqlite),
+        new JsonTest(sqlite, dbSqlite),
+        new SelectTest(sqlite, dbSqlite),
+        new FormatTest(sqlite, dbSqlite),
+        new StringTest(sqlite, dbSqlite),
+        new ExprTest(sqlite, dbSqlite),
+        new Run(sqlite, dbSqlite),
+        new SubQueryTest(sqlite, dbSqlite),
+        new TransactionTest(sqlite, dbSqlite),
+        #if nodejs
+        new TruncateTest(sqlite, dbSqlite),
+        #end
+        new TestIssue104()
+      ])));
   }
 
   static function env(key, byDefault)
