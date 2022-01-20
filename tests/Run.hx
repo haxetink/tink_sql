@@ -55,7 +55,7 @@ class Run extends TestWithDb {
     var mysql, dbMysql;
     return Promise.retry(() -> try {
       mysql = new MySql({
-        host: '127.0.0.1',
+        host: env('MYSQL_HOST', '127.0.0.1'),
         user: env('MYSQL_USERNAME', 'root'),
         password: env('MYSQL_PASSWORD', '')
       });
