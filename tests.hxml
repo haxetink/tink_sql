@@ -2,6 +2,5 @@
 -lib jdbc.mysql
 -lib tink_unittest
 -lib tink_await
--lib geojson
 -cp tests
 -main Run

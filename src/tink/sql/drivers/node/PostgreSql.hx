@@ -81,21 +81,8 @@ class PostgreSqlResultParser<Db> extends ResultParser<Db> {
     }
   }
 
-  static function geoJsonToTink(geoJson:Dynamic):Dynamic {
-    return switch (geoJson.type:geojson.GeometryType<Dynamic>) {
-      case Point:
-        tink.s2d.Point.fromGeoJson(geoJson);
-      case LineString:
-        (geoJson:geojson.LineString).points;
-      case Polygon:
-        tink.s2d.Polygon.fromGeoJson(geoJson);
-      case MultiPoint:
-        (geoJson:geojson.MultiPoint).points;
-      case MultiLineString:
-        (geoJson:geojson.MultiLineString).lines.map(l -> l.points);
-      case MultiPolygon:
-        tink.s2d.MultiPolygon.fromGeoJson(geoJson);
-    }
+  static inline function geoJsonToTink(geoJson:Dynamic):Dynamic {
+    return geoJson.coordinates;
   }
 }
 
