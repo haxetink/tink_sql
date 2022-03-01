@@ -129,6 +129,9 @@ class Run extends TestWithDb {
         new JsonTest(sqlite, dbSqlite),
         new SelectTest(sqlite, dbSqlite),
         new FormatTest(sqlite, dbSqlite),
+        #if (!nodejs) // node-sqlite3 has no BigInt support yet
+        new BigIntTest(sqlite, dbSqlite),
+        #end
         new StringTest(sqlite, dbSqlite),
         new ExprTest(sqlite, dbSqlite),
         new Run(sqlite, dbSqlite),
