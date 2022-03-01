@@ -10,6 +10,7 @@ class ExprTyper {
   static function typeColumn(type:DataType)
     return switch type {
       case DBool(_): (ExprType.VBool: ExprType<Dynamic>);
+      case DInt(Big, _, _, _): ExprType.VInt64;
       case DInt(_, _, _, _): ExprType.VInt;
       case DDouble(_): ExprType.VFloat;
       case DString(_, _) | DText(_, _): ExprType.VString;

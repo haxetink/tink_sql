@@ -2,6 +2,7 @@ package tink.sql.drivers.php;
 
 import tink.sql.format.Formatter;
 import haxe.DynamicAccess;
+import haxe.Int64;
 import haxe.io.Bytes;
 import tink.sql.Query;
 import tink.sql.Info;
@@ -83,6 +84,7 @@ class PDOConnection<Db> implements Connection.ConnectionPool<Db> implements Sani
   }
 
   public function value(v:Any):String {
+    if (Int64.isInt64(v)) return Int64.toStr(v);
     if (Std.is(v, Bool)) return v ? '1' : '0';
     if (v == null || Std.is(v, Int)) return '$v';
     if (Std.is(v, Date)) v = (cast v: Date).toString();

@@ -70,8 +70,8 @@ class TableBuilder {
                           macro tink.sql.Info.DataType.DInt(Small, $v{!f.meta.has(':unsigned')}, $v{f.meta.has(':autoIncrement')}, $defaultValue);
                         case {module: 'tink.sql.Types', name: 'MediumInt'}:
                           macro tink.sql.Info.DataType.DInt(Medium, $v{!f.meta.has(':unsigned')}, $v{f.meta.has(':autoIncrement')}, $defaultValue);
-                        // case {module: 'tink.sql.Types', name: 'BigInt'}:
-                        //   macro tink.sql.Info.DataType.DInt(Big, true, $v{f.meta.has(':autoIncrement')}, $defaultValue);
+                        case {module: 'tink.sql.Types', name: 'BigInt'}:
+                          macro tink.sql.Info.DataType.DInt(Big, $v{!f.meta.has(':unsigned')}, $v{f.meta.has(':autoIncrement')}, $defaultValue);
                           
                         case {module: 'tink.sql.Types', name: 'TinyText'}:
                           macro tink.sql.Info.DataType.DText(tink.sql.Info.TextSize.Tiny, $defaultValue);

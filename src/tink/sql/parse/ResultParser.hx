@@ -1,5 +1,6 @@
 package tink.sql.parse;
 
+import haxe.Int64;
 import tink.sql.Expr;
 import haxe.DynamicAccess;
 import tink.sql.format.SqlFormatter;
@@ -40,6 +41,8 @@ class ResultParser<Db> {
         Std.parseFloat(value);
       case ExprType.VInt if (Std.is(value, String)):
         Std.parseInt(value);
+      case ExprType.VInt64 if (Std.is(value, String)):
+        Int64.parseString(value);
       case ExprType.VDate if (Std.is(value, String)):
         Date.fromString(value);
       case ExprType.VDate if (Std.is(value, Float)):

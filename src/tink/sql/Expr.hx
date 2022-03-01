@@ -1,5 +1,6 @@
 package tink.sql;
 
+import haxe.Int64;
 import haxe.io.Bytes;
 import tink.sql.Types;
 import tink.sql.Query;
@@ -25,6 +26,7 @@ enum ExprType<T> {
   VBool:ExprType<Bool>;
   VFloat:ExprType<Float>;
   VInt:ExprType<Int>;
+  VInt64:ExprType<haxe.Int64>;
   VArray<T>(type:ExprType<T>):ExprType<Array<T>>;
   VBytes:ExprType<Bytes>;
   VDate:ExprType<Date>;
@@ -268,6 +270,9 @@ typedef Set<T> = Dataset<SingleField<T, Dynamic>, Dynamic, Dynamic>;
 
   @:from inline static function ofInt(s:Int):Expr<Int>
     return EValue(s, VInt);
+
+  @:from inline static function ofInt64(s:Int64):Expr<Int64>
+    return EValue(s, VInt64);
 
   @:from inline static function ofFloat(s:Float):Expr<Float>
     return EValue(s, VFloat);

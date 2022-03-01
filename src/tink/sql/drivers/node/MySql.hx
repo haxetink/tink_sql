@@ -1,5 +1,6 @@
 package tink.sql.drivers.node;
 
+import haxe.Int64;
 import js.node.stream.Readable.Readable;
 import js.node.events.EventEmitter;
 import js.node.Buffer;
@@ -50,6 +51,8 @@ class MySql implements Driver {
       charset: settings.charset,
       ssl: settings.ssl,
       multipleStatements: true,
+      supportBigNumbers: true,
+      bigNumberStrings: true,
     });
     
     // pool.on('acquire', function (connection) {
@@ -139,11 +142,15 @@ class MySqlConnection<Db> implements Connection<Db> implements Sanitizer {
     this.autoRelease = autoRelease;
   }
 
-  public function value(v:Any):String
-    return if (Std.is(v, Date))
-      'DATE_ADD(FROM_UNIXTIME(0), INTERVAL ${(v:Date).getTime()/1000} SECOND)';
-    else
-      NativeDriver.escape(if(Std.is(v, Bytes)) Buffer.hxFromBytes(v) else v);
+  public function value(v:Any):String {
+    if (Std.is(v, Date))
+      return 'DATE_ADD(FROM_UNIXTIME(0), INTERVAL ${(v:Date).getTime()/1000} SECOND)';
+
+    if (Int64.isInt64(v))
+      return Int64.toStr(v);
+
+    return NativeDriver.escape(if(Std.is(v, Bytes)) Buffer.hxFromBytes(v) else v);
+  }
 
   public function ident(s:String):String
     return NativeDriver.escapeId(s);

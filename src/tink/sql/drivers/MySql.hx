@@ -1,5 +1,6 @@
 package tink.sql.drivers;
 
+import haxe.Int64;
 import tink.sql.format.Sanitizer;
 import tink.core.Any;
 import haxe.io.Bytes;
@@ -24,6 +25,7 @@ private class MySqlSanitizer implements Sanitizer {
   public function new() {}
   
   public function value(v:Any):String {
+    if (Int64.isInt64(v)) v = Int64.toStr(v);
     if (Std.is(v, Bool)) return v ? 'true' : 'false';
     if (v == null || Std.is(v, Int)) return '$v';
     if (Std.is(v, Bytes)) v = (cast v: Bytes).toString();

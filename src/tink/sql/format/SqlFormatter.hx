@@ -65,6 +65,8 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
         sql('SMALLINT').add('UNSIGNED', !signed).add(addDefault(d));
       case DInt(Medium, signed, _, d):
         sql('MEDIUMINT').add('UNSIGNED', !signed).add(addDefault(d));
+      case DInt(Big, signed, _, d):
+        sql('BIGINT').add('UNSIGNED', !signed).add(addDefault(d));
       case DInt(Default, signed, _, d):
         sql('INT').add('UNSIGNED', !signed).add(addDefault(d));
       case DString(maxLength, d):
@@ -417,6 +419,8 @@ class SqlFormatter<ColInfo, KeyInfo> implements Formatter<ColInfo, KeyInfo> {
       case EValue(v, VString):
         value(v);
       case EValue(v, VInt):
+        value(v);
+      case EValue(v, VInt64):
         value(v);
       case EValue(v, VFloat):
         value(v);

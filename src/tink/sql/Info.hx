@@ -1,5 +1,7 @@
 package tink.sql;
 
+import haxe.Int64;
+
 interface DatabaseInfo {
   function tableNames():Iterable<String>;
   function tableInfo(name:String):TableInfo;
@@ -28,7 +30,7 @@ enum Key {
 
 enum DataType {
   DBool(?byDefault:Bool);
-  DInt(size:IntSize, signed:Bool, autoIncrement:Bool, ?byDefault:Int);
+  DInt(size:IntSize, signed:Bool, autoIncrement:Bool, ?byDefault:Dynamic);
   DDouble(?byDefault:Float);
   DString(maxLength:Int, ?byDefault:String);
   DText(size:TextSize, ?byDefault:String);
@@ -51,7 +53,7 @@ enum IntSize {
   Small;
   Medium;
   Default;
-  // Big;
+  Big;
 }
 
 enum TextSize {

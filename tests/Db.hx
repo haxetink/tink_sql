@@ -102,6 +102,13 @@ typedef Schema = {
   @:unique('gh') public var h(default, null): Bool;
 }
 
+typedef BigIntTypes = {
+  @:autoIncrement @:primary public var id(default, null):Id<User>;
+  public var int0(default, null): BigInt;
+  public var intMin(default, null): BigInt;
+  public var intMax(default, null): BigInt;
+}
+
 typedef StringTypes = {
   @:autoIncrement @:primary public var id(default, null):Id<User>;
   public var text10(default, null): VarChar<20>;
@@ -128,7 +135,7 @@ typedef JsonTypes = {
 }
 
 typedef Db = tink.sql.Database<Def>;
-@:tables(User, Post, PostTags, Clap, Types, Geometry, Schema, StringTypes, JsonTypes)
+@:tables(User, Post, PostTags, Clap, Types, Geometry, Schema, StringTypes, JsonTypes, BigIntTypes)
 interface Def extends tink.sql.DatabaseDefinition {
   @:procedure var func:Int->{x:Int, point:tink.s2d.Point};
   @:table('alias') var PostAlias:Post;

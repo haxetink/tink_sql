@@ -1,5 +1,6 @@
 package tink.sql.drivers.node;
 
+import haxe.Int64;
 import haxe.Constraints.Function;
 import js.node.stream.Readable.Readable;
 import js.node.events.EventEmitter;
@@ -156,15 +157,18 @@ class PostgreSqlConnection<Db> implements Connection<Db> implements Sanitizer {
     this.autoRelease = autoRelease;
   }
 
-  public function value(v:Any):String
-    return if (Std.is(v, Date))
-      'to_timestamp(${(v:Date).getTime()/1000})';
-    else if (Std.is(v, String))
-      Client.escapeLiteral(v);
-    else if (Std.is(v, Bytes))
-      "'\\x" + (cast v:Bytes).toHex() + "'";
-    else
-      v;
+  public function value(v:Any):String {
+    if (Int64.isInt64(v))
+      return Int64.toStr(v);
+    if (Std.is(v, Date))
+      return 'to_timestamp(${(v:Date).getTime()/1000})';
+    if (Std.is(v, String))
+      return Client.escapeLiteral(v);
+    if (Std.is(v, Bytes))
+      return "'\\x" + (cast v:Bytes).toHex() + "'";
+
+    return v;
+  }
 
   public function ident(s:String):String
     return Client.escapeIdentifier(s);

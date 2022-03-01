@@ -1,5 +1,6 @@
 package tink.sql.format;
 
+import haxe.Int64;
 import haxe.io.Bytes;
 
 private enum StatementMember {
@@ -107,6 +108,7 @@ abstract Statement(Array<StatementMember>) from Array<StatementMember> to Array<
           #if nodejs
           if (Std.is(v, Bytes)) v = js.node.Buffer.hxFromBytes(cast v);
           #end
+          if (Int64.isInt64(v)) v = Int64.toStr(v);
           values.push(v);
       }
     return {query: query.toString(), values: values}

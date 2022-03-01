@@ -1,5 +1,6 @@
 package tink.sql.format;
 
+import haxe.Int64;
 import tink.sql.Info;
 import tink.sql.Query;
 import tink.sql.schema.KeyStore;
@@ -56,10 +57,10 @@ class MySqlFormatter extends SqlFormatter<MysqlColumnInfo, MysqlKeyInfo> {
         DInt(Small, type.flags.indexOf('UNSIGNED') == -1, type.autoIncrement, parseDefault(Std.parseInt));
       case {name: 'MEDIUMINT'}:
         DInt(Medium, type.flags.indexOf('UNSIGNED') == -1, type.autoIncrement, parseDefault(Std.parseInt));
+      case {name: 'BIGINT'}:
+        DInt(Big, type.flags.indexOf('UNSIGNED') == -1, type.autoIncrement, parseDefault(Int64.parseString));
       case {name: 'INT'}:
         DInt(Default, type.flags.indexOf('UNSIGNED') == -1, type.autoIncrement, parseDefault(Std.parseInt));
-      // case {name: 'BIGINT'}:
-      //   DInt(Big, type.flags.indexOf('UNSIGNED') == -1, type.autoIncrement, parseDefault(Std.parseInt));
       case {name: 'VARCHAR', values: [max]}:
         DString(Std.parseInt(max), type.defaultValue);
       case {name: 'BLOB', values: [max]}:

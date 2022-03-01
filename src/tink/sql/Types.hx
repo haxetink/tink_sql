@@ -10,7 +10,7 @@ typedef Timestamp = Date;
 typedef TinyInt = Int;
 typedef SmallInt = Int;
 typedef MediumInt = Int;
-// typedef BigInt = Int;
+typedef BigInt = haxe.Int64;
 
 typedef Text = String;
 typedef LongText = String;

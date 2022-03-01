@@ -68,6 +68,7 @@ class Run extends TestWithDb {
         new TypeTest(mysql, dbMysql),
         new SelectTest(mysql, dbMysql),
         new FormatTest(mysql, dbMysql),
+        new BigIntTest(mysql, dbMysql),
         #if !neko
         new StringTest(mysql, dbMysql),
         #end
@@ -102,6 +103,7 @@ class Run extends TestWithDb {
         new TypeTest(postgres, dbPostgres),
         new SelectTest(postgres, dbPostgres),
         new FormatTest(postgres, dbPostgres),
+        new BigIntTest(postgres, dbPostgres),
         new ExprTest(postgres, dbPostgres),
         new Run(postgres, dbPostgres),
         new GeometryTest(postgres, dbPostgres),
@@ -185,7 +187,7 @@ class Run extends TestWithDb {
 
   public function info() {
     asserts.assert(db.getName() == 'test');
-    asserts.assert(sorted(db.getInfo().tableNames()).join(',') == 'Clap,Geometry,JsonTypes,Post,PostTags,Schema,StringTypes,Types,User,alias');
+    asserts.assert(sorted(db.getInfo().tableNames()).join(',') == 'BigIntTypes,Clap,Geometry,JsonTypes,Post,PostTags,Schema,StringTypes,Types,User,alias');
     asserts.assert(sorted(db.getInfo().tableInfo('Post').columnNames()).join(',') == 'author,content,id,title');
     return asserts.done();
   }
