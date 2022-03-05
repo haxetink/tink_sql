@@ -100,6 +100,10 @@ devcontainer:
     COPY +earthly/earthly /usr/local/bin/
     RUN earthly bootstrap --no-buildkit --with-autocomplete
 
+    RUN npm config --global set update-notifier false
+    RUN npm config set prefix /usr/local
+    RUN npm install -g lix
+
     USER $USERNAME
 
     # Config direnv

@@ -1,4 +1,5 @@
 {
+  "name": "tink_sql",
   "scripts": {
     "test": "lix run travix",
     "postinstall": "lix download"
