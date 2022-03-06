@@ -9,5 +9,6 @@ interface Driver {
 enum DriverType {
   MySql;
   PostgreSql;
+  CockroachDb;
   Sqlite;
 }

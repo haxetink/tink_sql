@@ -20,3 +20,14 @@ services:
       - "5432:5432"
     healthcheck:
       test: ["CMD", "pg_isready"]
+  cockroachdb:
+    # We use the unstable image here for easy config with env vars
+    # https://github.com/cockroachdb/cockroach/commit/2862374a4743aece5707ea52d0ac17f6cb10dc7b
+    image: cockroachdb/cockroach-unstable:v22.1.0-alpha.1
+    environment:
+      - COCKROACH_DATABASE=test
+      - COCKROACH_USER=crdb
+      - COCKROACH_PASSWORD=crdb
+    ports:
+      - "26257:26257"
+    command: start-single-node --insecure

@@ -83,7 +83,7 @@ class SubQueryTest extends TestWithDb {
 					.next(function(row) {
 						return assert(true);
 					});
-			case Sqlite | PostgreSql:
+			case Sqlite | PostgreSql | CockroachDb:
 				// syntax not supported
 				asserts.done();
 		}
@@ -99,7 +99,7 @@ class SubQueryTest extends TestWithDb {
 					.next(function(row) {
 						return assert(true);
 					});
-			case Sqlite | PostgreSql:
+			case Sqlite | PostgreSql | CockroachDb:
 				// syntax not supported
 				asserts.done();
 		}
@@ -191,7 +191,7 @@ class SubQueryTest extends TestWithDb {
 							asserts.assert(e.message.indexOf('Duplicate entry') != -1);
 						case Sqlite:
 							asserts.assert(e.message.indexOf('UNIQUE constraint failed') != -1);
-						case PostgreSql:
+						case PostgreSql | CockroachDb:
 							throw "Not implemented";
 					}
 					asserts.done();

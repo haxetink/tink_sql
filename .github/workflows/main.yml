@@ -25,7 +25,6 @@ jobs:
         options: --health-cmd="pg_isready" --health-interval=10s --health-timeout=5s --health-retries=3
     strategy:
       matrix:
-      
         haxe-version:
           - 4.0.5
           - 4.1.5
@@ -34,6 +33,9 @@ jobs:
         target: 
           - node
           - php
+    env:
+      # excluded CockroachDb here because it is hard to create a GitHub Actions service with command/entrypoint override
+      TEST_DB_TYPES: MySql,PostgreSql,Sqlite
     steps:
     - uses: actions/checkout@v2
     - uses: actions/setup-node@v1

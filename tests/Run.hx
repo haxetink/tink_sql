@@ -15,6 +15,7 @@ using tink.CoreApi;
 enum abstract TestDbType(String) to String {
   final MySql;
   final PostgreSql;
+  final CockroachDb;
   final Sqlite;
 }
 
@@ -23,7 +24,7 @@ enum abstract TestDbType(String) to String {
 @:allow(tink.unit)
 class Run extends TestWithDb {
   static function main() {
-    final testDbTypes:Array<TestDbType> = cast env('TEST_DB_TYPES', [MySql, PostgreSql, Sqlite].join(',')).split(',');
+    final testDbTypes:Array<TestDbType> = cast env('TEST_DB_TYPES', [MySql, PostgreSql, CockroachDb, Sqlite].join(',')).split(',');
 
     Promise.inSequence([
       for (dbType in testDbTypes)
@@ -32,6 +33,8 @@ class Run extends TestWithDb {
           testMySql();
         case PostgreSql:
           testPostgreSql();
+        case CockroachDb:
+          testCockroachDb();
         case Sqlite:
           testSqlite();
         case db:
@@ -113,6 +116,35 @@ class Run extends TestWithDb {
         new TransactionTest(postgres, dbPostgres),
         new InsertIgnoreTest(postgres, dbPostgres),
         new UpsertTest(postgres, dbPostgres),
+      ])));
+    #else
+    return Promise.resolve([]);
+    #end
+  }
+
+  static function testCockroachDb() {
+    #if nodejs
+    final cockroachdb = new tink.sql.drivers.node.CockroachDb({
+      host: env('COCKROACH_HOST', '127.0.0.1'),
+      user: env('COCKROACH_USER', 'crdb'),
+      password: env('COCKROACH_PASSWORD', 'crdb'),
+    });
+    final db = new Db(env('COCKROACH_DATABASE', 'test'), cockroachdb);
+    return Promise.retry(()->loadFixture(db, 'init_cockroachdb'), max10Seconds)
+      .next(_ -> Runner.run(TestBatch.make([
+        new TypeTest(cockroachdb, db),
+        new SelectTest(cockroachdb, db),
+        new FormatTest(cockroachdb, db),
+        new BigIntTest(cockroachdb, db),
+        new ExprTest(cockroachdb, db),
+        new Run(cockroachdb, db),
+        new GeometryTest(cockroachdb, db),
+        new TruncateTest(cockroachdb, db),
+        
+        new ConnectionTest(cockroachdb, db),
+        new TransactionTest(cockroachdb, db),
+        new InsertIgnoreTest(cockroachdb, db),
+        new UpsertTest(cockroachdb, db),
       ])));
     #else
     return Promise.resolve([]);

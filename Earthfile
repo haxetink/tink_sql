@@ -130,7 +130,7 @@ test-base:
 
 test-node:
     FROM +test-base
-    ARG TEST_DB_TYPES=MySql,PostgreSql,Sqlite
+    ARG TEST_DB_TYPES=MySql,PostgreSql,CockroachDb,Sqlite
     ENV TEST_DB_TYPES="$TEST_DB_TYPES"
     WITH DOCKER --compose tests/docker-compose.yml
         RUN npm run test node
@@ -138,7 +138,7 @@ test-node:
 
 test-php:
     FROM +test-base
-    ARG TEST_DB_TYPES=MySql,PostgreSql,Sqlite
+    ARG TEST_DB_TYPES=MySql,PostgreSql,CockroachDb,Sqlite
     ENV TEST_DB_TYPES="$TEST_DB_TYPES"
     WITH DOCKER --compose tests/docker-compose.yml
         RUN npm run test php

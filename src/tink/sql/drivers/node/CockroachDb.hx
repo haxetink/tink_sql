@@ -7,28 +7,19 @@ import haxe.io.Bytes;
 import tink.sql.Query;
 import tink.sql.Info;
 import tink.sql.Types;
-import tink.sql.Expr;
 import tink.sql.format.Sanitizer;
 import tink.streams.Stream;
-import tink.sql.format.PostgreSqlFormatter;
-import tink.sql.parse.ResultParser;
-using tink.CoreApi.JsPromiseTools;
+import tink.sql.format.CockroachDbFormatter;
+import tink.sql.drivers.node.PostgreSql;
 import tink.sql.drivers.node.externs.PostgreSql;
 
 import #if haxe3 js.lib.Error #else js.Error #end as JsError;
 
 using tink.CoreApi;
 
-typedef PostgreSqlNodeSettings = {
-  > PostgreSqlSettings,
-  ?ssl:PostgresSslConfig,
-  ?max:Int,
-}
+class CockroachDb implements Driver {
+  public final type:Driver.DriverType = CockroachDb;
 
-class PostgreSql implements Driver {
-  
-  public final type:Driver.DriverType = PostgreSql;
-  
   final settings:PostgreSqlNodeSettings;
 
   public function new(settings) {
@@ -40,7 +31,10 @@ class PostgreSql implements Driver {
       user: settings.user,
       password: settings.password,
       host: settings.host,
-      port: settings.port,
+      port: switch (settings.port) {
+        case null: 26257;
+        case v: v;
+      },
       ssl: settings.ssl,
       max: switch settings.max {
         case null: 1;
@@ -49,76 +43,48 @@ class PostgreSql implements Driver {
       database: name,
     });
 
-    return new PostgreSqlConnectionPool(info, pool);
+    return new CockroachDbConnectionPool(info, pool);
   }
 }
 
-class PostgreSqlResultParser<Db> extends ResultParser<Db> {
-  override function parseGeometryValue<T, C>(bytes:Bytes):Any {
-    return switch tink.spatial.Parser.ewkb(bytes).geometry {
-      case S2D(Point(v)): v;
-      case S2D(LineString(v)): v;
-      case S2D(Polygon(v)): v;
-      case S2D(MultiPoint(v)): v;
-      case S2D(MultiLineString(v)): v;
-      case S2D(MultiPolygon(v)): v;
-      case S2D(GeometryCollection(v)): v;
-      case v: throw 'expected 2d geometries';
-    }
-  }
-
-  override function parseValue(value:Dynamic, type:ExprType<Dynamic>): Any {
-    if (value == null) return null;
-    return switch type {
-      case null: super.parseValue(value, type);
-      case ExprType.VGeometry(_): parseGeometryValue(Bytes.ofHex(value));
-      default: super.parseValue(value, type);
-    }
-  }
-
-  static inline function geoJsonToTink(geoJson:Dynamic):Dynamic {
-    return geoJson.coordinates;
-  }
-}
-
-class PostgreSqlConnectionPool<Db> implements Connection.ConnectionPool<Db> {
+class CockroachDbConnectionPool<Db> implements Connection.ConnectionPool<Db> {
   final pool:Pool;
   final info:DatabaseInfo;
-  final formatter:PostgreSqlFormatter;
+  final formatter:CockroachDbFormatter;
   final parser:PostgreSqlResultParser<Db>;
   final streamBatch:Int = 50;
   
   public function new(info, pool) {
     this.info = info;
     this.pool = pool;
-    this.formatter = new PostgreSqlFormatter();
+    this.formatter = new CockroachDbFormatter();
     this.parser = new PostgreSqlResultParser();
   }
   
   public function getFormatter()
     return formatter;
-  
+
   public function execute<Result>(query:Query<Db, Result>):Result {
     final cnx = getNativeConnection();
-    return new PostgreSqlConnection(info, cnx, true).execute(query);
+    return new CockroachDbConnection(info, cnx, true).execute(query);
   }
 
   public function executeSql(sql:String):tink.core.Promise<tink.core.Noise> {
     final cnx = getNativeConnection();
-    return new PostgreSqlConnection(info, cnx, true).executeSql(sql);
+    return new CockroachDbConnection(info, cnx, true).executeSql(sql);
   }
 
   public function isolate():Pair<Connection<Db>, CallbackLink> {
     final cnx = getNativeConnection();
     return new Pair(
-      (new PostgreSqlConnection(info, cnx, false):Connection<Db>),
+      (new CockroachDbConnection(info, cnx, false):Connection<Db>),
       (() -> cnx.handle(o -> switch o {
         case Success(native): native.release();
         case Failure(_): // nothing to do
       }):CallbackLink)
     );
   }
-  
+
   function getNativeConnection() {
     return new Promise((resolve, reject) -> {
       var cancelled = false;
@@ -135,10 +101,11 @@ class PostgreSqlConnectionPool<Db> implements Connection.ConnectionPool<Db> {
     });
   }
 }
-class PostgreSqlConnection<Db> implements Connection<Db> implements Sanitizer {
+
+class CockroachDbConnection<Db> implements Connection<Db> implements Sanitizer {
   final client:Promise<Client>;
   final info:DatabaseInfo;
-  final formatter:PostgreSqlFormatter;
+  final formatter:CockroachDbFormatter;
   final parser:PostgreSqlResultParser<Db>;
   final streamBatch:Int = 50;
   final autoRelease:Bool;
@@ -146,7 +113,7 @@ class PostgreSqlConnection<Db> implements Connection<Db> implements Sanitizer {
   public function new(info, client, autoRelease) {
     this.info = info;
     this.client = client;
-    this.formatter = new PostgreSqlFormatter();
+    this.formatter = new CockroachDbFormatter();
     this.parser = new PostgreSqlResultParser();
     this.autoRelease = autoRelease;
   }
@@ -155,7 +122,7 @@ class PostgreSqlConnection<Db> implements Connection<Db> implements Sanitizer {
     if (Int64.isInt64(v))
       return Int64.toStr(v);
     if (Std.is(v, Date))
-      return 'to_timestamp(${(v:Date).getTime()/1000})';
+      return '(${(v : Date).getTime() / 1000})::timestamp';
     if (Std.is(v, String))
       return Client.escapeLiteral(v);
     if (Std.is(v, Bytes))
