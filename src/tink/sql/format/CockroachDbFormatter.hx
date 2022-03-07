@@ -167,7 +167,7 @@ class CockroachDbFormatter extends SqlFormatter<CockroachDbColumnInfo, Cockroach
             case [v, DMultiPoint]: 'ST_GeomFromText(\'${(v:MultiPoint).toWkt()}\',4326)';
             case [v, DMultiLineString]: 'ST_GeomFromText(\'${(v:MultiLineString).toWkt()}\',4326)';
             case [v, DMultiPolygon]: 'ST_GeomFromText(\'${(v:MultiPolygon).toWkt()}\',4326)';
-            case [v, DJson]: trace("json: " + haxe.Json.stringify(v)); value(haxe.Json.stringify(v));
+            case [v, DJson]: value(haxe.Json.stringify(v));
             case [v, _]: value(v);
           }
       ))
