@@ -66,6 +66,7 @@ class Targets {
       case 'Bool': macro VBool;
       case 'Float': macro VFloat;
       case 'Int' | 'tink.sql.Id': macro VInt;
+      case 'haxe.Int64': macro VInt64;
       case 'haxe.io.Bytes': macro VBytes;
       case 'Date': macro VDate;
       case 'tink.s2d.Point': macro VGeometry(Point);

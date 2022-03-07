@@ -10,7 +10,6 @@ using tink.CoreApi;
 @:asserts
 @:allow(tink.unit)
 class BigIntTest extends TestWithDb {
-
   @:before
   public function createTable() {
     return db.BigIntTypes.create();
@@ -25,9 +24,9 @@ class BigIntTest extends TestWithDb {
   static final int64Max = haxe.Int64.parseString('9223372036854775807');
 
   public function insert() {
-    function desc(length: Int)
+    function desc(length:Int)
       return 'compare strings of length $length';
-    var future = db.BigIntTypes.insertOne({
+    final future = db.BigIntTypes.insertOne({
       id: null,
       int0: 0,
       intMin: int64Min,
@@ -42,8 +41,37 @@ class BigIntTest extends TestWithDb {
       });
 
     future.handle(function(o) switch o {
-      case Success(_): asserts.done();
-      case Failure(e): asserts.fail(e, e.pos);
+      case Success(_):
+        asserts.done();
+      case Failure(e):
+        asserts.fail(e, e.pos);
+    });
+
+    return asserts;
+  }
+
+  public function select() {
+    final future = db.BigIntTypes.insertOne({
+      id: null,
+      int0: 0,
+      intMin: int64Min,
+      intMax: int64Max,
+    })
+      .next(_ -> db.BigIntTypes.where(r -> r.intMax == int64Max).count())
+      .next(count -> {
+        asserts.assert(count == 1);
+      })
+      .next(_ -> db.BigIntTypes.where(r -> r.intMax == r.intMax).count())
+      .next(count -> {
+        asserts.assert(count == 1);
+      })
+      .next(_ -> Noise);
+
+    future.handle(function(o) switch o {
+      case Success(_):
+        asserts.done();
+      case Failure(e):
+        asserts.fail(e, e.pos);
     });
 
     return asserts;

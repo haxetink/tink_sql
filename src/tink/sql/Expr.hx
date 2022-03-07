@@ -119,6 +119,18 @@ typedef Set<T> = Dataset<SingleField<T, Dynamic>, Dynamic, Dynamic>;
     @:op(a <= b) static function lte<T:Float>(a:Expr<T>, b:Expr<T>):Condition
       return EBinOp(LessThanOrEquals, a, b);
 
+    @:op(a > b) static function gtInt64(a:Expr<Int64>, b:Expr<Int64>):Condition
+      return EBinOp(Greater, a, b);
+
+    @:op(a < b) static function ltInt64(a:Expr<Int64>, b:Expr<Int64>):Condition
+      return EBinOp(LessThan, a, b);
+
+    @:op(a >= b) static function gteInt64(a:Expr<Int64>, b:Expr<Int64>):Condition
+      return EBinOp(GreaterOrEquals, a, b);
+
+    @:op(a <= b) static function lteInt64(a:Expr<Int64>, b:Expr<Int64>):Condition
+      return EBinOp(LessThanOrEquals, a, b);
+
     @:op(a > b) static function gtDate(a:Expr<Date>, b:Expr<Date>):Condition
       return EBinOp(Greater, a, b);
 
@@ -196,6 +208,28 @@ typedef Set<T> = Dataset<SingleField<T, Dynamic>, Dynamic, Dynamic>;
 
     @:op(a <= b) static function lteConst<T:Float>(a:Expr<T>, b:T):Condition
       return lte(a, EValue(b, cast VFloat));
+
+
+    @:commutative
+    @:op(a == b) static function eqInt64(a:Expr<Int64>, b:Int64):Condition
+      return eq(a, EValue(b, cast VInt64));
+
+    @:commutative
+    @:op(a != b) static function neqInt64(a:Expr<Int64>, b:Int64):Condition
+      return neq(a, EValue(b, cast VInt64));
+
+    @:op(a > b) static function gInt64tConst(a:Expr<Int64>, b:Int64):Condition
+      return gtInt64(a, EValue(b, cast VInt64));
+
+    @:op(a < b) static function ltInt64Const(a:Expr<Int64>, b:Int64):Condition
+      return ltInt64(a, EValue(b, cast VInt64));
+
+    @:op(a >= b) static function gteInt64Const(a:Expr<Int64>, b:Int64):Condition
+      return gteInt64(a, EValue(b, cast VInt64));
+
+    @:op(a <= b) static function lteInt64Const(a:Expr<Int64>, b:Int64):Condition
+      return lteInt64(a, EValue(b, cast VInt64));
+
 
     @:op(a > b) static function gtDateConst(a:Expr<Date>, b:Date):Condition
       return gtDate(a, EValue(b, VDate));

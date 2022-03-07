@@ -1,5 +1,6 @@
 package tink.sql.expr;
 
+import haxe.Int64;
 import tink.sql.Expr;
 import tink.sql.Query;
 import tink.sql.Types;
@@ -152,6 +153,26 @@ abstract Field<Data, Owner>(Expr<Data>) to Expr<Data> {
     @:op(a <= b) static function lteConst<T:Float, S>(a:Field<T, S>, b:T):Condition
       return (a:Expr<T>) <= EValue(b, cast VFloat);
 
+    @:commutative
+    @:op(a == b) static function eqInt64<S>(a:Field<Int64, S>, b:Int64):Condition
+      return (a:Expr<Int64>) == EValue(b, cast VInt64);
+
+    @:commutative
+    @:op(a != b) static function neqInt64<S>(a:Field<Int64, S>, b:Int64):Condition
+      return (a:Expr<Int64>) != EValue(b, cast VInt64);
+
+    @:op(a > b) static function gtInt64<S>(a:Field<Int64, S>, b:Int64):Condition
+      return (a:Expr<Int64>) > EValue(b, cast VInt64);
+
+    @:op(a < b) static function ltInt64<S>(a:Field<Int64, S>, b:Int64):Condition
+      return (a:Expr<Int64>) < EValue(b, cast VInt64);
+
+    @:op(a >= b) static function gteInt64<S>(a:Field<Int64, S>, b:Int64):Condition
+      return (a:Expr<Int64>) >= EValue(b, cast VInt64);
+
+    @:op(a <= b) static function lteInt64<S>(a:Field<Int64, S>, b:Int64):Condition
+      return (a:Expr<Int64>) <= EValue(b, cast VInt64);
+
     @:op(a > b) static function gtDateConst<S>(a:Field<Date, S>, b:Date):Condition
       return (a:Expr<Date>) > EValue(b, VDate);
 
@@ -200,6 +221,28 @@ abstract Field<Data, Owner>(Expr<Data>) to Expr<Data> {
 
     @:op(a <= b) static function lteQuery<T:Float, S>(a:Field<T, S>, b:Scalar<T>):Condition
       return (a:Expr<T>) <= b.toScalarExpr();
+
+
+    @:commutative
+    @:op(a == b) static function eqInt64Query<S>(a:Field<Int64, S>, b:Scalar<Int64>):Condition
+      return (a:Expr<Int64>) == b.toScalarExpr();
+    
+    @:commutative
+    @:op(a == b) static function neqInt64Query<S>(a:Field<Int64, S>, b:Scalar<Int64>):Condition
+      return (a:Expr<Int64>) != b.toScalarExpr();
+
+    @:op(a > b) static function gtInt64Query<S>(a:Field<Int64, S>, b:Scalar<Int64>):Condition
+      return (a:Expr<Int64>) > b.toScalarExpr();
+
+    @:op(a < b) static function ltInt64Query<S>(a:Field<Int64, S>, b:Scalar<Int64>):Condition
+      return (a:Expr<Int64>) < b.toScalarExpr();
+
+    @:op(a >= b) static function gteInt64Query<S>(a:Field<Int64, S>, b:Scalar<Int64>):Condition
+      return (a:Expr<Int64>) >= b.toScalarExpr();
+
+    @:op(a <= b) static function lteInt64Query< S>(a:Field<Int64, S>, b:Scalar<Int64>):Condition
+      return (a:Expr<Int64>) <= b.toScalarExpr();
+
 
     @:op(a > b) static function gtDateQuery<S>(a:Field<Date, S>, b:Scalar<Date>):Condition
       return (a:Expr<Date>) > b.toScalarExpr();
