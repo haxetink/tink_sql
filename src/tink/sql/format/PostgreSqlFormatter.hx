@@ -146,18 +146,18 @@ class PostgreSqlFormatter extends SqlFormatter<PostgreSqlColumnInfo, PostgreSqlK
     return parenthesis(
       separated(columns.map(
         function (column):Statement
-          return switch [column.type, row[column.name]] {
-            case [DInt(_, _, true, _), null]: "DEFAULT";
-            case [_, null]: value(null);
-            case [_, v]: switch column.type {
-              case DPoint: 'ST_GeomFromText(\'${(v:Point).toWkt()}\',4326)';
-              case DLineString: 'ST_GeomFromText(\'${(v:LineString).toWkt()}\',4326)';
-              case DPolygon: 'ST_GeomFromText(\'${(v:Polygon).toWkt()}\',4326)';
-              case DMultiPoint: 'ST_GeomFromText(\'${(v:MultiPoint).toWkt()}\',4326)';
-              case DMultiLineString: 'ST_GeomFromText(\'${(v:MultiLineString).toWkt()}\',4326)';
-              case DMultiPolygon: 'ST_GeomFromText(\'${(v:MultiPolygon).toWkt()}\',4326)';
-              default: value(v);
-            }
+          return switch [row[column.name], column.type] {
+            case [null, DInt(_, _, true, _)]: "DEFAULT";
+            case [null, DJson] if (row.exists(column.name)): value("null");
+            case [null, _]: value(null);
+            case [v, DPoint]: 'ST_GeomFromText(\'${(v:Point).toWkt()}\',4326)';
+            case [v, DLineString]: 'ST_GeomFromText(\'${(v:LineString).toWkt()}\',4326)';
+            case [v, DPolygon]: 'ST_GeomFromText(\'${(v:Polygon).toWkt()}\',4326)';
+            case [v, DMultiPoint]: 'ST_GeomFromText(\'${(v:MultiPoint).toWkt()}\',4326)';
+            case [v, DMultiLineString]: 'ST_GeomFromText(\'${(v:MultiLineString).toWkt()}\',4326)';
+            case [v, DMultiPolygon]: 'ST_GeomFromText(\'${(v:MultiPolygon).toWkt()}\',4326)';
+            case [v, DJson]: trace("json: " + haxe.Json.stringify(v)); value(haxe.Json.stringify(v));
+            case [v, _]: value(v);
           }
       ))
     );

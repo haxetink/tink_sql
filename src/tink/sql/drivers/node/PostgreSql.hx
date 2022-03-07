@@ -72,6 +72,7 @@ class PostgreSqlResultParser<Db> extends ResultParser<Db> {
     return switch type {
       case null: super.parseValue(value, type);
       case ExprType.VGeometry(_): parseGeometryValue(Bytes.ofHex(value));
+      case ExprType.VJson: value;
       default: super.parseValue(value, type);
     }
   }
