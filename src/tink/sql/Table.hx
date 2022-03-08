@@ -20,7 +20,7 @@ class Table<T> {
 }
 #end
 
-class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db> 
+class TableSource<Fields, Filter:(Fields->Condition), Row:{}, IdType, Db> 
     extends Selectable<Fields, Filter, Row, Db>
 {
   
@@ -78,17 +78,17 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
     );
   }
   
-  public function insertMany(rows:Array<Row>, ?options): Promise<Id<Row>>
+  public function insertMany(rows:Array<Row>, ?options): Promise<IdType>
     return if (rows.length == 0) cast Promise #if (tink_core >= "2") .NOISE #else .NULL #end
       else insert(Literal(rows), options);
     
-  public function insertOne(row:Row, ?options): Promise<Id<Row>>
+  public function insertOne(row:Row, ?options): Promise<IdType>
     return insert(Literal([row]), options);
     
-  public function insertSelect(selected:Selected<Dynamic, Dynamic, Row, Db>, ?options): Promise<Id<Row>>
+  public function insertSelect(selected:Selected<Dynamic, Dynamic, Row, Db>, ?options): Promise<IdType>
     return insert(Select(selected.toSelectOp()), options);
 
-  function insert(data, ?options:{?ignore:Bool, ?replace:Bool, ?update:Fields->Update<Row>}): Promise<Id<Row>> {
+  function insert(data, ?options:{?ignore:Bool, ?replace:Bool, ?update:Fields->Update<Row>}): Promise<IdType> {
     return cnx.execute(Insert({
       table: info, 
       data: data, 
@@ -122,12 +122,12 @@ class TableSource<Fields, Filter:(Fields->Condition), Row:{}, Db>
 
   macro public function as(e:Expr, alias:String) {
     return switch haxe.macro.Context.typeof(e) {
-      case TInst(_.get() => { pack: pack, name: name, superClass: _.params => [fields, _, row, _] }, _):
+      case TInst(_.get() => { pack: pack, name: name, superClass: _.params => [fields, _, row, idType, _] }, _):
         var fieldsType = fields.toComplex({direct: true});
         var filterType = (macro function ($alias:$fieldsType):tink.sql.Expr.Condition return tink.sql.Expr.ExprData.EValue(true, tink.sql.Expr.ExprType.VBool)).typeof().sure();
         var path: haxe.macro.TypePath = 
         'tink.sql.Table.TableSource'.asTypePath(
-          [fields, filterType, row].map(function (type)
+          [fields, filterType, row, idType].map(function (type)
             return TPType(type.toComplex({direct: true}))
           ).concat([TPType(e.pos.makeBlankType())])
         );

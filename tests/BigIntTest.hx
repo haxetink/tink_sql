@@ -32,7 +32,7 @@ class BigIntTest extends TestWithDb {
       intMin: int64Min,
       intMax: int64Max,
     })
-      .next(function(id:Int) return db.BigIntTypes.first())
+      .next(function(id:tink.sql.Types.BigInt) return db.BigIntTypes.where(r -> r.id == id).first())
       .next(function(row:BigIntTypes) {
         asserts.assert(row.int0 == 0);
         asserts.assert(row.intMin == int64Min);

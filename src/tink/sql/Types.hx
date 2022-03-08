@@ -1,5 +1,6 @@
 package tink.sql;
 
+import haxe.*;
 import tink.sql.Expr;
 
 typedef Blob<@:const L> = haxe.io.Bytes;
@@ -63,10 +64,25 @@ abstract Id<T>(Int) to Int {
 
 }
 
+abstract Id64<T>(Int64) to Int64 {
 
+  public inline function new(v)
+    this = v;
 
+  @:from static inline function ofInt64<T>(i:Int64):Id64<T>
+    return new Id64(i);
 
+  @:to public inline function toString()
+    return Int64.toStr(this);
 
+  @:to public function toExpr():Expr<Id64<T>>
+    return tink.sql.Expr.ExprData.EValue(new Id64(this), cast VInt64);
 
+  @:op(A>B) static function gt<T>(a:Id64<T>, b:Id64<T>):Bool;
+  @:op(A<B) static function lt<T>(a:Id64<T>, b:Id64<T>):Bool;
+  @:op(A>=B) static function gte<T>(a:Id64<T>, b:Id64<T>):Bool;
+  @:op(A>=B) static function lte<T>(a:Id64<T>, b:Id64<T>):Bool;
+  @:op(A==B) static function eq<T>(a:Id64<T>, b:Id64<T>):Bool;
+  @:op(A!=B) static function neq<T>(a:Id64<T>, b:Id64<T>):Bool;
 
-
+}

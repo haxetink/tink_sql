@@ -12,7 +12,7 @@ enum Query<Db, Result> {
   // Multi(queries: Array<Query<Db, Any>>):Query<Db, Promise<Noise>>;
   Union<Row:{}>(union:UnionOperation<Db, Row>):Query<Db, RealStream<Row>>;
   Select<Row:{}>(select:SelectOperation<Db, Row>):Query<Db, RealStream<Row>>;
-  Insert<Row:{}>(insert:InsertOperation<Db, Row>):Query<Db, Promise<Id<Row>>>;
+  Insert<Row:{},IdType>(insert:InsertOperation<Db, Row>):Query<Db, Promise<IdType>>;
   Update<Row:{}>(update:UpdateOperation<Row>):Query<Db, Promise<{rowsAffected:Int}>>;
   Delete<Row:{}>(delete:DeleteOperation<Row>):Query<Db, Promise<{rowsAffected:Int}>>;
   CallProcedure<Row:{}>(call:CallOperation<Row>):Query<Db, RealStream<Row>>;

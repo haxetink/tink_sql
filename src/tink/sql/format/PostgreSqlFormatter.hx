@@ -92,6 +92,9 @@ class PostgreSqlFormatter extends SqlFormatter<PostgreSqlColumnInfo, PostgreSqlK
       case DInt(Default, _, true, _):
         ident(column.name)
           .add(sql('SERIAL'));
+      case DInt(Big, _, true, _):
+        ident(column.name)
+          .add(sql('BIGSERIAL'));
       case _:
         super.defineColumn(column);
     }

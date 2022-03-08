@@ -7,6 +7,7 @@ import haxe.macro.Expr;
 import tink.sql.schema.KeyStore;
 
 using tink.MacroApi;
+using Lambda;
 
 class TableBuilder {
 
@@ -203,8 +204,16 @@ class TableBuilder {
             var fieldsAlias = define(fieldsType, 'FieldsOf_${readableName}');
             var rowAlias = define(rowType, 'ResultOf_${readableName}');
             var filterType = (macro function ($name:$fieldsAlias):tink.sql.Expr.Condition return tink.sql.Expr.ExprData.EValue(true, tink.sql.Expr.ExprType.VBool)).typeof().sure().toComplex({ direct: true });
-
-            macro class $cName<Db> extends tink.sql.Table.TableSource<$fieldsAlias, $filterType, $rowAlias, Db> {
+            var idType = switch (keys.get()[0]) {
+              case null:
+                macro:tink.sql.Types.Id<$rowAlias>;
+              case Primary([keyField]) if (fields.find(f -> f.name == keyField).meta.has(':autoIncrement')):
+                final keyFieldType = fields.find(f -> f.name == keyField).type.toComplex();
+                macro:$keyFieldType;
+              case _:
+                macro:tink.sql.Types.Id<$rowAlias>;
+            };
+            macro class $cName<Db> extends tink.sql.Table.TableSource<$fieldsAlias, $filterType, $rowAlias, $idType, Db> {
 
               public function new(cnx, tableName, ?alias) {
                 final name = new tink.sql.Table.TableName(tableName);

@@ -103,7 +103,7 @@ typedef Schema = {
 }
 
 typedef BigIntTypes = {
-  @:autoIncrement @:primary public var id(default, null):Id<User>;
+  @:autoIncrement @:primary public var id(default, null):BigInt;
   public var int0(default, null): BigInt;
   public var intMin(default, null): BigInt;
   public var intMax(default, null): BigInt;

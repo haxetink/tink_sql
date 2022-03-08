@@ -103,6 +103,9 @@ class CockroachDbFormatter extends SqlFormatter<CockroachDbColumnInfo, Cockroach
       case DInt(Default, _, true, _):
         ident(column.name)
           .add(sql('SERIAL4'));
+      case DInt(Big, _, true, _):
+        ident(column.name)
+          .add(sql('SERIAL8'));
       case _:
         super.defineColumn(column);
     }
