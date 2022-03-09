@@ -33,7 +33,7 @@ class PostgreSqlFormatter extends SqlFormatter<PostgreSqlColumnInfo, PostgreSqlK
       case DDate(d):
         sql('DATE').add(addDefault(d));
       case DDateTime(d):
-        sql('TIMESTAMP').add(addDefault(d));
+        sql('TIMESTAMPTZ').add(addDefault(d));
 
       // https://postgis.net/docs/manual-3.1/postgis_usage.html#Geography_Basics
       case DPoint: 'geometry';
