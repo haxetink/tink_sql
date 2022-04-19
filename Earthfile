@@ -30,7 +30,7 @@ github-src:
 # RUN earthly bootstrap --no-buildkit --with-autocomplete
 earthly:
     FROM +devcontainer-base
-    RUN curl -fsSL https://github.com/earthly/earthly/releases/download/v0.6.8/earthly-linux-${TARGETARCH} -o /usr/local/bin/earthly \
+    RUN curl -fsSL https://github.com/earthly/earthly/releases/download/v0.6.14/earthly-linux-${TARGETARCH} -o /usr/local/bin/earthly \
         && chmod +x /usr/local/bin/earthly
     SAVE ARTIFACT /usr/local/bin/earthly
 
