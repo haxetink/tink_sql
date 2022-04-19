@@ -122,7 +122,7 @@ class CockroachDbConnection<Db> implements Connection<Db> implements Sanitizer {
     if (Int64.isInt64(v))
       return Int64.toStr(v);
     if (Std.is(v, Date))
-      return '(${Math.round((v : Date).getTime() / 1000)})::timestamptz';
+      return '(${Math.round((v : Date).getTime() / 1000)})::timestamptz'; // https://github.com/cockroachdb/cockroach/issues/77591
     if (Std.is(v, String))
       return Client.escapeLiteral(v);
     if (Std.is(v, Bytes))
