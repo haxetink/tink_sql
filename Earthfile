@@ -129,17 +129,53 @@ test-base:
     COPY haxelib.json tests.hxml .
 
 test-node:
+    BUILD +test-node-sqlite
+    BUILD +test-node-mysql
+    BUILD +test-node-postgres
+    BUILD +test-node-cockroachdb
+
+test-node-sqlite:
     FROM +test-base
-    ARG TEST_DB_TYPES=MySql,PostgreSql,CockroachDb,Sqlite
-    ENV TEST_DB_TYPES="$TEST_DB_TYPES"
-    WITH DOCKER --compose tests/docker-compose.yml
+    ENV TEST_DB_TYPES=Sqlite
+    WITH DOCKER
+        RUN npm run test node
+    END
+
+test-node-mysql:
+    FROM +test-base
+    ENV TEST_DB_TYPES=MySql
+    WITH DOCKER --compose tests/docker-compose.yml --service mysql
+        RUN npm run test node
+    END
+
+test-node-postgres:
+    FROM +test-base
+    ENV TEST_DB_TYPES=PostgreSql
+    WITH DOCKER --compose tests/docker-compose.yml --service postgres
+        RUN npm run test node
+    END
+
+test-node-cockroachdb:
+    FROM +test-base
+    ENV TEST_DB_TYPES=CockroachDb
+    WITH DOCKER --compose tests/docker-compose.yml --service cockroachdb
         RUN npm run test node
     END
 
 test-php:
+    BUILD +test-php-sqlite
+    BUILD +test-php-mysql
+
+test-php-sqlite:
     FROM +test-base
-    ARG TEST_DB_TYPES=MySql,PostgreSql,CockroachDb,Sqlite
-    ENV TEST_DB_TYPES="$TEST_DB_TYPES"
-    WITH DOCKER --compose tests/docker-compose.yml
+    ENV TEST_DB_TYPES=Sqlite
+    WITH DOCKER
+        RUN npm run test php
+    END
+
+test-php-mysql:
+    FROM +test-base
+    ENV TEST_DB_TYPES=MySql
+    WITH DOCKER --compose tests/docker-compose.yml --service mysql
         RUN npm run test php
     END
