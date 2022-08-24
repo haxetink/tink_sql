@@ -38,7 +38,7 @@ class PDOMysql implements Driver {
       new PDO(
         'mysql:host=${or(settings.host, 'localhost')};'
         + 'port=${or(settings.port, 3306)};'
-        + 'dbname=$name;charset=${or(settings.charset, 'utf8')}',
+        + 'dbname=$name;charset=${or(settings.charset, 'utf8mb4')}',
         settings.user,
         settings.password
       )
