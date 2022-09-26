@@ -76,6 +76,10 @@ typedef Geometry = {
   // public var multiPolygon(default, null):Null<MultiPolygon>;
 }
 
+typedef TimestampTypes = {
+  public var timestamp(default, null): Timestamp;
+}
+
 typedef Schema = {
   @:autoIncrement @:primary public var id(default, null):Id<Schema>;
 
@@ -135,7 +139,7 @@ typedef JsonTypes = {
 }
 
 typedef Db = tink.sql.Database<Def>;
-@:tables(User, Post, PostTags, Clap, Types, Geometry, Schema, StringTypes, JsonTypes, BigIntTypes)
+@:tables(User, Post, PostTags, Clap, Types, Geometry, Schema, StringTypes, JsonTypes, BigIntTypes, TimestampTypes)
 interface Def extends tink.sql.DatabaseDefinition {
   @:procedure var func:Int->{x:Int, point:tink.s2d.Point};
   @:table('alias') var PostAlias:Post;

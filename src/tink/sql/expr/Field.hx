@@ -186,6 +186,10 @@ abstract Field<Data, Owner>(Expr<Data>) to Expr<Data> {
       return (a:Expr<Date>) <= EValue(b, VDate);
 
     @:commutative
+    @:op(a == b) static function eqDateConst<S>(a:Field<Date, S>, b:Date):Condition
+      return (a:Expr<Date>) == EValue(b, VDate);
+
+    @:commutative
     @:op(a == b) static function eqBytes<T:Bytes, S>(a:Field<T, S>, b:T):Condition
       return (a:Expr<T>) == EValue(b, cast VBytes);
   //} endregion

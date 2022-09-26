@@ -244,6 +244,10 @@ typedef Set<T> = Dataset<SingleField<T, Dynamic>, Dynamic, Dynamic>;
       return lteDate(a, EValue(b, VDate));
 
     @:commutative
+    @:op(a == b) static function eqDateConst(a:Expr<Date>, b:Date):Condition
+      return eq(a, EValue(b, VDate));
+
+    @:commutative
     @:op(a == b) static function eqBytes<T:Bytes>(a:Expr<T>, b:T):Condition
       return eq(a, EValue(b, cast VBytes));
   //} endregion

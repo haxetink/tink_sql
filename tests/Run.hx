@@ -76,6 +76,7 @@ class Run extends TestWithDb {
         new StringTest(mysql, dbMysql),
         #end
         new JsonTest(mysql, dbMysql),
+        new DateTest(mysql, dbMysql),
         new GeometryTest(mysql, dbMysql),
         new ExprTest(mysql, dbMysql),
         new Run(mysql, dbMysql),
@@ -108,6 +109,7 @@ class Run extends TestWithDb {
         new FormatTest(postgres, dbPostgres),
         new BigIntTest(postgres, dbPostgres),
         new JsonTest(postgres, dbPostgres),
+        new DateTest(postgres, dbPostgres),
         new ExprTest(postgres, dbPostgres),
         new Run(postgres, dbPostgres),
         new GeometryTest(postgres, dbPostgres),
@@ -138,6 +140,7 @@ class Run extends TestWithDb {
         new FormatTest(cockroachdb, db),
         new BigIntTest(cockroachdb, db),
         new JsonTest(cockroachdb, db),
+        new DateTest(cockroachdb, db),
         new ExprTest(cockroachdb, db),
         new Run(cockroachdb, db),
         new GeometryTest(cockroachdb, db),
@@ -161,6 +164,7 @@ class Run extends TestWithDb {
       .next(_ -> Runner.run(TestBatch.make([
         new TypeTest(sqlite, dbSqlite),
         new JsonTest(sqlite, dbSqlite),
+        new DateTest(sqlite, dbSqlite),
         new SelectTest(sqlite, dbSqlite),
         new FormatTest(sqlite, dbSqlite),
         #if (!nodejs) // node-sqlite3 has no BigInt support yet
@@ -224,7 +228,7 @@ class Run extends TestWithDb {
 
   public function info() {
     asserts.assert(db.getName() == 'test');
-    asserts.assert(sorted(db.getInfo().tableNames()).join(',') == 'BigIntTypes,Clap,Geometry,JsonTypes,Post,PostTags,Schema,StringTypes,Types,User,alias');
+    asserts.assert(sorted(db.getInfo().tableNames()).join(',') == 'BigIntTypes,Clap,Geometry,JsonTypes,Post,PostTags,Schema,StringTypes,TimestampTypes,Types,User,alias');
     asserts.assert(sorted(db.getInfo().tableInfo('Post').columnNames()).join(',') == 'author,content,id,title');
     return asserts.done();
   }
