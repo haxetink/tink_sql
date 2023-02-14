@@ -22,6 +22,14 @@ class SqliteFormatter extends SqlFormatter<{}, {}> {
     );
   }
 
+  override function keyType(key:Key):Statement
+    return switch key {
+      case Primary(_): sql('PRIMARY KEY');
+      case Unique(name, [field]) if(name == field): sql('UNIQUE');
+      case Unique(name, _): sql('CONSTRAINT').addIdent(name).add(sql('UNIQUE'));
+      case Index(name, _): sql('INDEX').addIdent(name);
+    }
+
   override function type(type: DataType):Statement
     return switch type {
       case DText(size, d):
