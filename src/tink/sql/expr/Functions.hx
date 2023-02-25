@@ -21,6 +21,9 @@ class Functions {
   public static function min<D,O>(e:Field<D,O>):Expr<D> 
     return ECall('MIN', cast [e], VTypeOf(e));
 
+  public static function avg<D,O>(e:Field<D,O>):Expr<D>
+    return ECall('AVG', cast [e], VTypeOf(e));
+
   public static function stContains<T>(g1:Expr<Geometry>, g2:Expr<Geometry>):Expr<Bool>
     return ECall('ST_Contains', cast [g1, g2], VBool);
 
