@@ -11,5 +11,4 @@ enum DriverType {
   PostgreSql;
   CockroachDb;
   Sqlite;
-  SqlServer;
 }

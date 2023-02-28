@@ -11,7 +11,6 @@ import tink.sql.format.Sanitizer;
 import tink.streams.Stream;
 import tink.sql.format.MySqlFormatter;
 import tink.sql.format.SqliteFormatter;
-import tink.sql.format.SqlServerFormatter;
 import tink.sql.expr.ExprTyper;
 import tink.sql.parse.ResultParser;
 import tink.sql.drivers.MySqlSettings;
@@ -65,38 +64,6 @@ class PDOSqlite implements Driver {
           case f: f(name);
         }
       )
-    );
-  }
-}
-
-class PDOSqlServer implements Driver {
-  public final type: Driver.DriverType = SqlServer;
-
-  var settings: SqlServerSettings;
-
-  public function new(settings: SqlServerSettings)
-    this.settings = settings;
-
-  function or<T>(value: Null<T>, byDefault: T)
-    return value == null ? byDefault : value;
-
-  public function open<Db>(name: String, info: DatabaseInfo): Connection.ConnectionPool<Db> {
-    final host = or(settings.host, "localhost");
-    final port = or(settings.port, 1433);
-
-    #if pdo_dblib
-      final dsn = 'dblib:host=$host:$port;dbname=$name'
-        + ';charset=${or(settings.charset, "utf8")}';
-    #else
-      final dsn = 'sqlsrv:Server=$host,$port;Database=$name'
-        + ';Encrypt=${or(settings.encrypt, true)}'
-        + ';TrustServerCertificate=${or(settings.trustServerCertificate, false)}';
-    #end
-
-    return new PDOSqlServerConnection(
-      info,
-      new SqlServerFormatter(),
-      new PDO(dsn, settings.user, settings.password)
     );
   }
 }
@@ -213,9 +180,4 @@ class PDOConnection<Db> implements Connection.ConnectionPool<Db> implements Sani
   public function isolate():Pair<Connection<Db>, CallbackLink> {
     return new Pair((this:Connection<Db>), null);
   }
-}
-
-class PDOSqlServerConnection<Db> extends PDOConnection<Db> {
-  override public function ident(s: String): String
-    return SqlServer.getSanitizer(null).ident(s);
 }
