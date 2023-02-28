@@ -72,7 +72,7 @@ class PDOSqlite implements Driver {
 class PDOSqlServer implements Driver {
   public final type: Driver.DriverType = SqlServer;
 
-  var settings: SqlServerSettings;
+  final settings: SqlServerSettings;
 
   public function new(settings: SqlServerSettings)
     this.settings = settings;

@@ -7,8 +7,7 @@ typedef Impl =
   #if macro
     tink.sql.drivers.macro.Dummy;
   #elseif nodejs
-    // TODO tink.sql.drivers.node.SqlServer;
-    #error "SQL Server not supported on this target";
+    tink.sql.drivers.node.SqlServer;
   #elseif php
     tink.sql.drivers.php.PDO.PDOSqlServer;
   #else
@@ -16,15 +15,18 @@ typedef Impl =
   #end
 
 abstract SqlServer(Impl) from Impl to Impl {
-  static var sanitizer = new SqlServerSanitizer();
+
+  static final sanitizer = new SqlServerSanitizer();
+
   public inline function new(settings) this = new Impl(settings);
+
   static public function getSanitizer<A>(_: A) return sanitizer;
 }
 
 private class SqlServerSanitizer implements Sanitizer {
 
-  static inline var LEFT_BRACKET = "[".code;
-  static inline var RIGHT_BRACKET = "]".code;
+  static inline final LEFT_BRACKET = "[".code;
+  static inline final RIGHT_BRACKET = "]".code;
 
   public function new() {}
 
