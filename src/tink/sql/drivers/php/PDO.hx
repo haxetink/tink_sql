@@ -216,6 +216,14 @@ class PDOConnection<Db> implements Connection.ConnectionPool<Db> implements Sani
 }
 
 class PDOSqlServerConnection<Db> extends PDOConnection<Db> {
-  override public function ident(s: String): String
+  override public function ident(s: String)
     return SqlServer.getSanitizer(null).ident(s);
+
+  override public function value(v: Any) {
+    if (v == null || Std.isOfType(v, Bytes) || Std.isOfType(v, Float) || Std.isOfType(v, Int)) return Std.string(v);
+    if (Int64.isInt64(v)) return Int64.toStr(v);
+    if (Std.isOfType(v, Bool)) return v ? "1" : "0";
+    if (Std.isOfType(v, Date)) return 'DATEADD(millisecond, ${(v: Date).getTime()}, \'1970-01-01\')';
+    return cnx.quote(v);
+  }
 }

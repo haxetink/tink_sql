@@ -6,7 +6,7 @@ import tink.sql.format.Statement.StatementFactory.*;
 class SqlServerFormatter extends SqlFormatter<SqlServerColumnInfo, SqlServerKeyInfo> {
 
   override function autoIncrement(increment: Bool)
-    return increment ? sql('IDENTITY') : empty();
+    return increment ? sql("IDENTITY") : empty();
 
   override function limit(limit: Limit) {
     if (limit == null || limit.limit == null) return empty();

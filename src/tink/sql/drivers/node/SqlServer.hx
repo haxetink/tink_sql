@@ -1,6 +1,5 @@
 package tink.sql.drivers.node;
 
-import js.lib.Error;
 import js.lib.Promise;
 import tink.sql.Info.DatabaseInfo;
 
@@ -18,40 +17,41 @@ class SqlServer implements Driver {
 }
 
 private typedef NativeConfig = {
-  final ?arrayRowMode: Bool;
-  final ?connectionTimeout: Int;
-  final ?database: String;
-  final ?domain: String;
-  final ?options: NativeDriverOptions;
-  final ?parseJSON: Bool;
-  final ?password: String;
-  final ?pool: NativeConnectionPoolOptions;
-  final ?port: Int;
-  final ?requestTimeout: Int;
-  final ?server: String;
-  final ?stream: Bool;
-  final ?user: String;
+  var ?arrayRowMode: Bool;
+  var ?connectionTimeout: Int;
+  var ?database: String;
+  var ?domain: String;
+  var ?options: NativeConfigOptions;
+  var ?parseJSON: Bool;
+  var ?password: String;
+  var ?pool: NativeConfigPool;
+  var ?port: Int;
+  var ?requestTimeout: Int;
+  var ?server: String;
+  var ?stream: Bool;
+  var ?user: String;
 }
 
-private typedef NativeConnectionPoolOptions = {
-  ?max: Int,
-  ?min: Int,
-  ?idleTimeoutMillis: Int
+private typedef NativeConfigOptions = {
+  var ?abortTransactionOnError: Bool;
+  var ?appName: String;
+  var ?encrypt: Bool;
+  var ?instanceName: String;
+  var ?useUTC: Bool;
+  var ?tdsVersion: String;
+  var ?trustServerCertificate: Bool;
 }
 
-private typedef NativeDriverOptions = {
-  ?abortTransactionOnError: Bool,
-  ?appName: String,
-  ?encrypt: Bool,
-  ?instanceName: String,
-  ?useUTC: Bool,
-  ?tdsVersion: String,
-  ?trustServerCertificate: Bool
+private typedef NativeConfigPool = {
+  var ?idleTimeoutMillis: Int;
+  var ?max: Int;
+  var ?min: Int;
 }
 
+@:jsRequire("msql", "ConnectionPool")
 private extern class NativeConnectionPool {
   function new(config: NativeConfig);
-  function connect(?callback: ?Error -> Void): Void;
+  function connect(): Promise<Void>;
   function close(): Void;
 }
 
