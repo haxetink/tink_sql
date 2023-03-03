@@ -14,6 +14,7 @@ import tink.sql.format.SqliteFormatter;
 import tink.sql.format.SqlServerFormatter;
 import tink.sql.expr.ExprTyper;
 import tink.sql.parse.ResultParser;
+import tink.sql.parse.SqlServerResultParser;
 import tink.sql.drivers.MySqlSettings;
 import php.db.PDO;
 import php.db.PDOStatement;
@@ -216,6 +217,12 @@ class PDOConnection<Db> implements Connection.ConnectionPool<Db> implements Sani
 }
 
 class PDOSqlServerConnection<Db> extends PDOConnection<Db> {
+
+  public function new(info, formatter, cnx) {
+    super(info, formatter, cnx);
+    this.parser = new SqlServerResultParser();
+  }
+
   override public function ident(s: String)
     return SqlServer.getSanitizer(null).ident(s);
 
