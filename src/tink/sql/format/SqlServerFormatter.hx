@@ -1,12 +1,33 @@
 package tink.sql.format;
 
+import tink.sql.Info;
 import tink.sql.Query;
 import tink.sql.format.Statement.StatementFactory.*;
+using Lambda;
 
 class SqlServerFormatter extends SqlFormatter<SqlServerColumnInfo, SqlServerKeyInfo> {
 
   override function autoIncrement(increment: Bool)
     return increment ? sql("IDENTITY") : empty();
+
+  override function insert<Db, Row: {}>(insert: InsertOperation<Db, Row>) {
+    return switch insert.data {
+      case Literal(rows):
+        final columns = insert.table.getColumns().filter(column -> column.writable && !isIdentity(column));
+        insertInto(insert)
+          .addIdent(insert.table.getName())
+          .addParenthesis(separated(columns.map(column -> column.name).map(ident)))
+          .add("VALUES")
+          .add(separated(rows.map(insertRow.bind(columns))));
+      case Select(operation):
+        if (operation.selection != null)
+          insert.table.getColumns().iter(column -> if (isIdentity(column)) operation.selection.remove(column.name));
+        super.insert(insert);
+    }
+  }
+
+  static function isIdentity(column: Column)
+    return column.type.match(DInt(_, _, true, _));
 
   override function limit(limit: Limit) {
     if (limit == null || limit.limit == null) return empty();

@@ -41,7 +41,6 @@ private class SqlServerSanitizer implements Sanitizer {
     if (v == null || Std.isOfType(v, Bytes) || Std.isOfType(v, Float) || Std.isOfType(v, Int)) return Std.string(v);
     if (Int64.isInt64(v)) return Int64.toStr(v);
     if (Std.isOfType(v, Bool)) return v ? "1" : "0";
-    if (Std.isOfType(v, Date)) return 'DATEADD(millisecond, ${(v: Date).getTime()}, \'1970-01-01\')';
     return "'" + Std.string(v).replace("'", "''") + "'";
   }
 }
