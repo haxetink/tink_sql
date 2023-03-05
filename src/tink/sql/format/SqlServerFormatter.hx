@@ -10,6 +10,9 @@ class SqlServerFormatter extends SqlFormatter<SqlServerColumnInfo, SqlServerKeyI
   override function autoIncrement(increment: Bool)
     return increment ? sql("IDENTITY") : empty();
 
+  override function beginTransaction()
+    return "BEGIN TRANSACTION";
+
   override function insert<Db, Row: {}>(insert: InsertOperation<Db, Row>) {
     return switch insert.data {
       case Literal(rows):
