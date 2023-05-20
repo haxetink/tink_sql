@@ -24,7 +24,7 @@ private typedef NativeConfig = {
   var ?options: NativeConfigOptions;
   var ?parseJSON: Bool;
   var ?password: String;
-  var ?pool: NativeConfigPool;
+  var ?pool: NativeConfigPoolOptions;
   var ?port: Int;
   var ?requestTimeout: Int;
   var ?server: String;
@@ -42,7 +42,7 @@ private typedef NativeConfigOptions = {
   var ?trustServerCertificate: Bool;
 }
 
-private typedef NativeConfigPool = {
+private typedef NativeConfigPoolOptions = {
   var ?idleTimeoutMillis: Int;
   var ?max: Int;
   var ?min: Int;

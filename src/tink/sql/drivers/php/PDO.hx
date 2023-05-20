@@ -71,15 +71,13 @@ class PDOSqlite implements Driver {
 }
 
 class PDOSqlServer implements Driver {
+
   public final type: Driver.DriverType = SqlServer;
 
   final settings: SqlServerSettings;
 
   public function new(settings: SqlServerSettings)
     this.settings = settings;
-
-  function or<T>(value: Null<T>, byDefault: T)
-    return value == null ? byDefault : value;
 
   public function open<Db>(name: String, info: DatabaseInfo): Connection.ConnectionPool<Db> {
     final host = or(settings.host, "localhost");
@@ -100,6 +98,9 @@ class PDOSqlServer implements Driver {
       new PDO(dsn, settings.user, settings.password)
     );
   }
+
+  function or<T>(value: Null<T>, byDefault: T)
+    return value == null ? byDefault : value;
 }
 
 class PDOConnection<Db> implements Connection.ConnectionPool<Db> implements Sanitizer {
