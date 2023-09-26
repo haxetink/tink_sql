@@ -49,8 +49,10 @@ class TableBuilder {
                       resolveType(p);
 
                     case TAbstract(_.get() => {module: 'tink.sql.Types', name: 'Id'}, [p]):
-                      var maxLength = 12; // TODO: make these configurable
                       macro tink.sql.Info.DataType.DInt(Default, false, $v{f.meta.has(':autoIncrement')}, $defaultValue);
+
+                    case TAbstract(_.get() => {module: 'tink.sql.Types', name: 'Id64'}, [p]):
+                      macro tink.sql.Info.DataType.DInt(Big, false, $v{f.meta.has(':autoIncrement')}, $defaultValue);
 
                     case TType(_.get() => tdef, params):
                       switch tdef {

@@ -173,6 +173,28 @@ abstract Field<Data, Owner>(Expr<Data>) to Expr<Data> {
     @:op(a <= b) static function lteInt64<S>(a:Field<Int64, S>, b:Int64):Condition
       return (a:Expr<Int64>) <= EValue(b, cast VInt64);
 
+
+    @:commutative
+    @:op(a == b) static function eqId64<S,T>(a:Field<Id64<T>, S>, b:Id64<T>):Condition
+      return (a:Expr<Int64>) == EValue(b, cast VInt64);
+
+    @:commutative
+    @:op(a != b) static function neqId64<S,T>(a:Field<Id64<T>, S>, b:Id64<T>):Condition
+      return (a:Expr<Int64>) != EValue(b, cast VInt64);
+
+    @:op(a > b) static function gtId64<S,T>(a:Field<Id64<T>, S>, b:Id64<T>):Condition
+      return (a:Expr<Int64>) > EValue(b, cast VInt64);
+
+    @:op(a < b) static function ltId64<S,T>(a:Field<Id64<T>, S>, b:Id64<T>):Condition
+      return (a:Expr<Int64>) < EValue(b, cast VInt64);
+
+    @:op(a >= b) static function gteId64<S,T>(a:Field<Id64<T>, S>, b:Id64<T>):Condition
+      return (a:Expr<Int64>) >= EValue(b, cast VInt64);
+
+    @:op(a <= b) static function lteId64<S,T>(a:Field<Id64<T>, S>, b:Id64<T>):Condition
+      return (a:Expr<Int64>) <= EValue(b, cast VInt64);
+
+
     @:op(a > b) static function gtDateConst<S>(a:Field<Date, S>, b:Date):Condition
       return (a:Expr<Date>) > EValue(b, VDate);
 
@@ -244,7 +266,28 @@ abstract Field<Data, Owner>(Expr<Data>) to Expr<Data> {
     @:op(a >= b) static function gteInt64Query<S>(a:Field<Int64, S>, b:Scalar<Int64>):Condition
       return (a:Expr<Int64>) >= b.toScalarExpr();
 
-    @:op(a <= b) static function lteInt64Query< S>(a:Field<Int64, S>, b:Scalar<Int64>):Condition
+    @:op(a <= b) static function lteInt64Query<S>(a:Field<Int64, S>, b:Scalar<Int64>):Condition
+      return (a:Expr<Int64>) <= b.toScalarExpr();
+
+
+    @:commutative
+    @:op(a == b) static function eqId64Query<S,T>(a:Field<Id64<T>, S>, b:Scalar<Id64<T>>):Condition
+      return (a:Expr<Int64>) == b.toScalarExpr();
+    
+    @:commutative
+    @:op(a == b) static function neqId64Query<S,T>(a:Field<Id64<T>, S>, b:Scalar<Id64<T>>):Condition
+      return (a:Expr<Int64>) != b.toScalarExpr();
+
+    @:op(a > b) static function gtId64Query<S,T>(a:Field<Id64<T>, S>, b:Scalar<Id64<T>>):Condition
+      return (a:Expr<Int64>) > b.toScalarExpr();
+
+    @:op(a < b) static function ltId64Query<S,T>(a:Field<Id64<T>, S>, b:Scalar<Id64<T>>):Condition
+      return (a:Expr<Int64>) < b.toScalarExpr();
+
+    @:op(a >= b) static function gteId64Query<S,T>(a:Field<Id64<T>, S>, b:Scalar<Id64<T>>):Condition
+      return (a:Expr<Int64>) >= b.toScalarExpr();
+
+    @:op(a <= b) static function lteId64Query<S,T>(a:Field<Id64<T>, S>, b:Scalar<Id64<T>>):Condition
       return (a:Expr<Int64>) <= b.toScalarExpr();
 
 
