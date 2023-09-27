@@ -68,6 +68,7 @@ class Run extends TestWithDb {
       Promise.reject(Error.asError(err));
     }, max10Seconds)
       .next(_ -> Runner.run(TestBatch.make([
+        new IdTest(),
         new TypeTest(mysql, dbMysql),
         new SelectTest(mysql, dbMysql),
         new FormatTest(mysql, dbMysql),
@@ -104,6 +105,7 @@ class Run extends TestWithDb {
     final dbPostgres = new Db(env('POSTGRES_DB', 'test'), postgres);
     return Promise.retry(()->loadFixture(dbPostgres, 'init_postgresql'), max10Seconds)
       .next(_ -> Runner.run(TestBatch.make([
+        new IdTest(),
         new TypeTest(postgres, dbPostgres),
         new SelectTest(postgres, dbPostgres),
         new FormatTest(postgres, dbPostgres),
@@ -135,6 +137,7 @@ class Run extends TestWithDb {
     final db = new Db(env('COCKROACH_DATABASE', 'test'), cockroachdb);
     return Promise.retry(()->loadFixture(db, 'init_cockroachdb'), max10Seconds)
       .next(_ -> Runner.run(TestBatch.make([
+        new IdTest(),
         new TypeTest(cockroachdb, db),
         new SelectTest(cockroachdb, db),
         new FormatTest(cockroachdb, db),
@@ -162,6 +165,7 @@ class Run extends TestWithDb {
 
     return loadFixture(dbSqlite, 'init_sqlite')
       .next(_ -> Runner.run(TestBatch.make([
+        new IdTest(),
         new TypeTest(sqlite, dbSqlite),
         new JsonTest(sqlite, dbSqlite),
         new DateTest(sqlite, dbSqlite),

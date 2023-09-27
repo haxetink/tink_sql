@@ -61,7 +61,19 @@ abstract Id<T>(Int) to Int {
   @:op(A>=B) static function lte<T>(a:Id<T>, b:Id<T>):Bool;
   @:op(A==B) static function eq<T>(a:Id<T>, b:Id<T>):Bool;
   @:op(A!=B) static function neq<T>(a:Id<T>, b:Id<T>):Bool;
-
+  @:op(A+B) static function plus<T>(a:Id<T>, b:Int):Id<T>;
+  @:op(A++) inline function postfixInc<T>():Id<T> {
+    return this++;
+  }
+  @:op(++A) inline function prefixInc<T>():Id<T> {
+    return ++this;
+  }
+  @:op(A--) inline function postfixDec<T>():Id<T> {
+    return this--;
+  }
+  @:op(--A) inline function prefixDec<T>():Id<T> {
+    return --this;
+  }
 }
 
 abstract Id64<T>(Int64) to Int64 {
@@ -78,11 +90,41 @@ abstract Id64<T>(Int64) to Int64 {
   @:to public function toExpr():Expr<Id64<T>>
     return tink.sql.Expr.ExprData.EValue(new Id64(this), cast VInt64);
 
-  @:op(A>B) static function gt<T>(a:Id64<T>, b:Id64<T>):Bool;
-  @:op(A<B) static function lt<T>(a:Id64<T>, b:Id64<T>):Bool;
-  @:op(A>=B) static function gte<T>(a:Id64<T>, b:Id64<T>):Bool;
-  @:op(A>=B) static function lte<T>(a:Id64<T>, b:Id64<T>):Bool;
-  @:op(A==B) static function eq<T>(a:Id64<T>, b:Id64<T>):Bool;
-  @:op(A!=B) static function neq<T>(a:Id64<T>, b:Id64<T>):Bool;
+  @:op(A>B) inline static function gt<T>(a:Id64<T>, b:Id64<T>):Bool {
+    return (a:Int64) > (b:Int64);
+  }
+  @:op(A<B) inline static function lt<T>(a:Id64<T>, b:Id64<T>):Bool {
+    return (a:Int64) < (b:Int64);
+  }
+  @:op(A>=B) inline static function gte<T>(a:Id64<T>, b:Id64<T>):Bool {
+    return (a:Int64) >= (b:Int64);
+  }
+  @:op(A>=B) inline static function lte<T>(a:Id64<T>, b:Id64<T>):Bool {
+    return (a:Int64) <= (b:Int64);
+  }
+  @:op(A==B) inline static function eq<T>(a:Id64<T>, b:Id64<T>):Bool {
+    return (a:Int64) == (b:Int64);
+  }
+  @:op(A!=B) static function neq<T>(a:Id64<T>, b:Id64<T>):Bool {
+    return (a:Int64) != (b:Int64);
+  }
+  @:op(A+B) static function plus<T>(a:Id64<T>, b:Int64):Id64<T> {
+    return (a:Int64) + b;
+  }
+  @:op(A-B) static function minus<T>(a:Id64<T>, b:Int64):Id64<T> {
+    return (a:Int64) - b;
+  }
+  @:op(A++) inline function postfixInc<T>():Id64<T> {
+    return this++;
+  }
+  @:op(++A) inline function prefixInc<T>():Id64<T> {
+    return ++this;
+  }
+  @:op(A--) inline function postfixDec<T>():Id64<T> {
+    return this--;
+  }
+  @:op(--A) inline function prefixDec<T>():Id64<T> {
+    return --this;
+  }
 
 }
