@@ -280,6 +280,19 @@ class Run extends TestWithDb {
     });
   }
 
+  public function firstInEmpty() {
+    db.User.first().handle(function (o) {
+      switch o {
+        case Success(_):
+          asserts.fail('should not return Success');
+        case Failure(err):
+          asserts.assert(err.code == 404);
+          asserts.done();
+      }
+    });
+    return asserts;
+  }
+
   public function unionTest() {
     return insertUsers().next(function (_)
       return db.User.union(db.User).first()
