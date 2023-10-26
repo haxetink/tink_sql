@@ -137,8 +137,9 @@ class MySqlConnection<Db> implements Connection<Db> implements Sanitizer {
   }
 
   public function value(v:Any):String {
-    if (Std.is(v, Date))
-      return 'DATE_ADD(FROM_UNIXTIME(0), INTERVAL ${(v : Date).getTime() / 1000} SECOND)';
+    if (Std.is(v, Date)) return
+      #if mysql_session_timezone NativeDriver.escape((v: Date).toString())
+      #else 'DATE_ADD(FROM_UNIXTIME(0), INTERVAL ${(v: Date).getTime() / 1000} SECOND)' #end;
 
     if (Int64.isInt64(v))
       return Int64.toStr(v);
