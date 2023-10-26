@@ -29,7 +29,11 @@ private class MySqlSanitizer implements Sanitizer {
     if (Std.is(v, Bool)) return v ? 'true' : 'false';
     if (v == null || Std.is(v, Int)) return '$v';
     if (Std.is(v, Bytes)) v = (cast v: Bytes).toString();
-    if (Std.is(v, Date)) return 'DATE_ADD(FROM_UNIXTIME(0), INTERVAL ${(v:Date).getTime()/1000} SECOND)';
+
+    if (Std.is(v, Date)) return
+      #if mysql_session_timezone string((v: Date).toString())
+      #else 'DATE_ADD(FROM_UNIXTIME(0), INTERVAL ${(v: Date).getTime() / 1000} SECOND)' #end;
+
     return string('$v');
   }
   
