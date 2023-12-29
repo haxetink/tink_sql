@@ -11,8 +11,10 @@ import tink.sql.format.Sanitizer;
 import tink.streams.Stream;
 import tink.sql.format.MySqlFormatter;
 import tink.sql.format.SqliteFormatter;
+import tink.sql.format.SqlServerFormatter;
 import tink.sql.expr.ExprTyper;
 import tink.sql.parse.ResultParser;
+import tink.sql.parse.SqlServerResultParser;
 import tink.sql.drivers.MySqlSettings;
 import php.db.PDO;
 import php.db.PDOStatement;
@@ -66,6 +68,39 @@ class PDOSqlite implements Driver {
       )
     );
   }
+}
+
+class PDOSqlServer implements Driver {
+
+  public final type: Driver.DriverType = SqlServer;
+
+  final settings: SqlServerSettings;
+
+  public function new(settings: SqlServerSettings)
+    this.settings = settings;
+
+  public function open<Db>(name: String, info: DatabaseInfo): Connection.ConnectionPool<Db> {
+    final host = or(settings.host, "localhost");
+    final port = or(settings.port, 1433);
+
+    #if pdo_dblib
+      final dsn = 'dblib:host=$host:$port;dbname=$name'
+        + ';charset=${or(settings.charset, "utf8")}';
+    #else
+      final dsn = 'sqlsrv:Server=$host,$port;Database=$name'
+        + ';Encrypt=${or(settings.encrypt, true)}'
+        + ';TrustServerCertificate=${or(settings.trustServerCertificate, false)}';
+    #end
+
+    return new PDOSqlServerConnection(
+      info,
+      new SqlServerFormatter(),
+      new PDO(dsn, settings.user, settings.password)
+    );
+  }
+
+  function or<T>(value: Null<T>, byDefault: T)
+    return value == null ? byDefault : value;
 }
 
 class PDOConnection<Db> implements Connection.ConnectionPool<Db> implements Sanitizer {
@@ -180,4 +215,15 @@ class PDOConnection<Db> implements Connection.ConnectionPool<Db> implements Sani
   public function isolate():Pair<Connection<Db>, CallbackLink> {
     return new Pair((this:Connection<Db>), null);
   }
+}
+
+class PDOSqlServerConnection<Db> extends PDOConnection<Db> {
+
+  public function new(info, formatter, cnx) {
+    super(info, formatter, cnx);
+    this.parser = new SqlServerResultParser();
+  }
+
+  override public function ident(s: String)
+    return SqlServer.getSanitizer(null).ident(s);
 }
