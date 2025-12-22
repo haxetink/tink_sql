@@ -1,29 +1,35 @@
 package tink.sql.drivers.node;
 
-import haxe.Int64;
-import js.node.stream.Readable.Readable;
-import js.node.events.EventEmitter;
-import js.node.Buffer;
-import js.node.tls.SecureContext;
+import #if haxe3 js.lib.Error #else js.Error #end as JsError;
 import haxe.DynamicAccess;
+import haxe.Int64;
 import haxe.extern.EitherType;
 import haxe.io.Bytes;
-import tink.sql.Query;
+import js.node.Buffer;
+import js.node.events.EventEmitter;
+import js.node.stream.Readable.Readable;
+import js.node.tls.SecureContext;
 import tink.sql.Info;
+import tink.sql.Query;
 import tink.sql.Types;
+import tink.sql.expr.ExprTyper;
+import tink.sql.format.MySqlFormatter;
 import tink.sql.format.Sanitizer;
 import tink.sql.format.SqlFormatter;
-import tink.streams.Stream;
-import tink.sql.format.MySqlFormatter;
-import tink.sql.expr.ExprTyper;
 import tink.sql.parse.ResultParser;
-import #if haxe3 js.lib.Error #else js.Error #end as JsError;
+import tink.streams.Stream;
 
 using tink.CoreApi;
 
 typedef NodeSettings = MySqlSettings & {
   final ?connectionLimit:Int;
   final ?ssl:EitherType<String, SecureContextOptions>;
+  final ?maxPreparedStatements:Int;
+  final ?rowsAsArray:Bool;
+  final ?queueLimit:Int;
+  final ?waitForConnections:Bool;
+  final ?enableKeepAlive:Bool;
+  final ?keepAliveInitialDelay:Int;
 }
 
 class MySql implements Driver {
@@ -52,20 +58,30 @@ class MySql implements Driver {
       multipleStatements: true,
       supportBigNumbers: true,
       bigNumberStrings: true,
+
+      maxPreparedStatements: settings.maxPreparedStatements ?? 0,
+      rowsAsArray: settings.rowsAsArray ?? false,
+
+      queueLimit: settings.queueLimit ?? 0,
+      waitForConnections: settings.waitForConnections ?? true,
+      enableKeepAlive: settings.enableKeepAlive ?? true,
+      keepAliveInitialDelay: settings.keepAliveInitialDelay ?? 10000
     });
 
-    // pool.on('acquire', function (connection) {
-    //   js.Node.console.log('Connection ${connection.threadId} acquired');
-    // });
-    // pool.on('connection', function (connection) {
-    //   js.Node.console.log('Connection ${connection.threadId} created');
-    // });
-    // pool.on('enqueue', function () {
-    //   js.Node.console.log('Waiting for available connection slot');
-    // });
-    // pool.on('release', function (connection) {
-    //   js.Node.console.log('Connection ${connection.threadId} released');
-    // });
+    #if debug
+    pool.on('acquire', function (connection) {
+      js.Node.console.log('Connection ${connection.threadId} acquired');
+    });
+    pool.on('connection', function (connection) {
+      js.Node.console.log('Connection ${connection.threadId} created');
+    });
+    pool.on('enqueue', function () {
+      js.Node.console.log('Waiting for available connection slot');
+    });
+    pool.on('release', function (connection) {
+      js.Node.console.log('Connection ${connection.threadId} released');
+    });
+    #end
 
     return new MySqlConnectionPool(info, pool);
   }
@@ -163,7 +179,6 @@ class MySqlConnection<Db> implements Connection<Db> implements Sanitizer {
       case Select(_) | Union(_):
         final parse:DynamicAccess<Any> -> {} = parser.queryParser(query, formatter.isNested(query));
         stream(queryOptions(query)).map(parse);
-
       case CallProcedure(_):
         Stream.promise(fetch().next((res:Array<Array<Any>>) -> {
           final iterator = res[0].iterator();
@@ -252,7 +267,7 @@ class MySqlConnection<Db> implements Connection<Db> implements Sanitizer {
   }
 }
 
-@:jsRequire("mysql")
+@:jsRequire("mysql2")
 private extern class NativeDriver {
   static function escape(value:Any):String;
   static function escapeId(ident:String):String;
@@ -284,11 +299,15 @@ private typedef NativeConfig = {
   final ?multipleStatements:Bool;
   final ?flags:String;
   final ?ssl:Any;
+  final ?maxPreparedStatements:Int;
+  final ?rowsAsArray:Bool;
+  final ?enableKeepAlive:Bool;
+  final ?keepAliveInitialDelay:Int;
 }
 
 private typedef NativePoolConfig = NativeConfig & {
   final ?acquireTimeout:Int;
-  final ?waitForConnections:Int;
+  final ?waitForConnections:Bool;
   final ?connectionLimit:Int;
   final ?queueLimit:Int;
 }
